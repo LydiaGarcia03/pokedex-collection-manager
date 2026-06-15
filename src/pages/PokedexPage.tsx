@@ -31,6 +31,7 @@ export function PokedexPage() {
     const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
     const [genDropdownOpen, setGenDropdownOpen] = useState(false);
     const genDropdownRef = useRef<HTMLDivElement>(null);
+    const [collectionVisible, setCollectionVisible] = useState(false);
 
     // Ref used in export to order selected Pokémon — always the full unfiltered list
     const allPokemonRef = useRef<Pokemon[]>([]);
@@ -202,6 +203,14 @@ export function PokedexPage() {
                 >
                     Export Collection
                 </button>
+
+                <button
+                    type="button"
+                    className={`collection-action-button ${collectionVisible ? 'collection-action-button--active' : ''}`}
+                    onClick={() => setCollectionVisible(v => !v)}
+                >
+                    Toggle Collection Visibility
+                </button>
             </section>
 
             <div className="pokedex-count-row">
@@ -229,6 +238,7 @@ export function PokedexPage() {
                         key={item.id}
                         pokemon={item}
                         selected={collection.isPokemonSelected(item.id)}
+                        collectionVisible={collectionVisible}
                         onToggleSelected={collection.togglePokemon}
                         onOpenDetails={() => handleOpenModal(index)}
                         onCommitDeselection={collection.commitPendingCleanup}
@@ -244,6 +254,7 @@ export function PokedexPage() {
                 onChangePokemon={handleOpenModal}
                 onClose={handleCloseModal}
                 collection={collection}
+                collectionVisible={collectionVisible}
             />
 
             {showClearConfirm && (

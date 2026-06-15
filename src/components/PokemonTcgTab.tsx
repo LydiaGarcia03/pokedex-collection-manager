@@ -44,6 +44,7 @@ function CardImage({ card }: { card: TcgCard }) {
 interface PokemonTcgTabProps {
     pokemon: Pokemon;
     selected: boolean;
+    collectionVisible: boolean;
     selectedCardIds: string[];
     onToggleCard: (cardId: string) => void;
 }
@@ -51,6 +52,7 @@ interface PokemonTcgTabProps {
 export function PokemonTcgTab({
     pokemon,
     selected,
+    collectionVisible,
     selectedCardIds,
     onToggleCard,
 }: PokemonTcgTabProps) {
@@ -120,7 +122,7 @@ export function PokemonTcgTab({
                         <button
                             key={card.id}
                             type="button"
-                            className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''}`}
+                            className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''} ${collectionVisible && !checked ? 'pokemon-tcg-card--dimmed' : ''}`}
                             onClick={() => selected && onToggleCard(card.id)}
                             title={`${card.name}${card.setId ? ` · ${card.setId}` : ''}${card.number ? ` #${card.number}` : ''}`}
                         >

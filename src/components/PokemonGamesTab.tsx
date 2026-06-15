@@ -5,6 +5,7 @@ import type { Pokemon, PokemonGame } from '../types/Pokemon';
 interface PokemonGamesTabProps {
     pokemon: Pokemon;
     selected: boolean;
+    collectionVisible: boolean;
     selectedGameIds: string[];
     onToggleGame: (gameId: string) => void;
 }
@@ -32,6 +33,7 @@ function GameIcon({ game }: { game: PokemonGame }) {
 export function PokemonGamesTab({
                                     pokemon,
                                     selected,
+                                    collectionVisible,
                                     selectedGameIds,
                                     onToggleGame
                                 }: PokemonGamesTabProps) {
@@ -56,7 +58,7 @@ export function PokemonGamesTab({
                             <button
                                 key={game.id}
                                 type="button"
-                                className={`pokemon-game-item ${selected ? 'pokemon-game-item--selectable' : ''} ${checked ? 'pokemon-game-item--checked' : ''}`}
+                                className={`pokemon-game-item ${selected ? 'pokemon-game-item--selectable' : ''} ${checked ? 'pokemon-game-item--checked' : ''} ${collectionVisible && !checked ? 'pokemon-game-item--dimmed' : ''}`}
                                 onClick={() => selected && onToggleGame(game.id)}
                                 title={game.name}
                             >

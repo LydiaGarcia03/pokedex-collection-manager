@@ -5,6 +5,7 @@ import { TypeBadge } from './TypeBadge';
 interface PokemonCardProps {
     pokemon: PokemonSummary;
     selected: boolean;
+    collectionVisible: boolean;
     onToggleSelected: (id: string) => void;
     onOpenDetails: () => void;
     onCommitDeselection: (id: string) => void;
@@ -13,6 +14,7 @@ interface PokemonCardProps {
 export function PokemonCard({
                                 pokemon,
                                 selected,
+                                collectionVisible,
                                 onToggleSelected,
                                 onOpenDetails,
                                 onCommitDeselection
@@ -24,7 +26,7 @@ export function PokemonCard({
 
     return (
         <article
-            className={`pokemon-card ${selected ? 'pokemon-card--selected' : ''}`}
+            className={`pokemon-card ${selected ? 'pokemon-card--selected' : ''} ${collectionVisible && !selected ? 'pokemon-card--dimmed' : ''}`}
             onMouseLeave={() => onCommitDeselection(pokemon.id)}
         >
             <button

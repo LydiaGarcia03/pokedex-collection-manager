@@ -28,6 +28,7 @@ interface PokemonModalProps {
     onChangePokemon: (index: number) => void;
     onClose: () => void;
     collection: UseCollectionReturn;
+    collectionVisible: boolean;
 }
 
 export function PokemonModal({
@@ -37,7 +38,8 @@ export function PokemonModal({
                                  detailLoading,
                                  onChangePokemon,
                                  onClose,
-                                 collection
+                                 collection,
+                                 collectionVisible,
                              }: PokemonModalProps) {
     const [activeTab, setActiveTab] = useState<PokemonDetailTab>('info');
     const [showShiny, setShowShiny] = useState(false);
@@ -213,6 +215,7 @@ export function PokemonModal({
                                         <PokemonGamesTab
                                             pokemon={activePokemonDetail}
                                             selected={selected}
+                                            collectionVisible={collectionVisible}
                                             selectedGameIds={collection.getSelectedGameIds(summary.id)}
                                             onToggleGame={gameId => collection.toggleGame(summary.id, gameId)}
                                         />
@@ -222,6 +225,7 @@ export function PokemonModal({
                                         <PokemonTcgTab
                                             pokemon={activePokemonDetail}
                                             selected={selected}
+                                            collectionVisible={collectionVisible}
                                             selectedCardIds={collection.getSelectedCardIds(summary.id)}
                                             onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
                                         />
