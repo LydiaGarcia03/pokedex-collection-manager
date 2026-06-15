@@ -92,6 +92,19 @@ Collection state (selected Pokémon, cards, and games) is stored in `localStorag
 
 ---
 
+## Data Sources
+
+The data compiled into this project comes from the following public APIs:
+
+| API | Used for | Docs |
+|-----|----------|------|
+| [PokéAPI](https://pokeapi.co) | Pokémon data (stats, types, abilities, moves, species, game indices) | https://pokeapi.co/docs/v2 |
+| [TCGdex](https://tcgdex.dev) | TCG card metadata and images | https://tcgdex.dev/rest |
+
+These APIs are only called during the local setup steps (`npm run compile-data` and `npm run collect-tcg`). The deployed site makes no API calls at runtime.
+
+---
+
 ## Relationship to `pokedex` (Spring Boot)
 
 This project is a static port of the [`pokedex`](https://github.com/LydiaGarcia03/pokedex) Spring Boot project. The UI is functionally identical; the only difference is that data fetching, image serving, and TCG lookups — which the original handles via a Java backend — are replaced here by pre-compiled files and client-side logic.
