@@ -1,5 +1,28 @@
 # Changes Log
 
+## 2026-06-15 (data)
+
+### Data: Adicionados 45 Pokémon/formas faltando (39 Megas + 6 outras formas)
+
+**Files modified:**
+- `../pokedex/src/main/resources/data/pokedex.json` (fonte — 1242 → 1287 entradas)
+- `public/data/pokemon-compiled.json` (recompilado automaticamente)
+- `scripts/add-missing-pokemon.mjs` (novo script utilitário de inserção)
+- `scripts/crawl-pokepc.mjs` (correção do bug de comparação nid vs id + exclusão Tatsugiri droopy/stretchy mega)
+
+**What changed:**
+- Adicionadas 39 Megas confirmadas via crawler PokéPC CDN:
+  - Megas clássicas não registradas: Raichu X/Y, Clefable, Starmie, Meganium, Feraligatr, Skarmory, Chimecho, Staraptor
+  - Novas Megas de Legends: Z-A: Absol Mega Z, Garchomp Mega Z, Lucario Mega Z, Heatran, Darkrai, Emboar, Excadrill, Scolipede, Scrafty, Eelektross, Chandelure, Golurk, Chesnaught, Delphox, Greninja, Pyroar, Floette Eternal Mega, Meowstic, Barbaracle, Dragalge, Zygarde Complete Mega, Crabominable, Golisopod, Drampa, Zeraora, Falinks, Scovillain, Glimmora, Tatsugiri, Baxcalibur
+- Adicionadas 6 outras formas confirmadas: Cherrim Sunshine, Shaymin Sky, Darmanitan Zen Mode, Darmanitan Galarian Zen Mode, Floette Eternal Flower, Gimmighoul Roaming
+- Tipos e habilidades de cada nova Mega/forma obtidos diretamente do CDN do PokéPC
+- Atualizado Tatsugiri (base/droopy/stretchy): `capableOfMegaEvolution: true` + `megaEvolutions` adicionado
+
+**Why:**
+Pokémon Legends: Z-A introduziu dezenas de novas Mega Evoluções. Identificadas via comparação automatizada com o dataset do PokéPC (1595 entradas). O script `add-missing-pokemon.mjs` insere cada entrada na posição correta pelo dexNumber e reconstrói o sortOrder sequencial.
+
+---
+
 ## 2026-06-14 (fix 7)
 
 ### Fix: modal não exibe menus no celular — múltiplos problemas de responsividade
