@@ -12,13 +12,15 @@ interface AuthModalProps {
 type Mode = 'login' | 'register';
 
 const FIREBASE_ERRORS: Record<string, string> = {
-    'auth/invalid-credential':    'Incorrect email or password.',
-    'auth/user-not-found':        'Incorrect email or password.',
-    'auth/wrong-password':        'Incorrect email or password.',
-    'auth/email-already-in-use':  'This email is already registered.',
-    'auth/weak-password':         'Password must be at least 6 characters.',
-    'auth/invalid-email':         'Invalid email address.',
-    'auth/too-many-requests':     'Too many attempts. Please try again later.',
+    'auth/invalid-credential':         'Incorrect email or password.',
+    'auth/user-not-found':             'Incorrect email or password.',
+    'auth/wrong-password':             'Incorrect email or password.',
+    'auth/email-already-in-use':       'This email is already registered.',
+    'auth/weak-password':              'Password must be at least 6 characters.',
+    'auth/invalid-email':              'Invalid email address.',
+    'auth/too-many-requests':          'Too many attempts. Please try again later.',
+    'appCheck/token-generation-failed': 'Security check failed. Please reload the page and try again.',
+    'appCheck/fetch-status-error':      'Security check failed. Please reload the page and try again.',
 };
 
 export function AuthModal({ onClose, onSuccess }: AuthModalProps) {

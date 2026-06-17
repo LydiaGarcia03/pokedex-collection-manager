@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { ReCaptchaV3Provider, initializeAppCheck } from 'firebase/app-check';
 
 const firebaseConfig = {
     apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,3 +11,15 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
+
+if (import.meta.env.DEV) {
+    // Enables debug token — Firebase logs it in the console on first run.
+    // Register that token in Firebase Console → App Check → [app] → Manage debug tokens.
+    // @ts-expect-error
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+initializeAppCheck(firebaseApp, {
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+});
