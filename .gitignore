@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Scripts temp output (intermediate file — not committed)
 public/data/tcg-download-manifest.json
+
+# Local AI/change logs — not tracked remotely
+.ai/
