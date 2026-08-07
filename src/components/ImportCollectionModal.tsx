@@ -5,6 +5,7 @@ interface ImportResult {
     pokemonCount: number;
     gameCount: number;
     cardCount: number;
+    foilCount: number;
     invalidLines: string[];
 }
 
@@ -142,6 +143,7 @@ export function ImportCollectionModal({ onClose, onImport }: ImportCollectionMod
                                 Import finished — {feedback.result.pokemonCount} Pokemon
                                 {feedback.result.gameCount > 0 && `, ${feedback.result.gameCount} games`}
                                 {feedback.result.cardCount > 0 && `, ${feedback.result.cardCount} cards`}
+                                {feedback.result.foilCount > 0 && ` (${feedback.result.foilCount} foil)`}
                                 {feedback.result.invalidLines.length > 0 && ` · ${feedback.result.invalidLines.length} line(s) ignored`}
                             </span>
                         </div>

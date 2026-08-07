@@ -1,4 +1,4 @@
-import { Check, WifiOff } from 'lucide-react';
+import { Check, Sparkle, WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { fetchTcgCards } from '../api/pokemonApi';
 import type { Pokemon, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
@@ -47,6 +47,8 @@ interface PokemonTcgTabProps {
     collectionVisible: boolean;
     selectedCardIds: string[];
     onToggleCard: (cardId: string) => void;
+    foilCardIds: string[];
+    onToggleFoil: (cardId: string) => void;
 }
 
 export function PokemonTcgTab({
@@ -55,6 +57,8 @@ export function PokemonTcgTab({
     collectionVisible,
     selectedCardIds,
     onToggleCard,
+    foilCardIds,
+    onToggleFoil,
 }: PokemonTcgTabProps) {
     const [tcgData, setTcgData] = useState<TcgCardsApiResponse | null>(null);
     const [loading, setLoading] = useState(false);
@@ -136,16 +140,36 @@ export function PokemonTcgTab({
 
     return (
         <div className="pokemon-tcg-tab">
+            <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+                <defs>
+                    <linearGradient id="foil-toggle-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ffffff" />
+                        <stop offset="40%" stopColor="#d4d4d8" />
+                        <stop offset="50%" stopColor="#8a8a94" />
+                        <stop offset="60%" stopColor="#d4d4d8" />
+                        <stop offset="100%" stopColor="#ffffff" />
+                    </linearGradient>
+                </defs>
+            </svg>
+
             <div className="pokemon-tcg-grid">
                 {displayCards.map(card => {
                     const checked = selectedCardIds.includes(card.id);
+                    const isFoil = foilCardIds.includes(card.id);
 
                     return (
-                        <button
+                        <div
                             key={card.id}
-                            type="button"
                             className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''} ${collectionVisible && !checked ? 'pokemon-tcg-card--dimmed' : ''}`}
+                            role={selected ? 'button' : undefined}
+                            tabIndex={selected ? 0 : undefined}
                             onClick={() => selected && onToggleCard(card.id)}
+                            onKeyDown={e => {
+                                if (selected && (e.key === 'Enter' || e.key === ' ')) {
+                                    e.preventDefault();
+                                    onToggleCard(card.id);
+                                }
+                            }}
                             title={`${card.name}${card.setId ? ` · ${card.setId}` : ''}${card.number ? ` #${card.number}` : ''}`}
                         >
                             {selected && (
@@ -159,7 +183,21 @@ export function PokemonTcgTab({
                             )}
 
                             <CardImage card={card} />
-                        </button>
+
+                            {checked && (
+                                <button
+                                    type="button"
+                                    className={`pokemon-tcg-card__foil-toggle ${isFoil ? 'pokemon-tcg-card__foil-toggle--active' : ''}`}
+                                    onClick={e => {
+                                        e.stopPropagation();
+                                        onToggleFoil(card.id);
+                                    }}
+                                    title={isFoil ? 'Marked as foil' : 'Mark as foil'}
+                                >
+                                    <Sparkle size={16} strokeWidth={2.4} fill={isFoil ? 'url(#foil-toggle-silver)' : 'none'} />
+                                </button>
+                            )}
+                        </div>
                     );
                 })}
             </div>

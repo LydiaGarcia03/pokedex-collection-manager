@@ -1075,6 +1075,46 @@ input {
             0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
+.pokemon-tcg-card__foil-toggle {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    z-index: 2;
+
+    width: 20px;
+    height: 20px;
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: rgba(226, 232, 240, 0.75);
+    background: rgba(11, 51, 96, 0.34);
+    border: 1px solid rgba(139, 191, 235, 0.32);
+    border-radius: 5px;
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    transition:
+            color 160ms ease,
+            background 160ms ease,
+            border-color 160ms ease,
+            box-shadow 160ms ease;
+}
+
+.pokemon-tcg-card__foil-toggle:hover {
+    border-color: rgba(139, 108, 189, 0.55);
+}
+
+.pokemon-tcg-card__foil-toggle--active {
+    color: #eaeaee;
+    background: #7c5cb8;
+    border: 1px solid #7c5cb8;
+    box-shadow:
+            0 0 5px rgba(234, 234, 238, 0.5),
+            0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
 .pokemon-tcg-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));

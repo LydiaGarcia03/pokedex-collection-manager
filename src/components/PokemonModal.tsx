@@ -240,6 +240,8 @@ export function PokemonModal({
                                             collectionVisible={collectionVisible}
                                             selectedCardIds={collection.getSelectedCardIds(summary.id)}
                                             onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
+                                            foilCardIds={collection.getFoilCardIds(summary.id)}
+                                            onToggleFoil={cardId => collection.toggleFoil(summary.id, cardId)}
                                         />
                                     )}
                                 </>

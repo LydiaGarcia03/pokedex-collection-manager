@@ -1,4 +1,4 @@
-# Pokédex Collection Manager — Static
+# Pokédex Collection Manager
 
 A personal Pokédex app for tracking your Pokémon collection, built as a fully static site deployable on GitHub Pages with no backend required.
 

@@ -132,3 +132,9 @@ export interface TcgCardsApiResponse {
     cards: TcgCard[];
     dataUnavailable: boolean;
 }
+
+// A card the user has added to their collection, with its foil status
+export interface SelectedCard {
+    id: string;
+    foil: boolean;
+}

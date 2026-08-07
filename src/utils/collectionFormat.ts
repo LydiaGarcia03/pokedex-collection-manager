@@ -1,12 +1,14 @@
-import type { PokemonSummary, TcgCard } from '../types/Pokemon';
+import type { PokemonSummary, SelectedCard, TcgCard } from '../types/Pokemon';
 
 export type ExportType = 'games' | 'cards' | 'none';
+
+const FOIL_TAG = '[foil]';
 
 export interface ExportData {
     type: ExportType;
     selectedPokemonIds: string[];
     selectedGamesByPokemonId: Record<string, string[]>;
-    selectedCardsByPokemonId: Record<string, string[]>;
+    selectedCardsByPokemonId: Record<string, SelectedCard[]>;
     summaries: PokemonSummary[];
     tcgCardsByPokemonId?: Record<string, TcgCard[]>;
 }
@@ -49,17 +51,19 @@ export function buildExportText(data: ExportData): string {
                 gameIds.forEach(id => lines.push(`  ${id}`));
             }
         } else if (type === 'cards') {
-            const cardIds = selectedCardsByPokemonId[pokemon.id] ?? [];
-            if (cardIds.length === 0) {
+            const cardEntries = selectedCardsByPokemonId[pokemon.id] ?? [];
+            if (cardEntries.length === 0) {
                 lines.push('  No Card Selected');
             } else {
                 const cards = tcgCardsByPokemonId?.[pokemon.id] ?? [];
-                cardIds.forEach(cardId => {
+                cardEntries.forEach(({ id: cardId, foil }) => {
                     const card = cards.find(c => c.id === cardId);
                     if (card?.name && card.number != null && card.setId != null) {
-                        lines.push(`  ${card.name} #${card.number} (${card.setId}) - ${cardId}`);
+                        const foilSuffix = foil ? ` ${FOIL_TAG}` : '';
+                        lines.push(`  ${card.name} #${card.number} (${card.setId})${foilSuffix} - ${cardId}`);
                     } else {
-                        lines.push(`  ${cardId}`);
+                        const foilPrefix = foil ? `${FOIL_TAG} ` : '';
+                        lines.push(`  ${foilPrefix}${cardId}`);
                     }
                 });
             }
@@ -74,10 +78,11 @@ export function buildExportText(data: ExportData): string {
 export interface ParsedCollection {
     selectedPokemonIds: string[];
     selectedGamesByPokemonId: Record<string, string[]>;
-    selectedCardsByPokemonId: Record<string, string[]>;
+    selectedCardsByPokemonId: Record<string, SelectedCard[]>;
     pokemonCount: number;
     gameCount: number;
     cardCount: number;
+    foilCount: number;
     invalidLines: string[];
 }
 
@@ -94,7 +99,7 @@ export function parseCollectionText(content: string): ParsedCollection | null {
 
     const selectedPokemonIds: string[] = [];
     const selectedGamesByPokemonId: Record<string, string[]> = {};
-    const selectedCardsByPokemonId: Record<string, string[]> = {};
+    const selectedCardsByPokemonId: Record<string, SelectedCard[]> = {};
     const invalidLines: string[] = [];
 
     let currentId: string | null = null;
@@ -127,12 +132,17 @@ export function parseCollectionText(content: string): ParsedCollection | null {
                     selectedGamesByPokemonId[currentId].push(child);
                 }
             } else if (type === 'cards') {
-                const sep = child.lastIndexOf(' - ');
-                const cardId = sep >= 0 ? child.slice(sep + 3).trim() : child;
+                const isFoil = child.includes(FOIL_TAG);
+                const cleaned = isFoil
+                    ? child.split(FOIL_TAG).join('').replace(/\s+/g, ' ').trim()
+                    : child;
+
+                const sep = cleaned.lastIndexOf(' - ');
+                const cardId = sep >= 0 ? cleaned.slice(sep + 3).trim() : cleaned;
                 if (cardId) {
                     if (!selectedCardsByPokemonId[currentId]) selectedCardsByPokemonId[currentId] = [];
-                    if (!selectedCardsByPokemonId[currentId].includes(cardId)) {
-                        selectedCardsByPokemonId[currentId].push(cardId);
+                    if (!selectedCardsByPokemonId[currentId].some(card => card.id === cardId)) {
+                        selectedCardsByPokemonId[currentId].push({ id: cardId, foil: isFoil });
                     }
                 } else {
                     invalidLines.push(rawLine);
@@ -148,6 +158,7 @@ export function parseCollectionText(content: string): ParsedCollection | null {
         pokemonCount: selectedPokemonIds.length,
         gameCount: Object.values(selectedGamesByPokemonId).flat().length,
         cardCount: Object.values(selectedCardsByPokemonId).flat().length,
+        foilCount: Object.values(selectedCardsByPokemonId).flat().filter(card => card.foil).length,
         invalidLines,
     };
 }

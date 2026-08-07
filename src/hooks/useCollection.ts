@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { parseCollectionText } from '../utils/collectionFormat';
+import type { SelectedCard } from '../types/Pokemon';
 
 const STORAGE_KEY = 'pokedex.collection.v2';
 const LEGACY_STORAGE_KEY = 'pokedex.collection.ids';
@@ -7,13 +8,14 @@ const LEGACY_STORAGE_KEY = 'pokedex.collection.ids';
 export interface CollectionState {
     selectedPokemonIds: string[];
     selectedGamesByPokemonId: Record<string, string[]>;
-    selectedCardsByPokemonId: Record<string, string[]>;
+    selectedCardsByPokemonId: Record<string, SelectedCard[]>;
 }
 
 export interface CollectionImportResult {
     pokemonCount: number;
     gameCount: number;
     cardCount: number;
+    foilCount: number;
     invalidLines: string[];
 }
 
@@ -37,6 +39,33 @@ function toggleId(list: string[], id: string) {
         : [...list, id];
 }
 
+/**
+ * Accepts both the current `{id, foil}[]` shape and the legacy plain
+ * `string[]` shape (from localStorage/Firestore data saved before foil
+ * tracking existed), normalizing either into `SelectedCard[]`.
+ */
+function normalizeSelectedCards(raw: unknown): Record<string, SelectedCard[]> {
+    if (!raw || typeof raw !== 'object') return {};
+
+    const result: Record<string, SelectedCard[]> = {};
+
+    for (const [pokemonId, entries] of Object.entries(raw as Record<string, unknown>)) {
+        if (!Array.isArray(entries)) continue;
+
+        result[pokemonId] = entries
+            .map((entry): SelectedCard | null => {
+                if (typeof entry === 'string') return { id: entry, foil: false };
+                if (entry && typeof entry === 'object' && typeof (entry as { id?: unknown }).id === 'string') {
+                    return { id: (entry as { id: string }).id, foil: (entry as { foil?: unknown }).foil === true };
+                }
+                return null;
+            })
+            .filter((entry): entry is SelectedCard => entry !== null);
+    }
+
+    return result;
+}
+
 function readCollectionState(): CollectionState {
     const stored = localStorage.getItem(STORAGE_KEY);
 
@@ -47,7 +76,7 @@ function readCollectionState(): CollectionState {
             return {
                 selectedPokemonIds: parsed.selectedPokemonIds ?? [],
                 selectedGamesByPokemonId: parsed.selectedGamesByPokemonId ?? {},
-                selectedCardsByPokemonId: parsed.selectedCardsByPokemonId ?? {}
+                selectedCardsByPokemonId: normalizeSelectedCards(parsed.selectedCardsByPokemonId)
             };
         } catch {
             return INITIAL_COLLECTION_STATE;
@@ -174,12 +203,24 @@ export function useCollection() {
         });
     }
 
-    function getSelectedCardIds(pokemonId: string) {
+    function getSelectedCardEntries(pokemonId: string) {
         return state.selectedCardsByPokemonId[pokemonId] ?? [];
     }
 
+    function getSelectedCardIds(pokemonId: string) {
+        return getSelectedCardEntries(pokemonId).map(card => card.id);
+    }
+
     function isCardSelected(pokemonId: string, cardId: string) {
-        return getSelectedCardIds(pokemonId).includes(cardId);
+        return getSelectedCardEntries(pokemonId).some(card => card.id === cardId);
+    }
+
+    function getFoilCardIds(pokemonId: string) {
+        return getSelectedCardEntries(pokemonId).filter(card => card.foil).map(card => card.id);
+    }
+
+    function isCardFoil(pokemonId: string, cardId: string) {
+        return getSelectedCardEntries(pokemonId).some(card => card.id === cardId && card.foil);
     }
 
     function toggleCard(pokemonId: string, cardId: string) {
@@ -188,13 +229,38 @@ export function useCollection() {
                 return current;
             }
 
-            const currentCardIds = current.selectedCardsByPokemonId[pokemonId] ?? [];
+            const currentCards = current.selectedCardsByPokemonId[pokemonId] ?? [];
+            const isSelected = currentCards.some(card => card.id === cardId);
+
+            const nextCards = isSelected
+                ? currentCards.filter(card => card.id !== cardId)
+                : [...currentCards, { id: cardId, foil: false }];
 
             return {
                 ...current,
                 selectedCardsByPokemonId: {
                     ...current.selectedCardsByPokemonId,
-                    [pokemonId]: toggleId(currentCardIds, cardId)
+                    [pokemonId]: nextCards
+                }
+            };
+        });
+    }
+
+    function toggleFoil(pokemonId: string, cardId: string) {
+        setState(current => {
+            const currentCards = current.selectedCardsByPokemonId[pokemonId] ?? [];
+
+            if (!currentCards.some(card => card.id === cardId)) {
+                return current;
+            }
+
+            return {
+                ...current,
+                selectedCardsByPokemonId: {
+                    ...current.selectedCardsByPokemonId,
+                    [pokemonId]: currentCards.map(card =>
+                        card.id === cardId ? { ...card, foil: !card.foil } : card
+                    )
                 }
             };
         });
@@ -229,6 +295,7 @@ export function useCollection() {
             pokemonCount: parsed.pokemonCount,
             gameCount: parsed.gameCount,
             cardCount: parsed.cardCount,
+            foilCount: parsed.foilCount,
             invalidLines: parsed.invalidLines,
         };
     }
@@ -243,7 +310,7 @@ export function useCollection() {
             setState({
                 selectedPokemonIds: parsed.selectedPokemonIds ?? [],
                 selectedGamesByPokemonId: parsed.selectedGamesByPokemonId ?? {},
-                selectedCardsByPokemonId: parsed.selectedCardsByPokemonId ?? {},
+                selectedCardsByPokemonId: normalizeSelectedCards(parsed.selectedCardsByPokemonId),
             });
             setPendingCleanupIds([]);
             return true;
@@ -276,6 +343,10 @@ export function useCollection() {
         getSelectedCardIds,
         isCardSelected,
         toggleCard,
+
+        getFoilCardIds,
+        isCardFoil,
+        toggleFoil,
 
         replacePokemonSelection,
         clear,
