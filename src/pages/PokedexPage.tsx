@@ -1,14 +1,16 @@
-import { ChevronDown, ChevronUp, User as UserIcon, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, User as UserIcon, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchTcgCards, filterPokemon, loadAllPokemon } from '../api/pokemonApi';
 import { AuthModal } from '../components/AuthModal';
 import { ExportContentModal } from '../components/ExportContentModal';
 import { ExportTypeModal } from '../components/ExportTypeModal';
+import { FilterCombobox } from '../components/FilterCombobox';
 import { ImportCollectionModal } from '../components/ImportCollectionModal';
 import { MyCollectionsModal } from '../components/MyCollectionsModal';
 import { PokemonCard } from '../components/PokemonCard';
 import { PokemonModal } from '../components/PokemonModal';
 import { SaveCollectionModal } from '../components/SaveCollectionModal';
+import { TypeBadge } from '../components/TypeBadge';
 import { UserMenu } from '../components/UserMenu';
 import { logout } from '../firebase/auth';
 import {
@@ -20,7 +22,7 @@ import {
 } from '../firebase/collections';
 import { useAuth } from '../hooks/useAuth';
 import { useCollection } from '../hooks/useCollection';
-import type { Pokemon, PokemonSummary, TcgCard } from '../types/Pokemon';
+import type { Pokemon, PokemonSummary, PokemonType, TcgCard } from '../types/Pokemon';
 import { buildExportText, type ExportType } from '../utils/collectionFormat';
 
 type ExportStep = 'closed' | 'type' | 'loading' | 'content';
@@ -30,9 +32,20 @@ interface Toast {
     type: 'success' | 'error';
 }
 
-const GEN_LABELS: Record<number, string> = {
-    1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX',
+const GEN_REGION_LABELS: Record<number, string> = {
+    1: 'Gen I · Kanto', 2: 'Gen II · Johto', 3: 'Gen III · Hoenn',
+    4: 'Gen IV · Sinnoh', 5: 'Gen V · Unova', 6: 'Gen VI · Kalos',
+    7: 'Gen VII · Alola', 8: 'Gen VIII · Galar', 9: 'Gen IX · Paldea',
 };
+
+const ALL_TYPES: PokemonType[] = [
+    'NORMAL', 'FIRE', 'WATER', 'GRASS', 'ELECTRIC', 'ICE', 'FIGHTING', 'POISON', 'GROUND',
+    'FLYING', 'PSYCHIC', 'BUG', 'ROCK', 'GHOST', 'DRAGON', 'DARK', 'STEEL', 'FAIRY',
+];
+
+function typeLabel(type: PokemonType): string {
+    return type.charAt(0) + type.slice(1).toLowerCase();
+}
 
 export function PokedexPage() {
     // All Pokémon loaded once at startup from pokemon-compiled.json
@@ -46,9 +59,14 @@ export function PokedexPage() {
     const [exportStep, setExportStep] = useState<ExportStep>('closed');
     const [exportContent, setExportContent] = useState('');
     const [showImportModal, setShowImportModal] = useState(false);
-    const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
-    const [genDropdownOpen, setGenDropdownOpen] = useState(false);
-    const genDropdownRef = useRef<HTMLDivElement>(null);
+    const [filterGenerations, setFilterGenerations] = useState<number[]>([]);
+    const [filterTypes, setFilterTypes] = useState<PokemonType[]>([]);
+    const [filterGameIds, setFilterGameIds] = useState<string[]>([]);
+    const [filterExcludeForms, setFilterExcludeForms] = useState(false);
+    const [filterShiny, setFilterShiny] = useState(false);
+    const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+    const [openCombobox, setOpenCombobox] = useState<'generation' | 'type' | 'game' | null>(null);
+    const filterDropdownRef = useRef<HTMLDivElement>(null);
     const [collectionVisible, setCollectionVisible] = useState(false);
     const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
@@ -191,21 +209,91 @@ export function PokedexPage() {
         return () => window.clearTimeout(id);
     }, [search]);
 
-    // Close generation dropdown when clicking outside
+    // Close filter dropdown when clicking outside
     useEffect(() => {
         function handleOutsideClick(e: MouseEvent) {
-            if (genDropdownRef.current && !genDropdownRef.current.contains(e.target as Node)) {
-                setGenDropdownOpen(false);
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) {
+                setFilterDropdownOpen(false);
+                setOpenCombobox(null);
             }
         }
         document.addEventListener('mousedown', handleOutsideClick);
         return () => document.removeEventListener('mousedown', handleOutsideClick);
     }, []);
 
+    // Unique games available across all Pokémon, grouped by generation for the filter panel
+    const gamesByGeneration = useMemo(() => {
+        const seen = new Map<string, { id: string; name: string; generation: number }>();
+        for (const p of allPokemon) {
+            for (const g of p.games ?? []) {
+                if (!seen.has(g.id) && g.generation != null) {
+                    seen.set(g.id, { id: g.id, name: g.name, generation: g.generation });
+                }
+            }
+        }
+        const groups = new Map<number, { id: string; name: string }[]>();
+        for (const g of seen.values()) {
+            const list = groups.get(g.generation) ?? [];
+            list.push({ id: g.id, name: g.name });
+            groups.set(g.generation, list);
+        }
+        return [...groups.entries()].sort(([a], [b]) => a - b);
+    }, [allPokemon]);
+
+    const generationOptions = useMemo(
+        () => Object.entries(GEN_REGION_LABELS).map(([gen, label]) => ({ id: gen, label })),
+        []
+    );
+
+    const typeOptions = useMemo(
+        () => ALL_TYPES.map(type => ({ id: type, label: typeLabel(type), icon: <TypeBadge type={type} /> })),
+        []
+    );
+
+    const gameGroups = useMemo(
+        () => gamesByGeneration.map(([gen, games]) => ({
+            heading: GEN_REGION_LABELS[gen] ?? `Gen ${gen}`,
+            options: games.map(g => ({ id: g.id, label: g.name })),
+        })),
+        [gamesByGeneration]
+    );
+
+    const activeFilterCount =
+        (filterGenerations.length > 0 ? 1 : 0) + (filterTypes.length > 0 ? 1 : 0) + (filterGameIds.length > 0 ? 1 : 0)
+        + (filterExcludeForms ? 1 : 0);
+    const hasActiveFilterPanel = activeFilterCount > 0 || filterShiny;
+
+    function toggleFilterGeneration(id: string) {
+        const gen = Number(id);
+        setFilterGenerations(prev => prev.includes(gen) ? prev.filter(g => g !== gen) : [...prev, gen]);
+    }
+
+    function toggleFilterType(id: string) {
+        const type = id as PokemonType;
+        setFilterTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+    }
+
+    function toggleFilterGame(gameId: string) {
+        setFilterGameIds(prev => prev.includes(gameId) ? prev.filter(id => id !== gameId) : [...prev, gameId]);
+    }
+
+    function clearFilters() {
+        setFilterGenerations([]);
+        setFilterTypes([]);
+        setFilterGameIds([]);
+        setFilterExcludeForms(false);
+        setFilterShiny(false);
+    }
+
     // Client-side filtering — same logic as PokemonSearchFilter.java
     const summaries: PokemonSummary[] = useMemo(
-        () => filterPokemon(allPokemon, debouncedSearch, null, selectedGeneration),
-        [allPokemon, debouncedSearch, selectedGeneration]
+        () => filterPokemon(allPokemon, debouncedSearch, {
+            types: filterTypes,
+            generations: filterGenerations,
+            gameIds: filterGameIds,
+            excludeForms: filterExcludeForms,
+        }),
+        [allPokemon, debouncedSearch, filterTypes, filterGenerations, filterGameIds, filterExcludeForms]
     );
 
     const activeSummary = activePokemonIndex !== null ? summaries[activePokemonIndex] ?? null : null;
@@ -296,31 +384,86 @@ export function PokedexPage() {
                     onChange={event => setSearch(event.target.value)}
                 />
 
-                <div className="gen-filter" ref={genDropdownRef}>
+                <div className="pokedex-filter" ref={filterDropdownRef}>
                     <button
                         type="button"
-                        className={`gen-filter__button${selectedGeneration ? ' gen-filter__button--active' : ''}`}
-                        onClick={() => setGenDropdownOpen(o => !o)}
-                        aria-expanded={genDropdownOpen}
+                        className={`pokedex-filter__button${activeFilterCount > 0 ? ' pokedex-filter__button--active' : ''}`}
+                        onClick={() => setFilterDropdownOpen(o => !o)}
+                        aria-expanded={filterDropdownOpen}
                     >
-                        {selectedGeneration ? `Gen ${GEN_LABELS[selectedGeneration]}` : 'All Gens'}
+                        <Filter size={14} />
+                        Filters
+                        {activeFilterCount > 0 && (
+                            <span className="pokedex-filter__badge">{activeFilterCount}</span>
+                        )}
                         <ChevronDown size={14} />
                     </button>
 
-                    {genDropdownOpen && (
-                        <div className="gen-filter__dropdown" role="listbox">
-                            {([null, 1, 2, 3, 4, 5, 6, 7, 8, 9] as (number | null)[]).map(gen => (
-                                <button
-                                    key={gen ?? 'all'}
-                                    type="button"
-                                    role="option"
-                                    aria-selected={selectedGeneration === gen}
-                                    className={`gen-filter__option${selectedGeneration === gen ? ' gen-filter__option--selected' : ''}`}
-                                    onClick={() => { setSelectedGeneration(gen); setGenDropdownOpen(false); }}
-                                >
-                                    {gen === null ? 'All Gens' : `Gen ${GEN_LABELS[gen]}`}
+                    {filterDropdownOpen && (
+                        <div className="pokedex-filter__dropdown" role="dialog" aria-label="Filters">
+                            <div className="pokedex-filter__grid">
+                                <FilterCombobox
+                                    label="Generation / Region"
+                                    options={generationOptions}
+                                    selectedIds={filterGenerations.map(String)}
+                                    onToggle={toggleFilterGeneration}
+                                    open={openCombobox === 'generation'}
+                                    onOpenChange={o => setOpenCombobox(o ? 'generation' : null)}
+                                />
+                                <FilterCombobox
+                                    label="Type"
+                                    options={typeOptions}
+                                    selectedIds={filterTypes}
+                                    onToggle={toggleFilterType}
+                                    open={openCombobox === 'type'}
+                                    onOpenChange={o => setOpenCombobox(o ? 'type' : null)}
+                                />
+                                <FilterCombobox
+                                    label="Game"
+                                    groups={gameGroups}
+                                    selectedIds={filterGameIds}
+                                    onToggle={toggleFilterGame}
+                                    open={openCombobox === 'game'}
+                                    onOpenChange={o => setOpenCombobox(o ? 'game' : null)}
+                                    wide
+                                />
+                            </div>
+
+                            <div className="pokedex-filter__options">
+                                <div className="filter-combobox__label">Options</div>
+                                <div className="pokedex-filter__options-grid">
+                                    <div className="filter-switch-row">
+                                        <span className="filter-switch-row__label">Shiny</span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={filterShiny}
+                                            className={`filter-switch${filterShiny ? ' filter-switch--on' : ''}`}
+                                            onClick={() => setFilterShiny(s => !s)}
+                                        >
+                                            <span className="filter-switch__knob" />
+                                        </button>
+                                    </div>
+                                    <div className="filter-switch-row">
+                                        <span className="filter-switch-row__label">Exclude forms</span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={filterExcludeForms}
+                                            className={`filter-switch${filterExcludeForms ? ' filter-switch--on' : ''}`}
+                                            onClick={() => setFilterExcludeForms(f => !f)}
+                                        >
+                                            <span className="filter-switch__knob" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {hasActiveFilterPanel && (
+                                <button type="button" className="pokedex-filter__reset" onClick={clearFilters}>
+                                    Reset
                                 </button>
-                            ))}
+                            )}
                         </div>
                     )}
                 </div>
@@ -451,6 +594,7 @@ export function PokedexPage() {
                         pokemon={item}
                         selected={collection.isPokemonSelected(item.id)}
                         collectionVisible={collectionVisible}
+                        shiny={filterShiny}
                         onToggleSelected={collection.togglePokemon}
                         onOpenDetails={() => handleOpenModal(index)}
                         onCommitDeselection={collection.commitPendingCleanup}

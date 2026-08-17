@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { getShinyImageUrl } from '../api/pokemonApi';
 import type { PokemonSummary } from '../types/Pokemon';
 import { TypeBadge } from './TypeBadge';
 
@@ -6,6 +7,7 @@ interface PokemonCardProps {
     pokemon: PokemonSummary;
     selected: boolean;
     collectionVisible: boolean;
+    shiny: boolean;
     onToggleSelected: (id: string) => void;
     onOpenDetails: () => void;
     onCommitDeselection: (id: string) => void;
@@ -15,6 +17,7 @@ export function PokemonCard({
                                 pokemon,
                                 selected,
                                 collectionVisible,
+                                shiny,
                                 onToggleSelected,
                                 onOpenDetails,
                                 onCommitDeselection
@@ -46,7 +49,7 @@ export function PokemonCard({
             >
                 <div className="pokemon-card__image-wrapper">
                     <img
-                        src={pokemon.imageUrl}
+                        src={shiny ? getShinyImageUrl(pokemon.imageCode) : pokemon.imageUrl}
                         alt={pokemon.formName ? `${pokemon.name} - ${pokemon.formName}` : pokemon.name}
                         className="pokemon-card__image"
                         loading="lazy"

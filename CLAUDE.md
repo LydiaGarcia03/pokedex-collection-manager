@@ -5,8 +5,26 @@
 Static version of the Pokédex Collection Manager, deployable on GitHub Pages with no backend.
 Functionally identical to the `pokedex` (Spring Boot) project but runs entirely in the browser.
 
-**GitHub Pages URL:** `https://LydiaGarcia03.github.io/pokedex-collection-manager-static/`
-**Source repository:** `https://github.com/LydiaGarcia03/pokedex-collection-manager-static`
+**GitHub Pages URL:** `https://LydiaGarcia03.github.io/pokedex-collection-manager/`
+**Source repository:** `https://github.com/LydiaGarcia03/pokedex-collection-manager`
+
+**Nota:** o diretório local do projeto se chama `pokedex-static`, mas o repositório no GitHub se
+chama `pokedex-collection-manager` (sem sufixo "-static") — por isso a URL do GitHub Pages e o
+`base` do `vite.config.ts` usam `/pokedex-collection-manager/`, não `/pokedex-collection-manager-static/`.
+⚠️ O `git remote -v` local ainda aponta para `pokedex-collection-manager-static.git` (nome antigo,
+provavelmente redirecionado pelo GitHub após um rename) — considerar atualizar com
+`git remote set-url origin https://github.com/LydiaGarcia03/pokedex-collection-manager.git` para
+evitar depender do redirect.
+
+---
+
+## Regras de Trabalho do Agente
+
+Antes de qualquer alteração neste projeto, ler e seguir **`.ai/rules.md`**. Esse arquivo define
+como o agente deve trabalhar aqui: manter `.ai/changes-log.md` e este `CLAUDE.md` atualizados,
+garantir compatibilidade contínua com deploy gratuito no GitHub Pages, seguir clean code, sempre
+perguntar antes de decisões de projeto, e sempre apresentar um plano de entrega para mudanças
+grandes.
 
 ---
 
@@ -22,6 +40,30 @@ Functionally identical to the `pokedex` (Spring Boot) project but runs entirely 
 | Game icons | CDN (runtime) | Local files in `public/images/games/` |
 | TCG metadata | TCGdex API (runtime, via backend) | `public/data/tcg-cards.json` (pre-fetched) |
 | Deployment | `./gradlew bootRun` | GitHub Pages (static HTML/JS/CSS) |
+| Cloud sync | Backend database | Firebase Auth + Firestore (client-side BaaS, no server maintained by this project) |
+
+---
+
+## Funcionalidades
+
+### Navegação e coleção
+- Navegação por todos os ~1242 Pokémon (incluindo formas regionais, Mega Evolution e Gigantamax)
+- Busca por nome/número, filtro por geração (Gen I–IX)
+- Detalhes por Pokémon: stats, efetividade de tipo, habilidades, learnsets, dados de espécie
+- Cartas TCG por Pokémon com imagens locais
+- Jogos em que cada Pokémon aparece
+- Marcar Pokémon/cartas/jogos como coletados, modo "Toggle Collection Visibility"
+- Marcar uma carta TCG já selecionada como **foil** (badge de "sparkle" com gradiente roxo-neon
+  metálico no canto inferior-esquerdo do card, só aparece depois que a carta está marcada — ver
+  `src/components/PokemonTcgTab.tsx`)
+- Exportar/importar coleção como arquivo de texto (formato `POKEDEX_COLLECTION_V2` — ver Critical Rules)
+
+### Sincronização em nuvem (Firebase)
+- Login/cadastro por e-mail e senha via **Firebase Authentication**
+- Coleções salvas na nuvem via **Firestore**, sincronizadas entre dispositivos (regras em `firestore.rules`, restritas por `userId`)
+- **Firebase App Check + reCAPTCHA v3** protege todas as chamadas ao Firebase contra bots/abuso
+- Continua sendo "sem backend próprio": Firebase é um BaaS hospedado pela Google, não um servidor mantido por este projeto — compatível com deploy 100% estático no GitHub Pages (ver Critical Rule #3 e `.ai/rules.md`)
+- Requer variáveis de ambiente `VITE_FIREBASE_*` e `VITE_RECAPTCHA_SITE_KEY` (ver `README.md` → Environment Variables), configuradas como secrets do repositório para o GitHub Actions
 
 ---
 
@@ -87,7 +129,7 @@ npm run dev
 Runs at `http://localhost:5175`. No backend needed.
 
 **Note:** During `npm run dev`, `BASE_URL` is `/` so data is fetched from `/data/pokemon-compiled.json`.
-In production, `BASE_URL` is `/pokedex-collection-manager-static/`.
+In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositório no GitHub).
 
 ---
 
@@ -95,10 +137,11 @@ In production, `BASE_URL` is `/pokedex-collection-manager-static/`.
 
 1. **Never change `POKEDEX_COLLECTION_V2` format** — existing user exports must still import correctly
 2. **Never remove `commitPendingCleanup` logic** in `useCollection.ts`
-3. **No backend** — do not add server-side code
+3. **No server-side code maintained by this project** — client-side BaaS (e.g. Firebase Auth/Firestore) is acceptable since it requires no server we host or maintain, but it must never require a backend the user has to run
 4. **ID is the canonical identifier** — never use Pokémon name for persistence
 5. **All CSS goes in `src/styles.css`** — do not create additional CSS files
 6. **Ask before architectural changes** — new dependencies, format changes, layout restructuring
+7. **Follow `.ai/rules.md`** — changes-log discipline, CLAUDE.md upkeep, GitHub Pages compatibility, clean code, ask-before-deciding, delivery plans for large changes
 
 ---
 
@@ -109,7 +152,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager-static/`.
 | `src/api/pokemonApi.ts` | **Modified** | Loads local JSON; no backend calls |
 | `src/pages/PokedexPage.tsx` | **Modified** | Client-side filtering; no detail fetch |
 | `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup |
-| `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager-static/'` |
+| `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager/'` (nome do repo no GitHub) |
 | `package.json` | **Modified** | Removed `axios`; added setup scripts |
 | `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON |
 | `scripts/collect-tcg-data.mjs` | **New** | Fetches TCG card metadata from TCGdex |
@@ -146,3 +189,6 @@ For each change, add an entry with:
 - Files modified
 - What was changed
 - Why it was changed
+
+Full working rules for the agent (when to update this file, when to plan first, GitHub Pages
+compatibility, clean code) live in **`.ai/rules.md`** — read it before starting any work.

@@ -66,12 +66,12 @@ input {
     font-style: italic;
 }
 
-.gen-filter {
+.pokedex-filter {
     position: relative;
     flex-shrink: 0;
 }
 
-.gen-filter__button {
+.pokedex-filter__button {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -87,43 +87,239 @@ input {
     transition: background 0.15s;
 }
 
-.gen-filter__button:hover,
-.gen-filter__button--active {
+.pokedex-filter__button:hover,
+.pokedex-filter__button--active {
     background: rgba(96, 165, 250, 0.18);
 }
 
-.gen-filter__dropdown {
+.pokedex-filter__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #041226;
+    background: #60a5fa;
+    border-radius: 999px;
+}
+
+/* Filter dialog — styled after pokepc.net/pokedex/national's filter panel:
+   dark navy dialog, 2-column grid of labeled comboboxes, pill reset button. */
+.pokedex-filter__dropdown {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    min-width: 140px;
-    background: #0d2f5a;
-    border: 1px solid rgba(96, 165, 250, 0.4);
+    width: 480px;
+    max-width: min(480px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #051629;
+    border: 1px solid #0b3360;
     border-radius: 12px;
-    overflow: hidden;
+    padding: 12px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
     z-index: 100;
 }
 
-.gen-filter__option {
-    display: block;
-    width: 100%;
-    padding: 10px 18px;
-    text-align: left;
-    color: rgba(229, 242, 255, 0.85);
+.pokedex-filter__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.pokedex-filter__options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.filter-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.filter-switch-row__label {
+    font-size: 0.88rem;
+    color: #e5f2ff;
+}
+
+.filter-switch {
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+    padding: 2px;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(96, 165, 250, 0.15);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.filter-switch--on {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.filter-switch__knob {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f1f2f4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transform: translateX(0);
+    transition: transform 0.15s;
+}
+
+.filter-switch--on .filter-switch__knob {
+    transform: translateX(16px);
+}
+
+.pokedex-filter__reset {
+    align-self: flex-end;
+    height: 34px;
+    padding: 0 16px;
+    color: rgba(229, 242, 255, 0.6);
     background: transparent;
-    border: none;
+    border: 1px solid rgba(229, 242, 255, 0.25);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.pokedex-filter__reset:hover {
+    color: rgba(229, 242, 255, 0.9);
+    background: rgba(229, 242, 255, 0.08);
+}
+
+/* Individual combobox (Generation/Region, Type, Game) */
+.filter-combobox {
+    position: relative;
+}
+
+.filter-combobox--wide {
+    grid-column: 1 / -1;
+}
+
+.filter-combobox__label {
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #e5f2ff;
+}
+
+.filter-combobox__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    color: #e5f2ff;
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.4);
+    border-radius: 10px;
+    font-size: 0.88rem;
     cursor: pointer;
     transition: background 0.12s;
 }
 
-.gen-filter__option:hover {
+.filter-combobox__trigger:hover,
+.filter-combobox__trigger--active {
+    background: rgba(96, 165, 250, 0.18);
+}
+
+.filter-combobox__trigger-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-combobox__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #0d2f5a;
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+    z-index: 101;
+}
+
+.filter-combobox__group-heading {
+    padding: 6px 10px 2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(229, 242, 255, 0.4);
+}
+
+.filter-combobox__option {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 7px 10px 7px 4px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: rgba(229, 242, 255, 0.85);
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.filter-combobox__option:hover {
     background: rgba(96, 165, 250, 0.15);
 }
 
-.gen-filter__option--selected {
+.filter-combobox__option--selected {
     color: #60a5fa;
     font-weight: 600;
+    background: rgba(96, 165, 250, 0.12);
+}
+
+.filter-combobox__option-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: #60a5fa;
+}
+
+.filter-combobox__option-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+.filter-combobox__option-icon .pokemon-type-icon,
+.filter-combobox__option-icon .pokemon-type {
+    width: 22px;
+    height: 22px;
+}
+
+.filter-combobox__option-icon .pokemon-type {
+    font-size: 0.72rem;
 }
 
 .pokedex-count-row {
@@ -2326,6 +2522,27 @@ input {
     .mobile-header-band__title svg {
         flex-shrink: 0;
         opacity: 0.9;
+    }
+
+    .pokedex-filter__button {
+        height: 42px;
+        padding: 0 14px;
+        font-size: 0.82rem;
+    }
+
+    .pokedex-filter__dropdown {
+        left: 0;
+        right: 0;
+        width: auto;
+        max-width: unset;
+    }
+
+    .pokedex-filter__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-combobox--wide {
+        grid-column: auto;
     }
 
     /* Auth corner: absolute (scrolls with page, stays at top of content) */

@@ -1,5 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { getShinyImageUrl } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
 import type { Pokemon, PokemonSummary } from '../types/Pokemon';
 import { PokemonGamesTab } from './PokemonGamesTab';
@@ -59,7 +60,7 @@ export function PokemonModal({
     const previousSummary = hasPrevious ? pokemonList[currentIndex - 1] : null;
     const nextSummary = hasNext ? pokemonList[currentIndex + 1] : null;
 
-    const shinyUrl = `https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/${summary.imageCode}.webp`;
+    const shinyUrl = getShinyImageUrl(summary.imageCode);
     const imageAlt = summary.formName ? `${summary.name} - ${summary.formName}` : summary.name;
 
     function handleClose() {

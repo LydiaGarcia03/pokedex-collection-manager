@@ -16,6 +16,11 @@ function resolveUrl(url: string | null | undefined): string | null {
     return url.startsWith('/') ? BASE + url.slice(1) : url;
 }
 
+// Shiny sprites aren't part of the local image set — fetched on demand from PokéPC's CDN.
+export function getShinyImageUrl(imageCode: string): string {
+    return `https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/${imageCode}.webp`;
+}
+
 export async function loadAllPokemon(): Promise<Pokemon[]> {
     if (pokemonCache) return pokemonCache;
     const res = await fetch(`${BASE}data/pokemon-compiled.json`);
@@ -57,17 +62,26 @@ export async function fetchTcgCards(pokemonName: string): Promise<TcgCardsApiRes
     }
 }
 
+export interface PokemonFilters {
+    types?: PokemonType[]; // OR — empty/undefined = no filter
+    generations?: number[]; // OR — empty/undefined = no filter
+    gameIds?: string[]; // OR — empty/undefined = no filter
+    excludeForms?: boolean; // keep only base species (formName == null)
+}
+
 export function filterPokemon(
     all: Pokemon[],
     search?: string,
-    type?: PokemonType | null,
-    generation?: number | null,
+    filters?: PokemonFilters,
 ): Pokemon[] {
     const q = search ? normalize(search) : '';
+    const { types, generations, gameIds, excludeForms } = filters ?? {};
     return all.filter(p => {
         if (q && !matchesSearch(p, q)) return false;
-        if (type && !p.types.includes(type)) return false;
-        if (generation != null && p.generation !== generation) return false;
+        if (types?.length && !types.some(t => p.types.includes(t))) return false;
+        if (generations?.length && (p.generation == null || !generations.includes(p.generation))) return false;
+        if (gameIds?.length && !p.games?.some(g => gameIds.includes(g.id))) return false;
+        if (excludeForms && p.formName) return false;
         return true;
     });
 }
