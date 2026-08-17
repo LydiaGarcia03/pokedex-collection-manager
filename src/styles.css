@@ -2531,10 +2531,16 @@ input {
     }
 
     .pokedex-filter__dropdown {
-        left: 0;
+        /* left/right:0 would resolve against .pokedex-filter's own width (just the
+           button), not the viewport — so anchor via right:0 and size explicitly
+           against the viewport instead, to actually reach across the screen.
+           No overflow/max-height here: same reasoning as the desktop panel — this
+           would clip the combobox listboxes, which are absolutely positioned
+           children that need to overflow freely (the page itself can scroll). */
         right: 0;
-        width: auto;
-        max-width: unset;
+        left: auto;
+        width: calc(100vw - 40px);
+        max-width: calc(100vw - 40px);
     }
 
     .pokedex-filter__grid {
