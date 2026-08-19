@@ -32,6 +32,12 @@ interface Toast {
     type: 'success' | 'error';
 }
 
+// Sentinel ids for the DLC combobox's two non-specific options.
+// "-" (DLC_NONE_ID) is the default: base-game Pokémon only, no DLC content.
+// "All DLCs" (DLC_ALL_ID) removes the DLC restriction entirely: base game + every DLC.
+const DLC_NONE_ID = 'none';
+const DLC_ALL_ID = 'all';
+
 const GEN_REGION_LABELS: Record<number, string> = {
     1: 'Gen I · Kanto', 2: 'Gen II · Johto', 3: 'Gen III · Hoenn',
     4: 'Gen IV · Sinnoh', 5: 'Gen V · Unova', 6: 'Gen VI · Kalos',
@@ -62,10 +68,11 @@ export function PokedexPage() {
     const [filterGenerations, setFilterGenerations] = useState<number[]>([]);
     const [filterTypes, setFilterTypes] = useState<PokemonType[]>([]);
     const [filterGameIds, setFilterGameIds] = useState<string[]>([]);
+    const [filterDlcId, setFilterDlcId] = useState<string>(DLC_NONE_ID);
     const [filterExcludeForms, setFilterExcludeForms] = useState(false);
     const [filterShiny, setFilterShiny] = useState(false);
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-    const [openCombobox, setOpenCombobox] = useState<'generation' | 'type' | 'game' | null>(null);
+    const [openCombobox, setOpenCombobox] = useState<'generation' | 'type' | 'game' | 'dlc' | null>(null);
     const filterDropdownRef = useRef<HTMLDivElement>(null);
     const [collectionVisible, setCollectionVisible] = useState(false);
     const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
@@ -258,9 +265,45 @@ export function PokedexPage() {
         [gamesByGeneration]
     );
 
+    // DLC options for the currently selected game — only meaningful when exactly one game is
+    // selected and that game has known DLCs (Sword/Shield, Scarlet/Violet). The combobox itself
+    // always renders (see JSX) so the filter panel never resizes; it's just visually hidden
+    // (space still reserved) when this list is empty.
+    const dlcOptionsForSelectedGame = useMemo(() => {
+        if (filterGameIds.length !== 1) return [];
+        const seen = new Map<string, { id: string; name: string }>();
+        for (const p of allPokemon) {
+            const game = p.games?.find(g => g.id === filterGameIds[0]);
+            for (const d of game?.dlc ?? []) {
+                if (!seen.has(d.id)) seen.set(d.id, d);
+            }
+        }
+        return [...seen.values()];
+    }, [allPokemon, filterGameIds]);
+
+    const dlcApplicable = dlcOptionsForSelectedGame.length > 0;
+
+    const dlcOptions = useMemo(
+        () => [
+            { id: DLC_NONE_ID, label: '─' },
+            { id: DLC_ALL_ID, label: 'All DLCs' },
+            ...dlcOptionsForSelectedGame.map(d => ({ id: d.id, label: d.name })),
+        ],
+        [dlcOptionsForSelectedGame]
+    );
+
+    // Reset back to "-" (base game only, the default) and close the combobox whenever the
+    // current game selection no longer has any DLC to filter by.
+    useEffect(() => {
+        if (!dlcApplicable) {
+            if (filterDlcId !== DLC_NONE_ID) setFilterDlcId(DLC_NONE_ID);
+            setOpenCombobox(prev => prev === 'dlc' ? null : prev);
+        }
+    }, [dlcApplicable, filterDlcId]);
+
     const activeFilterCount =
         (filterGenerations.length > 0 ? 1 : 0) + (filterTypes.length > 0 ? 1 : 0) + (filterGameIds.length > 0 ? 1 : 0)
-        + (filterExcludeForms ? 1 : 0);
+        + (dlcApplicable && filterDlcId !== DLC_NONE_ID ? 1 : 0) + (filterExcludeForms ? 1 : 0);
     const hasActiveFilterPanel = activeFilterCount > 0 || filterShiny;
 
     function toggleFilterGeneration(id: string) {
@@ -277,10 +320,15 @@ export function PokedexPage() {
         setFilterGameIds(prev => prev.includes(gameId) ? prev.filter(id => id !== gameId) : [...prev, gameId]);
     }
 
+    function toggleFilterDlc(dlcId: string) {
+        setFilterDlcId(dlcId);
+    }
+
     function clearFilters() {
         setFilterGenerations([]);
         setFilterTypes([]);
         setFilterGameIds([]);
+        setFilterDlcId(DLC_NONE_ID);
         setFilterExcludeForms(false);
         setFilterShiny(false);
     }
@@ -291,9 +339,11 @@ export function PokedexPage() {
             types: filterTypes,
             generations: filterGenerations,
             gameIds: filterGameIds,
+            dlcId: dlcApplicable && filterDlcId !== DLC_NONE_ID && filterDlcId !== DLC_ALL_ID ? filterDlcId : null,
+            dlcBaseOnly: dlcApplicable && filterDlcId === DLC_NONE_ID,
             excludeForms: filterExcludeForms,
         }),
-        [allPokemon, debouncedSearch, filterTypes, filterGenerations, filterGameIds, filterExcludeForms]
+        [allPokemon, debouncedSearch, filterTypes, filterGenerations, filterGameIds, filterDlcId, dlcApplicable, filterExcludeForms]
     );
 
     const activeSummary = activePokemonIndex !== null ? summaries[activePokemonIndex] ?? null : null;
@@ -418,15 +468,30 @@ export function PokedexPage() {
                                     open={openCombobox === 'type'}
                                     onOpenChange={o => setOpenCombobox(o ? 'type' : null)}
                                 />
-                                <FilterCombobox
-                                    label="Game"
-                                    groups={gameGroups}
-                                    selectedIds={filterGameIds}
-                                    onToggle={toggleFilterGame}
-                                    open={openCombobox === 'game'}
-                                    onOpenChange={o => setOpenCombobox(o ? 'game' : null)}
-                                    wide
-                                />
+                                <div className="pokedex-filter__game-row">
+                                    <div className="pokedex-filter__game-slot">
+                                        <FilterCombobox
+                                            label="Game"
+                                            groups={gameGroups}
+                                            selectedIds={filterGameIds}
+                                            onToggle={toggleFilterGame}
+                                            open={openCombobox === 'game'}
+                                            onOpenChange={o => setOpenCombobox(o ? 'game' : null)}
+                                        />
+                                    </div>
+                                    {/* Always rendered (space always reserved) so the panel never resizes —
+                                        just visually hidden until a single DLC-capable game is selected. */}
+                                    <div className={`pokedex-filter__dlc-slot${dlcApplicable ? '' : ' pokedex-filter__dlc-slot--hidden'}`}>
+                                        <FilterCombobox
+                                            label="DLC"
+                                            options={dlcOptions}
+                                            selectedIds={[filterDlcId]}
+                                            onToggle={toggleFilterDlc}
+                                            open={openCombobox === 'dlc'}
+                                            onOpenChange={o => setOpenCombobox(o ? 'dlc' : null)}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="pokedex-filter__options">

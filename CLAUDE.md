@@ -51,7 +51,13 @@ grandes.
 - Busca por nome/número, filtro por geração (Gen I–IX)
 - Detalhes por Pokémon: stats, efetividade de tipo, habilidades, learnsets, dados de espécie
 - Cartas TCG por Pokémon com imagens locais
-- Jogos em que cada Pokémon aparece
+- Jogos em que cada Pokémon aparece — cada versão de um par (ex. Scarlet vs Violet) mostra sua
+  lista correta e distinta de exclusivos (ver `.ai/changes-log.md` 2026-08-19)
+- Filtro de DLC (Isle of Armor, Crown Tundra, The Teal Mask, The Indigo Disk) — habilitado só
+  quando exatamente um jogo está selecionado no filtro de Game e esse jogo tem DLC conhecido
+  (hoje: Sword/Shield e Scarlet/Violet); dado de origem via scraping do Serebii, não existe em
+  nenhuma API já usada no projeto (ver `.ai/changes-log.md` 2026-08-19 e
+  `scripts/fetch-serebii-dlc-reference.mjs`)
 - Marcar Pokémon/cartas/jogos como coletados, modo "Toggle Collection Visibility"
 - Marcar uma carta TCG já selecionada como **foil** (badge de "sparkle" com gradiente roxo-neon
   metálico no canto inferior-esquerdo do card, só aparece depois que a carta está marcada — ver

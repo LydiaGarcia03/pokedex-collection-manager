@@ -47,6 +47,7 @@ const extras       = loadJson('pokemon-extras.json'); // keyed by dexNumber (str
 const learnsets    = loadJson('learnsets.json');       // keyed by dexNumber (string)
 const movesCatalog = loadJson('moves-catalog.json');   // keyed by move slug
 const gamesCatalog = loadJson('games-catalog.json');   // keyed by game id
+const dlcCatalog   = loadJson('dlc-catalog.json');      // keyed by dlc id
 const typeChart    = loadJson('type-chart.json');       // ATTACK_TYPE -> { DEF_TYPE: multiplier }
 
 console.log(`  Loaded ${pokedex.length} Pokémon entries`);
@@ -167,17 +168,25 @@ function computeRecommendedNatures(ext) {
 // ---------------------------------------------------------------------------
 // Games compilation — expands slug list → objects with iconUrl
 // ---------------------------------------------------------------------------
-function buildGames(gameSlugList) {
+function buildGames(gameSlugList, dlcBySlug, baseDexBySlug) {
     if (!gameSlugList?.length) return null;
     return gameSlugList
         .filter(slug => gamesCatalog[slug])
         .map(slug => {
             const info = gamesCatalog[slug];
+            const dlcIds = dlcBySlug?.[slug];
             return {
                 id:         slug,
                 name:       info.name,
                 iconUrl:    `/images/games/${slug}.webp`,
                 generation: info.generation ?? null,
+                dlc: dlcIds?.length
+                    ? dlcIds.map(dlcId => ({ id: dlcId, name: dlcCatalog[dlcId]?.name ?? dlcId }))
+                    : null,
+                // Whether this Pokémon has an entry in the game's *base* regional dex (Paldea,
+                // Galar) — independent of `dlc` above, since a Pokémon can be in both (e.g.
+                // Slowpoke is in both the Galar dex and the Isle of Armor dex).
+                inBaseDex: !!baseDexBySlug?.[slug],
             };
         });
 }
@@ -253,9 +262,13 @@ const compiled = pokedex.map(pokemon => {
         eggGroups:      ext.eggGroups      ?? null,
 
         // Games — fall back to base form when an alternate form has no game data
-        games: buildGames(ext.games)
+        games: buildGames(ext.games, ext.dlc, ext.baseDex)
             ?? (pokemon.id !== pokemon.dexNumberFormatted
-                ? buildGames((extras[pokemon.dexNumberFormatted] ?? {}).games)
+                ? buildGames(
+                    (extras[pokemon.dexNumberFormatted] ?? {}).games,
+                    (extras[pokemon.dexNumberFormatted] ?? {}).dlc,
+                    (extras[pokemon.dexNumberFormatted] ?? {}).baseDex,
+                )
                 : null),
 
         // Pre-computed type effectiveness

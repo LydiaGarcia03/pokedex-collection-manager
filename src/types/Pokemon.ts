@@ -112,6 +112,8 @@ export interface PokemonGame {
     name: string;
     iconUrl?: string | null;
     generation?: number | null;
+    dlc?: { id: string; name: string }[] | null;
+    inBaseDex?: boolean;
 }
 
 export interface MegaEvolution {

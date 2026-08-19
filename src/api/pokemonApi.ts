@@ -66,6 +66,8 @@ export interface PokemonFilters {
     types?: PokemonType[]; // OR — empty/undefined = no filter
     generations?: number[]; // OR — empty/undefined = no filter
     gameIds?: string[]; // OR — empty/undefined = no filter
+    dlcId?: string | null; // only meaningful alongside a single gameId — require this DLC tag
+    dlcBaseOnly?: boolean; // only meaningful alongside a single gameId — require an entry in the game's base regional dex
     excludeForms?: boolean; // keep only base species (see isBaseForm)
 }
 
@@ -83,12 +85,14 @@ export function filterPokemon(
     filters?: PokemonFilters,
 ): Pokemon[] {
     const q = search ? normalize(search) : '';
-    const { types, generations, gameIds, excludeForms } = filters ?? {};
+    const { types, generations, gameIds, dlcId, dlcBaseOnly, excludeForms } = filters ?? {};
     const matchesOtherFilters = (p: Pokemon): boolean => {
         if (q && !matchesSearch(p, q)) return false;
         if (types?.length && !types.some(t => p.types.includes(t))) return false;
         if (generations?.length && (p.generation == null || !generations.includes(p.generation))) return false;
         if (gameIds?.length && !p.games?.some(g => gameIds.includes(g.id))) return false;
+        if (dlcId && !p.games?.some(g => gameIds?.includes(g.id) && g.dlc?.some(d => d.id === dlcId))) return false;
+        if (dlcBaseOnly && !p.games?.some(g => gameIds?.includes(g.id) && g.inBaseDex)) return false;
         return true;
     };
 

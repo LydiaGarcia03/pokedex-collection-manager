@@ -210,6 +210,27 @@ input {
     grid-column: 1 / -1;
 }
 
+/* Game + DLC live side by side on their own full-width row, sharing the exact same 2-column
+   proportions as the Generation/Type row above (same grid-template-columns) so every combobox
+   in the panel lines up to the same width. The DLC slot is always present in the layout
+   (visibility:hidden, not display:none) so the panel never resizes when it toggles between
+   applicable/not-applicable — only its content visually appears/disappears. */
+.pokedex-filter__game-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.pokedex-filter__game-slot,
+.pokedex-filter__dlc-slot {
+    min-width: 0;
+}
+
+.pokedex-filter__dlc-slot--hidden {
+    visibility: hidden;
+}
+
 .filter-combobox__label {
     margin-bottom: 6px;
     font-size: 0.88rem;
@@ -2544,6 +2565,10 @@ input {
     }
 
     .pokedex-filter__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pokedex-filter__game-row {
         grid-template-columns: 1fr;
     }
 
