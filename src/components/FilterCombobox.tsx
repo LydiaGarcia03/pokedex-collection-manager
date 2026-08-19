@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface FilterComboboxOption {
     id: string;
@@ -28,6 +29,22 @@ interface FilterComboboxProps {
 export function FilterCombobox({
     label, selectedIds, onToggle, open, onOpenChange, options, groups, wide,
 }: FilterComboboxProps) {
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    // Close this combobox's own listbox when clicking anywhere outside it — independent of
+    // whatever closes the outer filter panel, so it also closes on a click elsewhere inside
+    // the panel (e.g. the Options section) and not just fully outside it.
+    useEffect(() => {
+        if (!open) return;
+        function handleOutsideClick(e: MouseEvent) {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+                onOpenChange(false);
+            }
+        }
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, [open, onOpenChange]);
+
     const allOptions = groups ? groups.flatMap(g => g.options) : options ?? [];
 
     let summary = 'All';
@@ -56,7 +73,7 @@ export function FilterCombobox({
     }
 
     return (
-        <div className={`filter-combobox${wide ? ' filter-combobox--wide' : ''}`}>
+        <div ref={rootRef} className={`filter-combobox${wide ? ' filter-combobox--wide' : ''}`}>
             <div className="filter-combobox__label">{label}</div>
             <button
                 type="button"
