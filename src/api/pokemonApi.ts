@@ -66,7 +66,15 @@ export interface PokemonFilters {
     types?: PokemonType[]; // OR — empty/undefined = no filter
     generations?: number[]; // OR — empty/undefined = no filter
     gameIds?: string[]; // OR — empty/undefined = no filter
-    excludeForms?: boolean; // keep only base species (formName == null)
+    excludeForms?: boolean; // keep only base species (see isBaseForm)
+}
+
+// The base form's id is always the dex number itself with no suffix (e.g. "0925"),
+// regardless of whether its formName is set — some species (Maushold, Deoxys, Rotom...)
+// give every one of their forms a non-null formName, so formName can't be used to
+// tell the base form apart from its alternates. Dex number + id suffix is authoritative.
+function isBaseForm(p: Pokemon): boolean {
+    return p.id === p.dexNumberFormatted;
 }
 
 export function filterPokemon(
@@ -76,14 +84,41 @@ export function filterPokemon(
 ): Pokemon[] {
     const q = search ? normalize(search) : '';
     const { types, generations, gameIds, excludeForms } = filters ?? {};
-    return all.filter(p => {
+    const matchesOtherFilters = (p: Pokemon): boolean => {
         if (q && !matchesSearch(p, q)) return false;
         if (types?.length && !types.some(t => p.types.includes(t))) return false;
         if (generations?.length && (p.generation == null || !generations.includes(p.generation))) return false;
         if (gameIds?.length && !p.games?.some(g => gameIds.includes(g.id))) return false;
-        if (excludeForms && p.formName) return false;
         return true;
-    });
+    };
+
+    if (!excludeForms) {
+        return all.filter(matchesOtherFilters);
+    }
+
+    // "Exclude forms" collapses each species down to a single entry — normally the
+    // base form. But some species have data gaps on their base entry specifically
+    // (e.g. Maushold's base "Family of Four" has no `games` recorded in the source
+    // dataset even though the species is in Scarlet/Violet — the data only ended up
+    // attached to the "Family of Three" entry). If the base form fails an active
+    // filter while a sibling form passes it, show that sibling instead of hiding the
+    // species outright — at least one entry per matching species should stay visible.
+    const matchesByDex = new Map<string, Pokemon[]>();
+    for (const p of all) {
+        if (!matchesOtherFilters(p)) continue;
+        const key = p.dexNumberFormatted;
+        const bucket = matchesByDex.get(key);
+        if (bucket) bucket.push(p);
+        else matchesByDex.set(key, [p]);
+    }
+
+    const representativeIds = new Set<string>();
+    for (const matches of matchesByDex.values()) {
+        const representative = matches.find(isBaseForm) ?? matches[0];
+        representativeIds.add(representative.id);
+    }
+
+    return all.filter(p => representativeIds.has(p.id));
 }
 
 function normalize(s: string): string {
