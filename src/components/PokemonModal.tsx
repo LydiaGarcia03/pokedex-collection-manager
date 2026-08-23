@@ -2,6 +2,7 @@ import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, 
 import { useState } from 'react';
 import { getShinyImageUrl } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
+import { useImageRetry } from '../hooks/useImageRetry';
 import type { Pokemon, PokemonSummary } from '../types/Pokemon';
 import { PokemonGamesTab } from './PokemonGamesTab';
 import { PokemonInfoTab } from './PokemonInfoTab';
@@ -48,6 +49,9 @@ export function PokemonModal({
     const [showShiny, setShowShiny] = useState(false);
 
     const summary = activePokemonIndex !== null ? pokemonList[activePokemonIndex] : null;
+    const shinyUrl = summary ? getShinyImageUrl(summary.imageCode) : null;
+    const rawImageSrc = summary ? (showShiny ? shinyUrl : (summary.imageUrlXl ?? summary.imageUrl)) : null;
+    const { src: imageSrc, failed: imageFailed, onError: onImageError } = useImageRetry(rawImageSrc);
 
     if (!summary || activePokemonIndex === null) {
         return null;
@@ -60,7 +64,6 @@ export function PokemonModal({
     const previousSummary = hasPrevious ? pokemonList[currentIndex - 1] : null;
     const nextSummary = hasNext ? pokemonList[currentIndex + 1] : null;
 
-    const shinyUrl = getShinyImageUrl(summary.imageCode);
     const imageAlt = summary.formName ? `${summary.name} - ${summary.formName}` : summary.name;
 
     function handleClose() {
@@ -149,11 +152,14 @@ export function PokemonModal({
                         </div>
 
                         <div className="pokemon-detail-sidebar__card">
-                            <img
-                                src={showShiny ? shinyUrl : (summary.imageUrlXl ?? summary.imageUrl)}
-                                alt={showShiny ? `${imageAlt} (Shiny)` : imageAlt}
-                                className="pokemon-detail-sidebar__image"
-                            />
+                            {imageSrc && !imageFailed && (
+                                <img
+                                    src={imageSrc}
+                                    alt={showShiny ? `${imageAlt} (Shiny)` : imageAlt}
+                                    className="pokemon-detail-sidebar__image"
+                                    onError={onImageError}
+                                />
+                            )}
 
                             <button
                                 type="button"

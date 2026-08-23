@@ -65,7 +65,9 @@ grandes.
 - Exportar/importar coleção como arquivo de texto (formato `POKEDEX_COLLECTION_V2` — ver Critical Rules)
 
 ### Sincronização em nuvem (Firebase)
-- Login/cadastro por e-mail e senha via **Firebase Authentication**
+- Login/cadastro por e-mail e senha via **Firebase Authentication**, com reset de senha
+  (`sendPasswordResetEmail`) acessível pelo link "Forgot password?" na tela de login — sem
+  configuração adicional no Firebase Console (usa o e-mail/action page padrão do Firebase)
 - Coleções salvas na nuvem via **Firestore**, sincronizadas entre dispositivos (regras em `firestore.rules`, restritas por `userId`)
 - **Firebase App Check + reCAPTCHA v3** protege todas as chamadas ao Firebase contra bots/abuso
 - Continua sendo "sem backend próprio": Firebase é um BaaS hospedado pela Google, não um servidor mantido por este projeto — compatível com deploy 100% estático no GitHub Pages (ver Critical Rule #3 e `.ai/rules.md`)

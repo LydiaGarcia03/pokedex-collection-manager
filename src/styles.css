@@ -2854,6 +2854,32 @@ input {
     font-size: 0.85rem;
 }
 
+.auth-modal__success {
+    margin: 0;
+    padding: 10px 12px;
+    background: rgba(147, 197, 253, 0.1);
+    border: 1px solid rgba(147, 197, 253, 0.3);
+    border-radius: 8px;
+    color: #93c5fd;
+    font-size: 0.85rem;
+}
+
+.auth-modal__forgot-link {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: -6px;
+    color: rgba(226, 232, 240, 0.5);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.auth-modal__forgot-link:hover {
+    color: #93c5fd;
+}
+
 /* ─── Save Collection Modal ───────────────────────────────────────────────── */
 
 .save-collection-modal {

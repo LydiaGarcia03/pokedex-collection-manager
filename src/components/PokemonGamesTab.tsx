@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { useImageRetry } from '../hooks/useImageRetry';
 import type { Pokemon, PokemonGame } from '../types/Pokemon';
 
 interface PokemonGamesTabProps {
@@ -11,9 +11,9 @@ interface PokemonGamesTabProps {
 }
 
 function GameIcon({ game }: { game: PokemonGame }) {
-    const [failed, setFailed] = useState(false);
+    const { src, failed, onError } = useImageRetry(game.iconUrl);
 
-    if (!game.iconUrl || failed) {
+    if (!src || failed) {
         return (
             <span className="pokemon-game-item__placeholder">
                 {game.name.charAt(0).toUpperCase()}
@@ -23,9 +23,9 @@ function GameIcon({ game }: { game: PokemonGame }) {
 
     return (
         <img
-            src={game.iconUrl}
+            src={src}
             alt={game.name}
-            onError={() => setFailed(true)}
+            onError={onError}
         />
     );
 }

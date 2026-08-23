@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useImageRetry } from '../hooks/useImageRetry';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -7,20 +7,20 @@ interface TypeBadgeProps {
 }
 
 export function TypeBadge({ type }: TypeBadgeProps) {
-    const [imgFailed, setImgFailed] = useState(false);
     const typeLower = type.toLowerCase();
+    const { src, failed, onError } = useImageRetry(`${BASE}images/types/type-${typeLower}.png`);
 
-    return imgFailed ? (
+    return !src || failed ? (
         <span className={`pokemon-type pokemon-type--${typeLower}`} title={type}>
             {type.charAt(0)}
         </span>
     ) : (
         <img
-            src={`${BASE}images/types/type-${typeLower}.png`}
+            src={src}
             alt={type}
             title={type}
             className="pokemon-type-icon"
-            onError={() => setImgFailed(true)}
+            onError={onError}
         />
     );
 }

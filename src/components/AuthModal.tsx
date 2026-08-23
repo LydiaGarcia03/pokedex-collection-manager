@@ -2,14 +2,14 @@ import { FirebaseError } from 'firebase/app';
 import { updateProfile } from 'firebase/auth';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { login, register } from '../firebase/auth';
+import { login, register, resetPassword } from '../firebase/auth';
 
 interface AuthModalProps {
     onClose: () => void;
     onSuccess: (isNewUser: boolean) => void;
 }
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'reset';
 
 const FIREBASE_ERRORS: Record<string, string> = {
     'auth/invalid-credential':         'Incorrect email or password.',
@@ -31,12 +31,14 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
 
     function switchMode(next: Mode) {
         setMode(next);
         setError(null);
         setPassword('');
         setDisplayName('');
+        setResetSent(false);
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -51,10 +53,19 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             if (mode === 'login') {
                 await login(email, password);
                 onSuccess(false);
-            } else {
+            } else if (mode === 'register') {
                 const cred = await register(email, password);
                 await updateProfile(cred.user, { displayName: displayName.trim() });
                 onSuccess(true);
+            } else {
+                try {
+                    await resetPassword(email);
+                } catch (err) {
+                    if (!(err instanceof FirebaseError) || err.code !== 'auth/user-not-found') {
+                        throw err;
+                    }
+                }
+                setResetSent(true);
             }
         } catch (err) {
             const code = err instanceof FirebaseError ? err.code : '';
@@ -64,32 +75,52 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         }
     }
 
+    const modalLabel = mode === 'login' ? 'Login' : mode === 'register' ? 'Create Account' : 'Reset Password';
+
     return (
         <div className="collection-modal-backdrop" role="presentation" onClick={onClose}>
             <div
                 className="collection-modal auth-modal"
                 role="dialog"
                 aria-modal="true"
-                aria-label={mode === 'login' ? 'Login' : 'Create Account'}
+                aria-label={modalLabel}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="auth-modal__tabs">
-                    <button
-                        type="button"
-                        className={`auth-modal__tab${mode === 'login' ? ' auth-modal__tab--active' : ''}`}
-                        onClick={() => switchMode('login')}
-                    >
-                        Login
-                    </button>
-                    <button
-                        type="button"
-                        className={`auth-modal__tab${mode === 'register' ? ' auth-modal__tab--active' : ''}`}
-                        onClick={() => switchMode('register')}
-                    >
-                        Create Account
-                    </button>
-                </div>
+                {mode !== 'reset' && (
+                    <div className="auth-modal__tabs">
+                        <button
+                            type="button"
+                            className={`auth-modal__tab${mode === 'login' ? ' auth-modal__tab--active' : ''}`}
+                            onClick={() => switchMode('login')}
+                        >
+                            Login
+                        </button>
+                        <button
+                            type="button"
+                            className={`auth-modal__tab${mode === 'register' ? ' auth-modal__tab--active' : ''}`}
+                            onClick={() => switchMode('register')}
+                        >
+                            Create Account
+                        </button>
+                    </div>
+                )}
 
+                {mode === 'reset' && resetSent ? (
+                    <div className="auth-modal__form">
+                        <p className="auth-modal__success">
+                            If an account exists for that email, a password reset link has been sent.
+                        </p>
+                        <div className="collection-modal__actions">
+                            <button
+                                type="button"
+                                className="collection-modal__btn-primary"
+                                onClick={() => switchMode('login')}
+                            >
+                                Back to Login
+                            </button>
+                        </div>
+                    </div>
+                ) : (
                 <form className="auth-modal__form" onSubmit={handleSubmit} noValidate>
                     {mode === 'register' && (
                         <div className="auth-modal__field">
@@ -123,30 +154,42 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                         />
                     </div>
 
-                    <div className="auth-modal__field">
-                        <label htmlFor="auth-password" className="auth-modal__label">Password</label>
-                        <div className="auth-modal__password-wrapper">
-                            <input
-                                id="auth-password"
-                                type={showPassword ? 'text' : 'password'}
-                                className="auth-modal__input"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                                required
-                                disabled={loading}
-                            />
-                            <button
-                                type="button"
-                                className="auth-modal__password-toggle"
-                                onClick={() => setShowPassword(v => !v)}
-                                tabIndex={-1}
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                            </button>
+                    {mode !== 'reset' && (
+                        <div className="auth-modal__field">
+                            <label htmlFor="auth-password" className="auth-modal__label">Password</label>
+                            <div className="auth-modal__password-wrapper">
+                                <input
+                                    id="auth-password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    className="auth-modal__input"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                                    required
+                                    disabled={loading}
+                                />
+                                <button
+                                    type="button"
+                                    className="auth-modal__password-toggle"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    tabIndex={-1}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {mode === 'login' && (
+                        <button
+                            type="button"
+                            className="auth-modal__forgot-link"
+                            onClick={() => switchMode('reset')}
+                        >
+                            Forgot password?
+                        </button>
+                    )}
 
                     {error && (
                         <p className="auth-modal__error">{error}</p>
@@ -156,20 +199,27 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                         <button
                             type="button"
                             className="collection-modal__btn-secondary"
-                            onClick={onClose}
+                            onClick={mode === 'reset' ? () => switchMode('login') : onClose}
                             disabled={loading}
                         >
-                            Cancel
+                            {mode === 'reset' ? 'Back to Login' : 'Cancel'}
                         </button>
                         <button
                             type="submit"
                             className="collection-modal__btn-primary"
-                            disabled={loading || !email || !password}
+                            disabled={loading || !email || (mode !== 'reset' && !password)}
                         >
-                            {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Create Account'}
+                            {loading
+                                ? 'Please wait…'
+                                : mode === 'login'
+                                    ? 'Login'
+                                    : mode === 'register'
+                                        ? 'Create Account'
+                                        : 'Send Reset Link'}
                         </button>
                     </div>
                 </form>
+                )}
             </div>
         </div>
     );

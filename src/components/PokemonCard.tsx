@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { getShinyImageUrl } from '../api/pokemonApi';
+import { useImageRetry } from '../hooks/useImageRetry';
 import type { PokemonSummary } from '../types/Pokemon';
 import { TypeBadge } from './TypeBadge';
 
@@ -22,6 +23,8 @@ export function PokemonCard({
                                 onOpenDetails,
                                 onCommitDeselection
                             }: PokemonCardProps) {
+    const { src, failed, onError } = useImageRetry(shiny ? getShinyImageUrl(pokemon.imageCode) : pokemon.imageUrl);
+
     function handleToggleSelected(event: React.MouseEvent<HTMLButtonElement>) {
         event.stopPropagation();
         onToggleSelected(pokemon.id);
@@ -48,12 +51,15 @@ export function PokemonCard({
                 aria-label={`Abrir detalhes de ${pokemon.name}`}
             >
                 <div className="pokemon-card__image-wrapper">
-                    <img
-                        src={shiny ? getShinyImageUrl(pokemon.imageCode) : pokemon.imageUrl}
-                        alt={pokemon.formName ? `${pokemon.name} - ${pokemon.formName}` : pokemon.name}
-                        className="pokemon-card__image"
-                        loading="lazy"
-                    />
+                    {src && !failed && (
+                        <img
+                            src={src}
+                            alt={pokemon.formName ? `${pokemon.name} - ${pokemon.formName}` : pokemon.name}
+                            className="pokemon-card__image"
+                            loading="lazy"
+                            onError={onError}
+                        />
+                    )}
                 </div>
 
                 <div className="pokemon-card__meta">
