@@ -627,6 +627,19 @@ input {
 .pokemon-type--dark { background: #292524; }
 .pokemon-type--steel { background: #64748b; }
 
+/* Legendary/Mythical/Starter — species-level categories, not real elemental types, so they
+   get a plain colored circle with a white star (instead of a letter) rather than the
+   rounded-square type badge shape used for real elemental types. */
+.pokemon-type--legendary,
+.pokemon-type--mythical,
+.pokemon-type--starter {
+    border-radius: 50%;
+    color: white;
+}
+.pokemon-type--legendary { background: #d4af37; }
+.pokemon-type--mythical { background: #9333ea; }
+.pokemon-type--starter { background: #6b7280; }
+
 .pokemon-card__name {
     padding: 0 4px;
     font-size: 0.92rem;
@@ -1340,7 +1353,12 @@ input {
 
 .pokemon-tcg-card {
     position: relative;
-    min-height: 172px;
+    /* Fixes a definite height from the grid column width, so every card is exactly the same
+       shape regardless of the source image's native resolution — without this, `height: 100%`
+       below has no reliable basis to resolve against (parent only had `min-height`), so taller
+       images could render past 172px and get clipped by `overflow: hidden` while others didn't.
+       Standard trading card ratio (2.5in x 3.5in). */
+    aspect-ratio: 5 / 7;
     overflow: hidden;
     color: #e8f4ff;
     background: rgba(147, 197, 253, 0.08);
@@ -1356,7 +1374,7 @@ input {
 }
 
 .pokemon-tcg-card__placeholder {
-    height: 172px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1385,6 +1403,51 @@ input {
 .pokemon-tcg-card--selectable:hover {
     border-color: rgba(159, 212, 255, 0.9);
     box-shadow: 0 0 0 1px rgba(159, 212, 255, 0.22);
+}
+
+/* Double-click (desktop) / long-press (touch) opens the full-size focus view below */
+.pokemon-tcg-card--zoomable:not(.pokemon-tcg-card--selectable) {
+    cursor: zoom-in;
+}
+
+.pokemon-tcg-card-focus {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: min(65vh, 560px);
+    padding: 16px;
+    background: rgba(3, 28, 61, 0.35);
+    border: 1px solid rgba(147, 197, 253, 0.32);
+    border-radius: 16px;
+}
+
+.pokemon-tcg-card-focus img {
+    max-width: 100%;
+    max-height: min(65vh, 560px);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.pokemon-tcg-card-focus__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: #e8f4ff;
+    background: rgba(11, 51, 96, 0.85);
+    border: 1px solid rgba(147, 197, 253, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.pokemon-tcg-card-focus__close:hover {
+    background: rgba(11, 51, 96, 1);
+    border-color: rgba(159, 212, 255, 0.9);
 }
 
 .pokemon-detail-panel,

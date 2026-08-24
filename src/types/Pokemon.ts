@@ -18,6 +18,10 @@ export type PokemonType =
     | 'STEEL'
     | 'FAIRY';
 
+// Real elemental types, plus the species-level pseudo-categories the Type filter also
+// lets you select (matched against `legendary`/`mythical`/`starter`, not `types`).
+export type PokemonTypeFilterId = PokemonType | 'LEGENDARY' | 'MYTHICAL' | 'STARTER';
+
 // Lightweight — used for the grid and modal navigation
 export interface PokemonSummary {
     id: string;
@@ -32,6 +36,7 @@ export interface PokemonSummary {
     region?: string | null;
     legendary?: boolean;
     mythical?: boolean;
+    starter?: boolean;
     fullyEvolved?: boolean;
     capableOfMegaEvolution?: boolean;
 }

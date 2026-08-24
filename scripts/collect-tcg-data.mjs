@@ -81,6 +81,7 @@ const downloadManifest = {}; // { cardId: originalLowUrl }
 
 let done = 0;
 let totalCards = 0;
+let missingImageCards = 0;
 let errors = 0;
 
 for (const name of uniqueNames) {
@@ -96,26 +97,38 @@ for (const name of uniqueNames) {
         continue;
     }
 
-    const cards = briefCards
-        .filter(c => c.image)   // skip entries without an image URL
-        .map(c => {
-            const localUrl = `/images/tcg/${c.id}/low.webp`;
-            const srcUrl   = `${c.image}/low.webp`;
-
-            downloadManifest[c.id] = srcUrl;
-
+    // Cards TCGdex hasn't uploaded an image for yet are kept (imageUrl: null) instead of
+    // dropped — fetch-serebii-tcg-images.mjs fills in what it can find on Serebii afterwards,
+    // and the UI already shows a name/set/number placeholder for whatever's still missing.
+    const cards = briefCards.map(c => {
+        if (!c.image) {
             return {
                 id:       c.id,
                 name:     c.name,
                 number:   c.localId ?? null,
-                imageUrl: localUrl,
+                imageUrl: null,
                 setId:    extractSetId(c.id),
             };
-        });
+        }
+
+        const localUrl = `/images/tcg/${c.id}/low.webp`;
+        const srcUrl   = `${c.image}/low.webp`;
+
+        downloadManifest[c.id] = srcUrl;
+
+        return {
+            id:       c.id,
+            name:     c.name,
+            number:   c.localId ?? null,
+            imageUrl: localUrl,
+            setId:    extractSetId(c.id),
+        };
+    });
 
     if (cards.length > 0) {
         cardCatalog[key] = cards;
         totalCards += cards.length;
+        missingImageCards += cards.filter(c => !c.imageUrl).length;
     }
 
     process.stdout.write(`\r[${++done}/${uniqueNames.length}] ${name.padEnd(20)} — ${cards.length} cards   `);
@@ -128,7 +141,7 @@ process.stdout.write('\n');
 // Write outputs
 // ---------------------------------------------------------------------------
 writeFileSync(CARDS_PATH, JSON.stringify(cardCatalog, null, 0), 'utf-8');
-console.log(`\nWrote tcg-cards.json  (${Object.keys(cardCatalog).length} Pokémon, ${totalCards} cards total)`);
+console.log(`\nWrote tcg-cards.json  (${Object.keys(cardCatalog).length} Pokémon, ${totalCards} cards total, ${missingImageCards} missing an image)`);
 
 writeFileSync(MANIFEST_PATH, JSON.stringify(downloadManifest, null, 0), 'utf-8');
 console.log(`Wrote tcg-download-manifest.json  (${Object.keys(downloadManifest).length} unique cards to download)`);

@@ -83,6 +83,29 @@ function computeTypeEffectiveness(pokemonTypes) {
 }
 
 // ---------------------------------------------------------------------------
+// Starter flag — not present in the source pokedex.json, computed here from a
+// hardcoded dex-number range table. Each generation's starter trio (grass/fire/
+// water, 3 evolution stages each) is exactly the first 9 dex numbers of that
+// generation's range — verified against Serebii (no dedicated "starters" page
+// exists there to scrape; this is standard, stable Pokémon canon).
+// ---------------------------------------------------------------------------
+const STARTER_DEX_RANGES = [
+    [1, 9],     // Kanto: Bulbasaur–Blastoise
+    [152, 160], // Johto: Chikorita–Feraligatr
+    [252, 260], // Hoenn: Treecko–Swampert
+    [387, 395], // Sinnoh: Turtwig–Empoleon
+    [495, 503], // Unova: Snivy–Samurott
+    [650, 658], // Kalos: Chespin–Greninja
+    [722, 730], // Alola: Rowlet–Primarina
+    [810, 818], // Galar: Grookey–Inteleon
+    [906, 914], // Paldea: Sprigatito–Quaquaval
+];
+
+function isStarter(dexNumber) {
+    return STARTER_DEX_RANGES.some(([from, to]) => dexNumber >= from && dexNumber <= to);
+}
+
+// ---------------------------------------------------------------------------
 // Learnset compilation
 // Mirrors PokemonResponseMapper.java
 // ---------------------------------------------------------------------------
@@ -228,6 +251,7 @@ const compiled = pokedex.map(pokemon => {
         region:                pokemon.region    ?? null,
         legendary:             pokemon.legendary  ?? false,
         mythical:              pokemon.mythical   ?? false,
+        starter:               isStarter(pokemon.dexNumber),
         fullyEvolved:          pokemon.fullyEvolved ?? false,
         capableOfMegaEvolution: pokemon.capableOfMegaEvolution ?? false,
         megaEvolutions:        pokemon.megaEvolutions ?? [],

@@ -1,4 +1,4 @@
-import type { Pokemon, PokemonType, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
+import type { Pokemon, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
 
 // import.meta.env.BASE_URL is set by Vite to the value of `base` in vite.config.ts.
 // In production this is '/pokedex-collection-manager-static/'.
@@ -63,7 +63,7 @@ export async function fetchTcgCards(pokemonName: string): Promise<TcgCardsApiRes
 }
 
 export interface PokemonFilters {
-    types?: PokemonType[]; // OR — empty/undefined = no filter
+    types?: PokemonTypeFilterId[]; // OR — empty/undefined = no filter; LEGENDARY/MYTHICAL/STARTER match species flags, not `types`
     generations?: number[]; // OR — empty/undefined = no filter
     gameIds?: string[]; // OR — empty/undefined = no filter
     dlcId?: string | null; // only meaningful alongside a single gameId — require this DLC tag
@@ -86,9 +86,17 @@ export function filterPokemon(
 ): Pokemon[] {
     const q = search ? normalize(search) : '';
     const { types, generations, gameIds, dlcId, dlcBaseOnly, excludeForms } = filters ?? {};
+    const matchesTypeFilter = (p: Pokemon, id: PokemonTypeFilterId): boolean => {
+        switch (id) {
+            case 'LEGENDARY': return !!p.legendary;
+            case 'MYTHICAL': return !!p.mythical;
+            case 'STARTER': return !!p.starter;
+            default: return p.types.includes(id);
+        }
+    };
     const matchesOtherFilters = (p: Pokemon): boolean => {
         if (q && !matchesSearch(p, q)) return false;
-        if (types?.length && !types.some(t => p.types.includes(t))) return false;
+        if (types?.length && !types.some(t => matchesTypeFilter(p, t))) return false;
         if (generations?.length && (p.generation == null || !generations.includes(p.generation))) return false;
         if (gameIds?.length && !p.games?.some(g => gameIds.includes(g.id))) return false;
         if (dlcId && !p.games?.some(g => gameIds?.includes(g.id) && g.dlc?.some(d => d.id === dlcId))) return false;

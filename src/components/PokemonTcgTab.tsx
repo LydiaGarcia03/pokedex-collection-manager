@@ -1,9 +1,10 @@
-import { Check, Sparkle, WifiOff } from 'lucide-react';
+import { Check, Sparkle, WifiOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { fetchTcgCards } from '../api/pokemonApi';
 import type { Pokemon, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
 
 const IMAGE_TIMEOUT_MS = 8000;
+const LONG_PRESS_MS = 500;
 
 function CardImage({ card }: { card: TcgCard }) {
     const [imgFailed, setImgFailed] = useState(false);
@@ -62,6 +63,43 @@ export function PokemonTcgTab({
 }: PokemonTcgTabProps) {
     const [tcgData, setTcgData] = useState<TcgCardsApiResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+
+    // A long press (mobile) fires a synthetic click on release — this ref suppresses that one
+    // click so it doesn't also toggle the card's selection right after opening the focus view.
+    const suppressNextClickRef = useRef(false);
+    const longPressTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+
+    function clearLongPressTimer() {
+        if (longPressTimerRef.current !== null) {
+            window.clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    }
+
+    function handleCardTouchStart(card: TcgCard) {
+        if (!card.imageUrl) return;
+        clearLongPressTimer();
+        longPressTimerRef.current = window.setTimeout(() => {
+            suppressNextClickRef.current = true;
+            setFocusedCardId(card.id);
+        }, LONG_PRESS_MS);
+    }
+
+    function handleCardClick(card: TcgCard) {
+        clearLongPressTimer();
+        if (suppressNextClickRef.current) {
+            suppressNextClickRef.current = false;
+            return;
+        }
+        if (selected) onToggleCard(card.id);
+    }
+
+    // Reset the focus view whenever the displayed Pokémon (species or form) changes, so it
+    // doesn't stay open across a species/form switch.
+    useEffect(() => {
+        setFocusedCardId(null);
+    }, [pokemon.id]);
 
     useEffect(() => {
         let cancelled = false;
@@ -138,6 +176,13 @@ export function PokemonTcgTab({
         if (filtered.length > 0) displayCards = filtered;
     }
 
+    // Cards without a resolved image (placeholder-only) sort after everything else, so the
+    // grid leads with real card art. Array.prototype.sort is stable, so order is otherwise
+    // preserved within each group.
+    displayCards = [...displayCards].sort((a, b) => Number(!a.imageUrl) - Number(!b.imageUrl));
+
+    const focusedCard = focusedCardId ? displayCards.find(c => c.id === focusedCardId) ?? null : null;
+
     return (
         <div className="pokemon-tcg-tab">
             <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -152,55 +197,74 @@ export function PokemonTcgTab({
                 </defs>
             </svg>
 
-            <div className="pokemon-tcg-grid">
-                {displayCards.map(card => {
-                    const checked = selectedCardIds.includes(card.id);
-                    const isFoil = foilCardIds.includes(card.id);
+            {focusedCard ? (
+                <div className="pokemon-tcg-card-focus">
+                    <button
+                        type="button"
+                        className="pokemon-tcg-card-focus__close"
+                        onClick={() => setFocusedCardId(null)}
+                        title="Close"
+                    >
+                        <X size={22} strokeWidth={2.4} />
+                    </button>
+                    <img src={focusedCard.imageUrl ?? undefined} alt={focusedCard.name} />
+                </div>
+            ) : (
+                <div className="pokemon-tcg-grid">
+                    {displayCards.map(card => {
+                        const checked = selectedCardIds.includes(card.id);
+                        const isFoil = foilCardIds.includes(card.id);
 
-                    return (
-                        <div
-                            key={card.id}
-                            className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''} ${collectionVisible && !checked ? 'pokemon-tcg-card--dimmed' : ''}`}
-                            role={selected ? 'button' : undefined}
-                            tabIndex={selected ? 0 : undefined}
-                            onClick={() => selected && onToggleCard(card.id)}
-                            onKeyDown={e => {
-                                if (selected && (e.key === 'Enter' || e.key === ' ')) {
-                                    e.preventDefault();
-                                    onToggleCard(card.id);
-                                }
-                            }}
-                            title={`${card.name}${card.setId ? ` · ${card.setId}` : ''}${card.number ? ` #${card.number}` : ''}`}
-                        >
-                            {selected && (
-                                <span
-                                    className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
-                                        checked ? 'selectable-item-checkbox--selected' : ''
-                                    }`}
-                                >
-                                    {checked && <Check size={20} strokeWidth={3.2} />}
-                                </span>
-                            )}
+                        return (
+                            <div
+                                key={card.id}
+                                className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''} ${collectionVisible && !checked ? 'pokemon-tcg-card--dimmed' : ''} ${card.imageUrl ? 'pokemon-tcg-card--zoomable' : ''}`}
+                                role={selected ? 'button' : undefined}
+                                tabIndex={selected ? 0 : undefined}
+                                onClick={() => handleCardClick(card)}
+                                onDoubleClick={() => card.imageUrl && setFocusedCardId(card.id)}
+                                onTouchStart={() => handleCardTouchStart(card)}
+                                onTouchEnd={clearLongPressTimer}
+                                onTouchMove={clearLongPressTimer}
+                                onTouchCancel={clearLongPressTimer}
+                                onKeyDown={e => {
+                                    if (selected && (e.key === 'Enter' || e.key === ' ')) {
+                                        e.preventDefault();
+                                        onToggleCard(card.id);
+                                    }
+                                }}
+                                title={`${card.name}${card.setId ? ` · ${card.setId}` : ''}${card.number ? ` #${card.number}` : ''}`}
+                            >
+                                {selected && (
+                                    <span
+                                        className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
+                                            checked ? 'selectable-item-checkbox--selected' : ''
+                                        }`}
+                                    >
+                                        {checked && <Check size={20} strokeWidth={3.2} />}
+                                    </span>
+                                )}
 
-                            <CardImage card={card} />
+                                <CardImage card={card} />
 
-                            {checked && (
-                                <button
-                                    type="button"
-                                    className={`pokemon-tcg-card__foil-toggle ${isFoil ? 'pokemon-tcg-card__foil-toggle--active' : ''}`}
-                                    onClick={e => {
-                                        e.stopPropagation();
-                                        onToggleFoil(card.id);
-                                    }}
-                                    title={isFoil ? 'Marked as foil' : 'Mark as foil'}
-                                >
-                                    <Sparkle size={16} strokeWidth={2.4} fill={isFoil ? 'url(#foil-toggle-silver)' : 'none'} />
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                                {checked && (
+                                    <button
+                                        type="button"
+                                        className={`pokemon-tcg-card__foil-toggle ${isFoil ? 'pokemon-tcg-card__foil-toggle--active' : ''}`}
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            onToggleFoil(card.id);
+                                        }}
+                                        title={isFoil ? 'Marked as foil' : 'Mark as foil'}
+                                    >
+                                        <Sparkle size={16} strokeWidth={2.4} fill={isFoil ? 'url(#foil-toggle-silver)' : 'none'} />
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

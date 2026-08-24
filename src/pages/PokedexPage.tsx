@@ -4,7 +4,7 @@ import { fetchTcgCards, filterPokemon, loadAllPokemon } from '../api/pokemonApi'
 import { AuthModal } from '../components/AuthModal';
 import { ExportContentModal } from '../components/ExportContentModal';
 import { ExportTypeModal } from '../components/ExportTypeModal';
-import { FilterCombobox } from '../components/FilterCombobox';
+import { FilterCombobox, type FilterComboboxGroup } from '../components/FilterCombobox';
 import { ImportCollectionModal } from '../components/ImportCollectionModal';
 import { MyCollectionsModal } from '../components/MyCollectionsModal';
 import { PokemonCard } from '../components/PokemonCard';
@@ -22,7 +22,7 @@ import {
 } from '../firebase/collections';
 import { useAuth } from '../hooks/useAuth';
 import { useCollection } from '../hooks/useCollection';
-import type { Pokemon, PokemonSummary, PokemonType, TcgCard } from '../types/Pokemon';
+import type { Pokemon, PokemonSummary, PokemonType, PokemonTypeFilterId, TcgCard } from '../types/Pokemon';
 import { buildExportText, type ExportType } from '../utils/collectionFormat';
 
 type ExportStep = 'closed' | 'type' | 'loading' | 'content';
@@ -49,7 +49,10 @@ const ALL_TYPES: PokemonType[] = [
     'FLYING', 'PSYCHIC', 'BUG', 'ROCK', 'GHOST', 'DRAGON', 'DARK', 'STEEL', 'FAIRY',
 ];
 
-function typeLabel(type: PokemonType): string {
+// Species-level pseudo-categories shown in the "Category" group of the same Type filter.
+const CATEGORY_TYPES: PokemonTypeFilterId[] = ['LEGENDARY', 'MYTHICAL', 'STARTER'];
+
+function typeLabel(type: PokemonTypeFilterId): string {
     return type.charAt(0) + type.slice(1).toLowerCase();
 }
 
@@ -66,7 +69,7 @@ export function PokedexPage() {
     const [exportContent, setExportContent] = useState('');
     const [showImportModal, setShowImportModal] = useState(false);
     const [filterGenerations, setFilterGenerations] = useState<number[]>([]);
-    const [filterTypes, setFilterTypes] = useState<PokemonType[]>([]);
+    const [filterTypes, setFilterTypes] = useState<PokemonTypeFilterId[]>([]);
     const [filterGameIds, setFilterGameIds] = useState<string[]>([]);
     const [filterDlcId, setFilterDlcId] = useState<string>(DLC_NONE_ID);
     const [filterExcludeForms, setFilterExcludeForms] = useState(false);
@@ -257,6 +260,19 @@ export function PokedexPage() {
         []
     );
 
+    const categoryOptions = useMemo(
+        () => CATEGORY_TYPES.map(type => ({ id: type, label: typeLabel(type), icon: <TypeBadge type={type} /> })),
+        []
+    );
+
+    const typeFilterGroups: FilterComboboxGroup[] = useMemo(
+        () => [
+            { heading: 'Type', options: typeOptions },
+            { heading: 'Category', options: categoryOptions },
+        ],
+        [typeOptions, categoryOptions]
+    );
+
     const gameGroups = useMemo(
         () => gamesByGeneration.map(([gen, games]) => ({
             heading: GEN_REGION_LABELS[gen] ?? `Gen ${gen}`,
@@ -312,7 +328,7 @@ export function PokedexPage() {
     }
 
     function toggleFilterType(id: string) {
-        const type = id as PokemonType;
+        const type = id as PokemonTypeFilterId;
         setFilterTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
     }
 
@@ -461,8 +477,8 @@ export function PokedexPage() {
                                     onOpenChange={o => setOpenCombobox(o ? 'generation' : null)}
                                 />
                                 <FilterCombobox
-                                    label="Type"
-                                    options={typeOptions}
+                                    label="Type / Category"
+                                    groups={typeFilterGroups}
                                     selectedIds={filterTypes}
                                     onToggle={toggleFilterType}
                                     open={openCombobox === 'type'}
