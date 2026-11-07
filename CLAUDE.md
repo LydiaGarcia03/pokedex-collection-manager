@@ -79,14 +79,17 @@ grandes.
   100% estáticos, nenhuma mudança necessária no `.github/workflows/deploy.yml`
 - Cache do app shell (JS/CSS/HTML, poucos MB) é pré-cacheado no build; imagens
   (`/images/**`) e dados compilados (`/data/*.json`) são cacheados sob demanda em runtime
-  (`CacheFirst` e `StaleWhileRevalidate` respectivamente) conforme a Lydia navega — decisão
+  (`CacheFirst` e `StaleWhileRevalidate` respectivamente) conforme o User navega — decisão
   deliberada para não tentar pré-cachear os ~570MB de imagens/cartas TCG de uma vez (ver
   `.ai/changes-log.md` 2026-08-24)
 - Ícones em `public/pwa-*.png`, `public/maskable-icon-512x512.png`,
-  `public/apple-touch-icon-180x180.png`, `public/favicon.ico` — gerados a partir de
-  `public/pokedex-favicon.png` via `npx @vite-pwa/assets-generator --preset minimal-2023
-  public/pokedex-favicon.png` (não é uma dependência do projeto, só uma ferramenta de geração
-  usada pontualmente); re-rodar esse comando se o favicon-fonte mudar
+  `public/apple-touch-icon-180x180.png`, `public/favicon.ico` — Pokébola em traço dourado
+  (`#ffcb05`) sobre azul-marinho (`#0b3360`), desenho-fonte em `docs/pwa-icon.svg` (transparente
+  fora do disco, usado em `pwa-*.png` e `favicon.ico`) e `docs/pwa-icon-maskable.svg` (fundo sólido
+  até a borda, usado no maskable e no Apple, porque Android e iPhone não aceitam fundo transparente
+  nesses ícones). As opções avaliadas estão em `docs/pwa-icon-options-mock.html`. Não usar o preset
+  `minimal-2023` do `@vite-pwa/assets-generator` a partir de um PNG sem canal alfa: foi isso que
+  deixou cantos pretos no ícone anterior (ver `.ai/changes-log.md` 2026-11-07)
 
 ### Sincronização em nuvem (Firebase)
 - Login/cadastro por e-mail e senha via **Firebase Authentication**, com reset de senha
