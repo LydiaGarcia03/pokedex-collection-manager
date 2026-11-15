@@ -11,8 +11,9 @@
     "compile-data": "node scripts/compile-pokedata.mjs",
     "collect-tcg": "node scripts/collect-tcg-data.mjs",
     "fetch-serebii-tcg": "node scripts/fetch-serebii-tcg-images.mjs",
+    "fetch-fallback-tcg": "node scripts/fetch-fallback-tcg-images.mjs",
     "download-images": "node scripts/download-images.mjs",
-    "setup": "npm run compile-data && npm run collect-tcg && npm run fetch-serebii-tcg && npm run download-images"
+    "setup": "npm run compile-data && npm run collect-tcg && npm run fetch-serebii-tcg && npm run fetch-fallback-tcg && npm run download-images"
   },
   "dependencies": {
     "firebase": "^12.15.0",

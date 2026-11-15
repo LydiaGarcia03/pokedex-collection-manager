@@ -15,6 +15,10 @@
  * Run from the pokedex-static root:
  *   node scripts/collect-tcg-data.mjs
  *
+ * Additive: both files are merged into, never rebuilt from scratch. A card already in the
+ * catalog is never removed (even if TCGdex stops returning it or a request fails), and an
+ * image another script already resolved (Serebii / fallback sources) is never reset to null.
+ *
  * Prerequisites: npm run compile-data must have run first.
  *
  * Duration: ~5 minutes (900 API calls × 350ms delay each).
@@ -76,8 +80,19 @@ console.log(`Found ${uniqueNames.length} unique Pokémon names to query.`);
 // ---------------------------------------------------------------------------
 // Fetch cards for each name
 // ---------------------------------------------------------------------------
-const cardCatalog   = {};   // { nameLower: [TcgCard, ...] }
-const downloadManifest = {}; // { cardId: originalLowUrl }
+const cardCatalog      = existsSync(CARDS_PATH)    ? JSON.parse(readFileSync(CARDS_PATH, 'utf-8'))    : {}; // { nameLower: [TcgCard, ...] }
+const downloadManifest = existsSync(MANIFEST_PATH) ? JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8')) : {}; // { cardId: sourceUrl }
+
+// Merges fresh TCGdex results into what's already stored for this Pokémon, keeping every
+// existing card and any image URL already resolved for it.
+function mergeCards(existing, fresh) {
+    const byId = new Map(existing.map(c => [c.id, c]));
+    for (const c of fresh) {
+        const prev = byId.get(c.id);
+        byId.set(c.id, prev ? { ...prev, ...c, imageUrl: c.imageUrl ?? prev.imageUrl } : c);
+    }
+    return [...byId.values()];
+}
 
 let done = 0;
 let totalCards = 0;
@@ -114,7 +129,7 @@ for (const name of uniqueNames) {
         const localUrl = `/images/tcg/${c.id}/low.webp`;
         const srcUrl   = `${c.image}/low.webp`;
 
-        downloadManifest[c.id] = srcUrl;
+        downloadManifest[c.id] ??= srcUrl;
 
         return {
             id:       c.id,
@@ -126,9 +141,7 @@ for (const name of uniqueNames) {
     });
 
     if (cards.length > 0) {
-        cardCatalog[key] = cards;
-        totalCards += cards.length;
-        missingImageCards += cards.filter(c => !c.imageUrl).length;
+        cardCatalog[key] = mergeCards(cardCatalog[key] ?? [], cards);
     }
 
     process.stdout.write(`\r[${++done}/${uniqueNames.length}] ${name.padEnd(20)} — ${cards.length} cards   `);
@@ -140,6 +153,11 @@ process.stdout.write('\n');
 // ---------------------------------------------------------------------------
 // Write outputs
 // ---------------------------------------------------------------------------
+for (const cards of Object.values(cardCatalog)) {
+    totalCards += cards.length;
+    missingImageCards += cards.filter(c => !c.imageUrl).length;
+}
+
 writeFileSync(CARDS_PATH, JSON.stringify(cardCatalog, null, 0), 'utf-8');
 console.log(`\nWrote tcg-cards.json  (${Object.keys(cardCatalog).length} Pokémon, ${totalCards} cards total, ${missingImageCards} missing an image)`);
 
