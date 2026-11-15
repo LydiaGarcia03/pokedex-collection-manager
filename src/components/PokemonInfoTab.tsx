@@ -1,6 +1,7 @@
 import { Egg, Hash, Heart, Leaf, MapPin, Palette, Ruler, Scale, Sparkles, Tag, Target, TrendingUp, TreePine, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Pokemon, PokemonMoveDetail } from '../types/Pokemon';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { InfoBalloon } from './InfoBalloon';
 import { TypeBadge } from './TypeBadge';
 
@@ -118,6 +119,11 @@ function getTotalStats(rows: StatRow[]): number {
     return rows.reduce((sum, r) => sum + r.value, 0);
 }
 
+// Mobile colors the stat bars by band; desktop keeps one color.
+function getStatBand(value: number): 'high' | 'low' | 'mid' {
+    return value >= 80 ? 'high' : value < 45 ? 'low' : 'mid';
+}
+
 function getStatPercentage(value: number): string {
     return `${(Math.min(value, STAT_MAX) / STAT_MAX) * 100}%`;
 }
@@ -164,6 +170,58 @@ function MoveTable({ title, rows }: { title: string; rows: PokemonMoveDetail[] }
     );
 }
 
+type MoveListKind = 'levelUp' | 'machine';
+
+// Mobile replacement for the two 6-column tables (which overflow a phone): one list at a time,
+// switched by "Level up / TM".
+function MoveList({ levelUpMoves, machineMoves }: { levelUpMoves: PokemonMoveDetail[]; machineMoves: PokemonMoveDetail[] }) {
+    const [preferred, setPreferred] = useState<MoveListKind>('levelUp');
+    // Fall back to whichever list exists when the preferred one is empty for this Pokémon.
+    const kind: MoveListKind = preferred === 'levelUp'
+        ? (levelUpMoves.length > 0 ? 'levelUp' : 'machine')
+        : (machineMoves.length > 0 ? 'machine' : 'levelUp');
+    const rows = kind === 'levelUp' ? levelUpMoves : machineMoves;
+    const options: { id: MoveListKind; label: string; count: number }[] = [
+        { id: 'levelUp', label: 'Level up', count: levelUpMoves.length },
+        { id: 'machine', label: 'TM', count: machineMoves.length },
+    ];
+
+    return (
+        <div className="pokemon-move-list">
+            <div className="pokemon-move-list__switch" role="tablist" aria-label="Move list">
+                {options.filter(option => option.count > 0).map(option => (
+                    <button
+                        key={option.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={kind === option.id}
+                        className={`pokemon-move-list__switch-option ${kind === option.id ? 'pokemon-move-list__switch-option--active' : ''}`}
+                        onClick={() => setPreferred(option.id)}
+                    >
+                        {option.label} ({option.count})
+                    </button>
+                ))}
+            </div>
+            <ul className="pokemon-move-list__items">
+                {rows.map(row => (
+                    <li key={`${row.levelOrTm}-${row.moveSlug}`} className="pokemon-move-list__item">
+                        <span className="pokemon-move-list__level">{row.levelOrTm}</span>
+                        <div className="pokemon-move-list__main">
+                            <InfoBalloon label={row.moveName} content={row.shortEffect} />
+                            <small>
+                                {formatCategory(row.category)} · Power {row.power ?? '—'} · Acc. {row.accuracy ?? '—'}
+                            </small>
+                        </div>
+                        {row.type && (
+                            <span className={`pokemon-move-type pokemon-move-type--${row.type.toLowerCase()}`}>{row.type}</span>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 function TypeEffectivenessSection({ typeEffectiveness }: { typeEffectiveness: Record<string, number> }) {
     const grouped: Record<number, string[]> = {};
 
@@ -200,6 +258,7 @@ function TypeEffectivenessSection({ typeEffectiveness }: { typeEffectiveness: Re
 }
 
 export function PokemonInfoTab({ pokemon }: PokemonInfoTabProps) {
+    const isMobile = useIsMobile();
     const [abilityDescriptions, setAbilityDescriptions] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -254,7 +313,7 @@ export function PokemonInfoTab({ pokemon }: PokemonInfoTabProps) {
                         )}
 
                         {pokemon.abilities && pokemon.abilities.length > 0 && (
-                            <div className="pokemon-general-info-row">
+                            <div className="pokemon-general-info-row pokemon-general-info-row--wide">
                                 <span className="pokemon-general-info-row__icon"><Sparkles size={16} /></span>
                                 <div>
                                     <small>Abilities</small>
@@ -274,7 +333,7 @@ export function PokemonInfoTab({ pokemon }: PokemonInfoTabProps) {
                         )}
 
                         {pokemon.recommendedNatures && pokemon.recommendedNatures.length > 0 && (
-                            <div className="pokemon-general-info-row">
+                            <div className="pokemon-general-info-row pokemon-general-info-row--wide">
                                 <span className="pokemon-general-info-row__icon"><Leaf size={16} /></span>
                                 <div>
                                     <small>Recommended Nature</small>
@@ -355,7 +414,7 @@ export function PokemonInfoTab({ pokemon }: PokemonInfoTabProps) {
                                         </div>
                                         <div className="pokemon-base-stat-row__bar">
                                             <div
-                                                className="pokemon-base-stat-row__bar-fill"
+                                                className={`pokemon-base-stat-row__bar-fill pokemon-base-stat-row__bar-fill--${getStatBand(stat.value)}`}
                                                 style={{ width: getStatPercentage(stat.value) }}
                                             />
                                         </div>
@@ -455,14 +514,18 @@ export function PokemonInfoTab({ pokemon }: PokemonInfoTabProps) {
                     <header>
                         <h3>Moves learned by {pokemon.name}</h3>
                     </header>
-                    <div className="pokemon-moves-grid">
-                        {(pokemon.levelUpMoves?.length ?? 0) > 0 && (
-                            <MoveTable title="Moves learnt by level up" rows={pokemon.levelUpMoves!} />
-                        )}
-                        {(pokemon.machineMoves?.length ?? 0) > 0 && (
-                            <MoveTable title="Moves learnt by TM" rows={pokemon.machineMoves!} />
-                        )}
-                    </div>
+                    {isMobile ? (
+                        <MoveList levelUpMoves={pokemon.levelUpMoves ?? []} machineMoves={pokemon.machineMoves ?? []} />
+                    ) : (
+                        <div className="pokemon-moves-grid">
+                            {(pokemon.levelUpMoves?.length ?? 0) > 0 && (
+                                <MoveTable title="Moves learnt by level up" rows={pokemon.levelUpMoves!} />
+                            )}
+                            {(pokemon.machineMoves?.length ?? 0) > 0 && (
+                                <MoveTable title="Moves learnt by TM" rows={pokemon.machineMoves!} />
+                            )}
+                        </div>
+                    )}
                 </section>
             ) : (
                 <section className="pokemon-moves-section">

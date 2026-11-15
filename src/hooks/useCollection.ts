@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { parseCollectionText } from '../utils/collectionFormat';
-import type { SelectedCard } from '../types/Pokemon';
+import type { CardOwnership, SelectedCard } from '../types/Pokemon';
 
 const STORAGE_KEY = 'pokedex.collection.v2';
 const LEGACY_STORAGE_KEY = 'pokedex.collection.ids';
@@ -266,6 +266,38 @@ export function useCollection() {
         });
     }
 
+    function getCardOwnership(pokemonId: string, cardId: string): CardOwnership {
+        const card = getSelectedCardEntries(pokemonId).find(entry => entry.id === cardId);
+        return !card ? 'none' : card.foil ? 'foil' : 'owned';
+    }
+
+    // Sets a card straight to one of the three states (mobile "No / Yes / Yes, foil" control).
+    // Same rule as toggleCard: cards can only be marked while their Pokémon is selected.
+    function setCardOwnership(pokemonId: string, cardId: string, ownership: CardOwnership) {
+        setState(current => {
+            if (!current.selectedPokemonIds.includes(pokemonId)) {
+                return current;
+            }
+
+            const currentCards = current.selectedCardsByPokemonId[pokemonId] ?? [];
+            const foil = ownership === 'foil';
+            // Keep an already-owned card in place (only its foil flag changes), like toggleFoil.
+            const nextCards = ownership === 'none'
+                ? currentCards.filter(card => card.id !== cardId)
+                : currentCards.some(card => card.id === cardId)
+                    ? currentCards.map(card => (card.id === cardId ? { ...card, foil } : card))
+                    : [...currentCards, { id: cardId, foil }];
+
+            return {
+                ...current,
+                selectedCardsByPokemonId: {
+                    ...current.selectedCardsByPokemonId,
+                    [pokemonId]: nextCards
+                }
+            };
+        });
+    }
+
     function replacePokemonSelection(pokemonIds: string[]) {
         setState(current => ({
             ...current,
@@ -347,6 +379,9 @@ export function useCollection() {
         getFoilCardIds,
         isCardFoil,
         toggleFoil,
+
+        getCardOwnership,
+        setCardOwnership,
 
         replacePokemonSelection,
         clear,

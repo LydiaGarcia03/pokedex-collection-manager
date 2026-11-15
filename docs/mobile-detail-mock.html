@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detalhe no celular — mock</title>
+<style>
+    :root {
+        --bg: #0b3360; --bg-deep: #082744; --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72);
+        --faint: rgba(226, 232, 240, 0.5); --accent: #9cc8ed; --accent-ink: #092f58;
+        --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --card: rgba(8, 24, 52, 0.52); --field: rgba(3, 24, 51, 0.28); --foil: #7c5cb8;
+        --electric: #eab308; --shiny: #ffe566;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+        min-height: 100vh;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .page { max-width: 1240px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 18px; color: var(--muted); max-width: 860px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button {
+        padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600;
+        border: 1px solid rgba(147, 197, 253, 0.62);
+    }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .frames { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+    .phone { width: 375px; height: 760px; padding: 12px; border-radius: 40px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .screen { position: relative; height: 100%; overflow: hidden; border-radius: 30px; background: linear-gradient(180deg, #0b3360, #082744);; user-select: none; -webkit-user-select: none; }
+    @media (max-width: 420px) { .phone { width: 100%; padding: 6px; border-radius: 26px; } .screen { border-radius: 20px; } }
+    .notes { margin-top: 36px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- shared bits ---------- */
+    .scroll { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .type-icon { width: 28px; height: 28px; border-radius: 7px; display: block; }
+    .chk {
+        width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(11, 51, 96, 0.45); border: 1px solid rgba(139, 191, 235, 0.65); color: transparent; flex: 0 0 auto;
+    }
+    .chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .chk svg { width: 22px; height: 22px; }
+    .pill-btn {
+        display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px;
+        background: rgba(147, 197, 253, 0.16); border: 1px solid rgba(147, 197, 253, 0.32); font-size: .82rem;
+    }
+    .pill-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .pill-btn svg, .icon-btn svg { width: 16px; height: 16px; }
+    .icon-btn {
+        width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(147, 197, 253, 0.14); border: 1px solid rgba(147, 197, 253, 0.32); flex: 0 0 auto;
+    }
+    .icon-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .icon-btn.shiny-on { color: var(--shiny); border-color: rgba(255, 229, 102, .55); background: rgba(255, 229, 102, .12); }
+    .hero-img {
+        width: 100%; aspect-ratio: 1; object-fit: contain;
+        background: radial-gradient(ellipse 72% 68% at 50% 48%, rgba(96,165,250,.2) 0%, rgba(29,78,148,.08) 55%, transparent 78%);
+        filter: drop-shadow(0 0 18px rgba(96,165,250,.24)) drop-shadow(0 14px 28px rgba(0,0,0,.55));
+    }
+    .dex { color: var(--muted); font-size: .8rem; }
+    .name { font-size: 1.2rem; font-weight: 800; }
+    .types { display: flex; gap: 6px; }
+
+    /* Content (new options) */
+    .content { padding: 14px 14px 28px; }
+    .section { margin-bottom: 14px; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid rgba(147, 197, 253, 0.11); }
+    .section h3 { margin: 0 0 10px; font-size: .95rem; color: #cfe6fb; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tile { padding: 9px 10px; border-radius: 12px; background: rgba(147, 197, 253, 0.07); }
+    .tile small { display: block; color: var(--faint); font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; }
+    .tile b { font-size: .92rem; }
+    .tile--wide { grid-column: 1 / -1; }
+    .stat { display: grid; grid-template-columns: 60px 30px 1fr; align-items: center; gap: 8px; margin: 7px 0; font-size: .82rem; }
+    .stat span { color: var(--muted); }
+    .stat b { text-align: right; }
+    .bar { height: 7px; border-radius: 99px; background: rgba(147, 197, 253, 0.12); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #60a5fa, #9cc8ed); }
+    .bar i.hi { background: linear-gradient(90deg, #34d399, #a7f3d0); }
+    .bar i.lo { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+    .total { margin-top: 10px; font-size: .82rem; color: var(--muted); }
+    .total b { color: var(--text); }
+    .quote { margin: 0 0 14px; padding: 12px 14px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: rgba(156, 200, 237, .08); color: #d6e9fb; font-size: .86rem; line-height: 1.5; font-style: italic; }
+    .eff-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+    .eff-row > span { width: 34px; font-weight: 800; font-size: .82rem; }
+    .eff-row .types img { width: 24px; height: 24px; }
+    .moves-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .moves-tabs button { flex: 1; height: 32px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font-size: .78rem; font-weight: 600; color: #9fc9f8; }
+    .moves-tabs button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .move { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line-soft); font-size: .84rem; }
+    .move:first-of-type { border-top: 0; }
+    .move .lv { color: var(--faint); font-size: .75rem; }
+    .move small { display: block; color: var(--faint); font-size: .72rem; }
+    .mtype { padding: 2px 8px; border-radius: 99px; font-size: .68rem; font-weight: 800; color: #fff; }
+    .mtype--ELECTRIC { background: #eab308; color: #0f172a; } .mtype--NORMAL { background: #a8a29e; }
+    .mtype--FAIRY { background: #ec4899; } .mtype--GHOST { background: #7c3aed; } .mtype--STEEL { background: #64748b; } .mtype--PSYCHIC { background: #db2777; } .mtype--DARK { background: #292524; } .mtype--FIGHTING { background: #dc2626; }
+    .desc { color: var(--muted); font-size: .82rem; line-height: 1.45; margin: 0 0 12px; }
+    .games { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .game { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 12px; background: rgba(147, 197, 253, .07); border: 1px solid var(--line-soft); }
+    .game img { width: 36px; height: 36px; object-fit: contain; }
+    .game small { font-size: .62rem; color: var(--muted); text-align: center; line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .game.on { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(156, 200, 237, .4); }
+    .dim { filter: grayscale(100%) opacity(.4); }
+    .mini-chk { position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 5px; background: rgba(11,51,96,.6); border: 1px solid rgba(139,191,235,.6); display: inline-flex; align-items: center; justify-content: center; color: var(--accent-ink); }
+    .mini-chk.on { background: var(--accent); border-color: var(--accent); }
+    .mini-chk svg { width: 11px; height: 11px; }
+    .search { position: relative; display: flex; align-items: center; margin-bottom: 10px; }
+    .search svg { position: absolute; left: 14px; width: 16px; height: 16px; opacity: .75; }
+    .search input { width: 100%; height: 42px; padding: 0 14px 0 40px; border-radius: 999px; outline: none; background: var(--field); border: 1px solid rgba(96,165,250,.55); font-size: 16px; color: #e5f2ff; }
+    .search input::placeholder { color: rgba(229, 242, 255, .65); font-style: italic; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; height: 30px; padding: 0 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #0A2F59; color: #9fc9f8; border: 1px solid rgba(147, 197, 253, .5); }
+    .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .count { color: var(--muted); font-size: .78rem; margin: 0 0 10px; }
+    .tcg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .tcard { position: relative; aspect-ratio: 5 / 7; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); background: rgba(147,197,253,.08); }
+    .tcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tcard.on { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(156,200,237,.4); }
+    .tcard .mini-chk { top: 5px; left: 5px; width: 18px; height: 18px; }
+    .links { display: flex; gap: 8px; align-items: center; justify-content: center; padding: 6px 0 4px; font-size: .75rem; color: var(--faint); }
+    .links a { color: #9fd4ff; text-decoration: none; padding: 4px 11px; border: 1px solid rgba(159, 212, 255, .3); border-radius: 999px; }
+
+    /* ---------- CURRENT (reproduction of today's ≤640px layout) ---------- */
+    .cur { position: absolute; inset: 0; background: rgba(1, 10, 25, 0.72); display: flex; align-items: flex-end; }
+    .cur__sheet { width: 100%; max-height: 95%; height: 95%; display: flex; flex-direction: column; background: #0b3360; border: 1px solid rgba(96,165,250,.62); border-bottom: 0; border-radius: 20px 20px 0 0; overflow: hidden; }
+    .cur__head { height: 60px; flex: 0 0 60px; display: flex; align-items: center; padding: 0 16px; gap: 10px; border-bottom: 1px solid var(--line-soft); }
+    .cur__head .vis { margin-left: auto; }
+    .cur__body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 16px; }
+    .cur__body::-webkit-scrollbar { display: none; }
+    .cur__nav { display: flex; justify-content: space-between; color: #7fb7f4; font-weight: 600; font-size: .9rem; min-height: 48px; align-items: center; }
+    .cur__nav span { color: #9fc9f8; }
+    .cur__card { display: grid; grid-template-columns: 54% 1fr; gap: 0 14px; margin-bottom: 16px; }
+    .cur__card .hero-img { padding: 6px; border-radius: 14px; }
+    .cur__card .info { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+    .cur__shiny { grid-column: 1; margin-top: 12px; height: 28px; font-size: .75rem; border-radius: 8px; background: transparent; border: 1px solid rgba(159,212,255,.18); color: rgba(159,212,255,.65); display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .cur__shiny.on { color: var(--shiny); border-color: rgba(255,229,102,.4); background: rgba(255,229,102,.1); }
+    .cur__tabs { display: flex; gap: 12px; justify-content: center; }
+    .cur__tab { flex: 1; height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: .82rem; font-weight: 600; color: #9fc9f8; background: #0A2F59; border: 1px solid rgba(147,197,253,.62); border-bottom: 0; border-radius: 12px 12px 0 0; }
+    .cur__tab.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+    .cur__panel { margin-top: 12px; padding: 16px 14px 24px; border: 1px solid rgba(147,197,253,.32); border-radius: 12px; }
+    .cur__panel h3 { margin: 0 0 10px; font-size: 1rem; }
+    .cur__row { display: flex; gap: 10px; align-items: center; margin: 8px 0; font-size: .86rem; }
+    .cur__row i { width: 30px; height: 30px; border-radius: 8px; background: rgba(147,197,253,.12); flex: 0 0 auto; }
+    .cur__row small { display: block; color: var(--faint); font-size: .72rem; }
+    .cur__table { overflow-x: auto; margin-top: 8px; }
+    .cur__table table { min-width: 520px; border-collapse: collapse; font-size: .8rem; }
+    .cur__table th, .cur__table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+    .cur__foot { padding: 12px 16px; border-top: 1px solid rgba(147,197,253,.12); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: .75rem; color: rgba(232,244,255,.45); }
+    .cur__foot a { color: #9fd4ff; text-decoration: none; padding: 4px 11px; border: 1px solid rgba(159,212,255,.3); border-radius: 999px; }
+    .cur .tcg { grid-template-columns: repeat(2, 1fr); gap: 22px; }
+    .cur .tcard { border-radius: 16px; }
+    .cur .games { grid-template-columns: repeat(3, 1fr); }
+
+    /* ---------- A: compact header ---------- */
+    .a-top { position: sticky; top: 0; z-index: 3; background: rgba(11, 51, 96, .97); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line-soft); }
+    .a-bar { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; }
+    .a-bar .spacer { flex: 1; }
+    .a-id { display: flex; align-items: center; gap: 10px; padding: 0 14px 10px; }
+    .a-id img.sprite { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
+    .a-id .who { flex: 1; min-width: 0; }
+    .a-nav { display: flex; gap: 6px; }
+    .seg { display: flex; margin: 0 12px 10px; padding: 4px; border-radius: 14px; background: rgba(3, 24, 51, .5); border: 1px solid var(--line-soft); }
+    .seg button { flex: 1; height: 34px; border: 0; border-radius: 10px; background: transparent; color: #9fc9f8; font-weight: 700; font-size: .84rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .seg button.on { background: var(--accent); color: var(--accent-ink); }
+    .seg svg { width: 15px; height: 15px; }
+
+    /* ---------- B: collapsing hero ---------- */
+    .b-hero { position: relative; padding: 50px 20px 10px; text-align: center; background: radial-gradient(ellipse 80% 70% at 50% 40%, rgba(234,179,8,.22), transparent 70%); }
+    .b-hero .hero-img { width: 210px; margin: 0 auto; background: none; }
+    .b-hero .name { font-size: 1.6rem; }
+    .b-hero .types { justify-content: center; margin-top: 8px; }
+    .b-float { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 5; display: flex; gap: 8px; align-items: center; }
+    .b-float .spacer { flex: 1; }
+    .b-mini { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 58px; background: rgba(11, 51, 96, .97); border-bottom: 1px solid var(--line-soft); transform: translateY(-100%); transition: transform .2s ease; }
+    .b-mini.show { transform: none; }
+    .b-mini img { width: 34px; height: 34px; object-fit: contain; }
+    .b-tabs { position: sticky; top: 58px; z-index: 3; display: flex; gap: 6px; padding: 8px 12px; background: rgba(11, 51, 96, .97); border-bottom: 1px solid var(--line-soft); }
+    .b-tabs button { flex: 1; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: #9fc9f8; font-weight: 700; font-size: .84rem; }
+    .b-tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .b-arrow { position: absolute; top: 140px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(11,51,96,.6); border: 1px solid var(--line); }
+    .b-arrow svg { width: 18px; height: 18px; }
+
+    /* ---------- C: bottom tab bar ---------- */
+    .c-top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(11, 51, 96, .97); border-bottom: 1px solid var(--line-soft); }
+    .c-top .title { flex: 1; text-align: center; font-weight: 800; }
+    .c-top .title small { display: block; font-weight: 500; }
+    .c-hero { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; padding: 14px 14px 4px; }
+    .c-hero .hero-img { border-radius: 18px; }
+    .c-hero .facts { display: flex; flex-direction: column; gap: 8px; }
+    .c-hero .facts .pill-btn { justify-content: center; }
+    .c-tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; padding: 6px 8px 14px; background: rgba(8, 39, 68, .98); border-top: 1px solid var(--line-soft); }
+    .c-tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border: 0; background: transparent; color: #7fa9d4; font-size: .7rem; font-weight: 700; }
+    .c-tabbar button svg { width: 22px; height: 22px; }
+    .c-tabbar button.on { color: var(--accent); }
+    .c-tabbar button.on svg { filter: drop-shadow(0 0 8px rgba(156,200,237,.6)); }
+    .c-fab { position: absolute; right: 14px; bottom: 82px; z-index: 6; height: 48px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: .85rem; background: #0A2F59; border: 1px solid rgba(147,197,253,.62); box-shadow: 0 10px 24px rgba(0,0,0,.45); }
+    .c-fab.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .c-fab svg { width: 18px; height: 18px; }
+
+    /* ---------- D: type-colored card ---------- */
+    .d-head { position: relative; padding: 12px 14px 18px; border-radius: 0 0 28px 28px; background: linear-gradient(160deg, rgba(234,179,8,.38), rgba(234,179,8,.08) 55%, transparent), #0d3a6b; border-bottom: 1px solid rgba(234,179,8,.35); overflow: hidden; }
+    .d-head::after { content: ''; position: absolute; right: -60px; top: -40px; width: 220px; height: 220px; border-radius: 50%; border: 26px solid rgba(255,255,255,.05); }
+    .d-bar { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; }
+    .d-bar .spacer { flex: 1; }
+    .d-main { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; }
+    .d-main .who { padding-bottom: 14px; }
+    .d-main .name { font-size: 1.7rem; }
+    .d-main .hero-img { width: 170px; background: none; margin-right: -10px; }
+    .d-genus { color: #fde68a; font-size: .8rem; font-weight: 600; margin-top: 2px; }
+    .d-swipe { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 0; color: var(--faint); font-size: .75rem; }
+    .d-swipe button { background: none; border: 0; color: #9fc9f8; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; }
+    .d-swipe svg { width: 16px; height: 16px; }
+    .d-tabs { position: sticky; top: 0; z-index: 3; display: flex; gap: 22px; padding: 12px 18px 0; background: rgba(11,51,96,.97); border-bottom: 1px solid var(--line-soft); }
+    .d-tabs button { position: relative; padding: 4px 0 12px; border: 0; background: none; color: #7fa9d4; font-weight: 800; font-size: .95rem; }
+    .d-tabs button.on { color: var(--text); }
+    .slide-from-right .scroll, .slide-from-right .cur__body { animation: from-right .26s ease-out; }
+    .slide-from-left .scroll, .slide-from-left .cur__body { animation: from-left .26s ease-out; }
+    @keyframes from-right { from { transform: translateX(40%); opacity: 0; } }
+    @keyframes from-left { from { transform: translateX(-40%); opacity: 0; } }
+    .edge-bump { animation: bump .25s ease; }
+    @keyframes bump { 30% { transform: translateX(-10px); } 70% { transform: translateX(10px); } }
+    .e-mini {
+        position: absolute; top: 0; left: 0; right: 0; z-index: 6; display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px; background: linear-gradient(160deg, rgba(234,179,8,.32), rgba(234,179,8,.06) 60%), #0d3a6b;
+        border-bottom: 1px solid rgba(234,179,8,.35); box-shadow: 0 8px 20px rgba(0,0,0,.35);
+        transform: translateY(-110%); transition: transform .22s ease;
+    }
+    .e-mini.show { transform: none; }
+    .e-mini img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+    .e-mini .who { flex: 1; min-width: 0; line-height: 1.15; }
+    .e-mini .who b { display: block; font-size: 1rem; }
+    .e-mini .icon-btn, .e-mini .chk { width: 34px; height: 34px; }
+    .e-tabbar button.on { color: #fde68a; }
+    .e-tabbar button.on svg { filter: drop-shadow(0 0 8px rgba(234, 179, 8, .65)); }
+    .e-tabbar button.on::before { content: ''; position: absolute; top: -7px; width: 28px; height: 3px; border-radius: 3px; background: var(--electric); }
+    .e-tabbar button { position: relative; }
+    .d-tabs button.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px; background: var(--electric); }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Detalhe do Pokémon no celular</h1>
+    <p class="lede">
+        À esquerda, como o app é hoje (reprodução do layout atual em telas pequenas). À direita, a opção
+        escolhida. Nos dois telefones dá para trocar de aba, marcar o Pokémon na coleção, marcar jogos
+        e cartas, ligar o Shiny e o Visibility, e rolar a tela. Os dados são reais (Pichu, Pikachu e Raichu). No telefone da opção, deslize para o lado (no computador, clique e arraste) para trocar de Pokémon, em qualquer ponto da tela e com qualquer rolagem. As setas também funcionam nos dois telefones. Abra este
+        arquivo direto no navegador, a partir da pasta <code>docs/</code>, para as imagens carregarem.
+    </p>
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="frames">
+        <div><p class="frame-label">Hoje</p><div class="phone"><div class="screen" id="phone-current"></div></div></div>
+        <div><p class="frame-label" id="opt-label">Opção</p><div class="phone"><div class="screen" id="phone-option"></div></div></div>
+    </div>
+    <div class="notes">
+        <h2>O que muda em todas as opções novas (o conteúdo das abas)</h2>
+        <ul>
+            <li><b>Info:</b> as informações gerais viram blocos em 2 colunas, em vez de uma lista comprida
+                com ícones; os stats ganham cor (verde = alto, amarelo = baixo).</li>
+            <li><b>Moves:</b> a tabela de 6 colunas, que hoje fica mais larga que a tela e precisa rolar para o lado, vira uma lista
+                (nível, nome, tipo, poder), com botões "Level up" e "TM".</li>
+            <li><b>Games:</b> grade de 4 colunas com ícones menores, para caber mais jogos por tela.</li>
+            <li><b>TCG:</b> já com a busca da opção C do mock anterior, e grade de 3 colunas em vez de 2.</li>
+            <li>A navegação anterior/próximo (as setas) aparece em todas as opções, mas aqui ela não troca de Pokémon.</li>
+            <li>O computador não muda: tudo isso valeria só para telas pequenas (até ~640px).</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const DEX = [{"id":"0172","dex":"#0172","name":"Pichu","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0172.webp","sprite":"../public/images/pokemon/0172.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0172.webp","height":"0.30 m","weight":"2.0 kg","color":"Yellow","abilities":"Static, Lightning Rod","natures":"Hasty, Jolly, Lonely","region":"Johto","generation":"Gen II","gender":"50% ♂ / 50% ♀","stats":[["HP",20],["Attack",40],["Defense",15],["Sp. Atk",35],["Sp. Def",35],["Speed",60]],"flavor":"Pichu stores electricity in the sacs on its cheeks but discharges it inadvertently when agitated or excited. Being yet immature, the Pokémon's handling of electricity is rather inept.","genus":"Tiny Mouse Pokémon","eggGroups":"No Eggs","growth":"Medium","habitat":"Forest","capture":190,"happiness":70,"eff":[["2×",["GROUND"]],["½×",["ELECTRIC","FLYING","STEEL"]]],"lv":[["1","Tail Whip","NORMAL","status",null,100],["1","Thunder Shock","ELECTRIC","special",40,100],["4","Play Nice","NORMAL","status",null,null],["5","Quick Attack","NORMAL","physical",40,100],["8","Sweet Kiss","FAIRY","status",null,75],["9","Thunder Wave","ELECTRIC","status",null,90],["12","Nuzzle","ELECTRIC","physical",20,100],["15","Swift","NORMAL","special",60,null],["16","Nasty Plot","DARK","status",null,null],["20","Charm","FAIRY","status",null,100],["21","Spark","ELECTRIC","physical",65,100],["29","Thunderbolt","ELECTRIC","special",90,100]],"tm":[["TM01","Attract","NORMAL","status",null,100],["TM02","Body Slam","NORMAL","physical",85,100],["TM03","Captivate","NORMAL","status",null,100],["TM04","Charge","ELECTRIC","status",null,null],["TM05","Charge Beam","ELECTRIC","special",50,90],["TM06","Charm","FAIRY","status",null,100],["TM07","Confide","NORMAL","status",null,null],["TM08","Curse","GHOST","status",null,null]],"totals":{"lv":14,"tm":62},"games":[["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["rs-s","Sapphire"],["rs-r","Ruby"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["e","Emerald"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["oras-as","Alpha Sapphire"],["oras-or","Omega Ruby"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["pop9-11","Pichu","POP Series 9","11"],["neo1-12","Pichu","Neo Genesis","12"],["pop3-16","Pichu Bros.","POP Series 3","16"],["ex2-20","Pichu","Sandstorm","20"],["ex16-21","Pichu","Power Keepers","21"],["ecard1-22","Pichu","Expedition Base Set","22"],["pl4-25","Pichu","Arceus","25"],["hgss1-28","Pichu","HeartGold SoulSilver","28"],["basep-35","Pichu","Wizards Black Star Promos","35"],["dp7-45","Pichu","Stormfront","45"],["ex9-59","Pichu","Emerald","59"],["A4-066","Pichu","Wisdom of Sea and Sky","066"],["sv10-071","Ethan's Pichu","Destined Rivals","071"],["ex13-76","Pichu δ","Holon Phantoms","76"],["dp2-93","Pichu","Mysterious Treasures","93"],["B2-213","Pichu","Fantastical Parade","213"]],"cardTotal":18},{"id":"0025","dex":"#0025","name":"Pikachu","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0025.webp","sprite":"../public/images/pokemon/0025.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0025.webp","height":"0.40 m","weight":"6.0 kg","color":"Yellow","abilities":"Static, Lightning Rod","natures":"Hasty, Jolly, Naive","region":"Kanto","generation":"Gen I","gender":"50% ♂ / 50% ♀","stats":[["HP",35],["Attack",55],["Defense",40],["Sp. Atk",50],["Sp. Def",50],["Speed",90]],"flavor":"Possesses cheek sacs in which it stores electricity. This clever forest-dweller roasts tough berries with an electric shock before consuming them.","genus":"Mouse Pokémon","eggGroups":"Ground, Fairy","growth":"Medium","habitat":"Forest","capture":190,"happiness":70,"eff":[["2×",["GROUND"]],["½×",["ELECTRIC","FLYING","STEEL"]]],"lv":[["1","Charm","FAIRY","status",null,100],["1","Growl","NORMAL","status",null,100],["1","Nasty Plot","DARK","status",null,null],["1","Nuzzle","ELECTRIC","physical",20,100],["1","Play Nice","NORMAL","status",null,null],["1","Quick Attack","NORMAL","physical",40,100],["1","Sweet Kiss","FAIRY","status",null,75],["1","Tail Whip","NORMAL","status",null,100],["1","Thunder Shock","ELECTRIC","special",40,100],["4","Thunder Wave","ELECTRIC","status",null,90],["8","Double Team","NORMAL","status",null,null],["9","Double Kick","FIGHTING","physical",30,100]],"tm":[["TM01","Agility","PSYCHIC","status",null,null],["TM02","Alluring Voice","FAIRY","special",80,100],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Calm Mind","PSYCHIC","status",null,null],["TM08","Captivate","NORMAL","status",null,100]],"totals":{"lv":24,"tm":86},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["rs-s","Sapphire"],["rs-r","Ruby"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["e","Emerald"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["oras-as","Alpha Sapphire"],["oras-or","Omega Ruby"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["fut2020-1","Pikachu on the Ball","Pokémon Futsal 2020","1"],["basep-1","Pikachu","Wizards Black Star Promos","1"],["tk-hs-r-2","Pikachu","HS trainer Kit (Raichu)","2"],["2024sv-2","Pikachu","McDonald's Collection 2024","2"],["2018sm-4","Pikachu","McDonald's Collection 2018","4"],["ex5.5-5","Pikachu","Poké Card Creator Pack","5"],["2014xy-5","Pikachu","McDonald's Collection 2014","5"],["2017sm-5","Pikachu","McDonald's Collection 2017","5"],["cel25-5","Pikachu","Celebrations","5"],["tk-ex-latio-6","Pikachu","EX trainer Kit (Latios)","6"],["2016xy-6","Pikachu","McDonald's Collection 2016","6"],["2023sv-6","Pikachu","McDonald's Collection 2023","6"],["2015xy-6","Pikachu","McDonald's Collection 2015","6"],["2019sm-6","Pikachu","McDonald's Collection 2019","6"],["2022swsh-7","Pikachu","McDonald's Collection 2022","7"],["ru1-7","Pikachu","Pokémon Rumble","7"],["30th-c-008","Pikachu & Zekrom GX","30th Classic Collection","008"],["P-A-009","Pikachu","Promos-A","009"],["pop6-9","Pikachu","POP Series 6","9"],["det1-10","Detective Pikachu","Detective Pikachu","10"],["np-12","Pikachu","Nintendo Black Star Promos","12"]],"cardTotal":246},{"id":"0026","dex":"#0026","name":"Raichu","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0026.webp","sprite":"../public/images/pokemon/0026.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0026.webp","height":"0.80 m","weight":"30.0 kg","color":"Yellow","abilities":"Static, Lightning Rod","natures":"Hasty, Lonely, Mild","region":"Kanto","generation":"Gen I","gender":"50% ♂ / 50% ♀","stats":[["HP",60],["Attack",90],["Defense",55],["Sp. Atk",90],["Sp. Def",80],["Speed",110]],"flavor":"It can discharge bursts of electricity exceeding 100,000 volts— a single strike with that amount of power would incapacitate one of the Copperajah of my homeland.","genus":"Mouse Pokémon","eggGroups":"Ground, Fairy","growth":"Medium","habitat":"Forest","capture":75,"happiness":70,"eff":[["2×",["GROUND"]],["½×",["ELECTRIC","FLYING","STEEL"]]],"lv":[["1","Agility","PSYCHIC","status",null,null],["1","Charm","FAIRY","status",null,100],["1","Discharge","ELECTRIC","special",80,100],["1","Double Team","NORMAL","status",null,null],["1","Electro Ball","ELECTRIC","special",null,100],["1","Encore","NORMAL","status",null,100],["1","Fake Out","NORMAL","physical",40,100],["1","Feint","NORMAL","physical",30,100],["1","Growl","NORMAL","status",null,100],["1","Iron Tail","STEEL","physical",100,75],["1","Light Screen","PSYCHIC","status",null,null],["1","Nasty Plot","DARK","status",null,null]],"tm":[["TM01","Agility","PSYCHIC","status",null,null],["TM02","Alluring Voice","FAIRY","special",80,100],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Brutal Swing","DARK","physical",60,100],["TM08","Calm Mind","PSYCHIC","status",null,null]],"totals":{"lv":25,"tm":91},"games":[["rb-r","Red"],["rb-b","Blue"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["rs-s","Sapphire"],["rs-r","Ruby"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["e","Emerald"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["oras-as","Alpha Sapphire"],["oras-or","Omega Ruby"],["go","Pokémon GO"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["pop9-3","Raichu","POP Series 9","3"],["lc-7","Dark Raichu","Legendary Collection","7"],["dp7-8","Raichu","Stormfront","8"],["hgss1-10","Raichu","HeartGold SoulSilver","10"],["gym2-11","Lt. Surge's Raichu","Gym Challenge","11"],["ex6-12","Raichu","FireRed & LeafGreen","12"],["ex16-12","Raichu","Power Keepers","12"],["ex4-13","Raichu","Team Magma vs Team Aqua","13"],["base3-14","Raichu","Fossil","14"],["base1-14","Raichu","Base Set","14"],["dp2-15","Raichu","Mysterious Treasures","15"],["ex13-15","Raichu δ","Holon Phantoms","15"],["base4-16","Raichu","Base Set 2","16"],["tk-sm-r-17","Alolan Raichu","SM trainer Kit (Alolan Raichu)","17"],["mfb-18","Raichu","My First Battle","18"],["tk-hs-r-19","Raichu","HS trainer Kit (Raichu)","19"],["sv04.5-019","Raichu","Paldean Fates","019"],["sm115-20","Raichu GX","Hidden Fates","20"],["neo3-21","Raichu","Neo Revelation","21"],["ecard1-25","Raichu","Expedition Base Set","25"],["A2a-026","Raichu","Triumphant Light","026"]],"cardTotal":84}];
+// The mock walks the Pichu → Pikachu → Raichu line; these globals always hold the one on screen.
+let dexIndex = 1;
+let P, MOVES_LV, MOVES_TM, MOVES_TOTAL, GAMES, CARDS;
+function loadPokemon(i) {
+    dexIndex = i;
+    P = DEX[i];
+    MOVES_LV = P.lv; MOVES_TM = P.tm; MOVES_TOTAL = P.totals; GAMES = P.games;
+    CARDS = P.cards.map(([id, name, set, num]) => ({ id, name, set, num, img: `../public/images/tcg/${id}/low.webp` }));
+}
+loadPokemon(dexIndex);
+const prevDex = () => DEX[dexIndex - 1]?.dex.slice(1) ?? '';
+const nextDex = () => DEX[dexIndex + 1]?.dex.slice(1) ?? '';
+
+const I = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 5.4-1.6"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M19 3v4M17 5h4"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>',
+    tcg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+};
+
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const typeIcon = t => `<img class="type-icon" src="../public/images/types/type-${t.toLowerCase()}.png" alt="${t}" title="${t}">`;
+const TAB_LABEL = { info: 'Info', games: 'Games', tcg: 'TCG' };
+
+function newState() {
+    return { tab: 'info', selected: true, visible: false, shiny: false, moves: 'lv', query: '', status: 'all',
+             games: new Set(GAMES.slice(2, 6).map(g => g[0])), cards: new Set(CARDS.filter((_, i) => i % 4 === 1).map(c => c.id)),
+             scroll: 0 };
+}
+
+/* ---------- shared content for the new options ---------- */
+function infoNew(s) {
+    const statClass = v => v >= 80 ? 'hi' : v < 45 ? 'lo' : '';
+    const moves = s.moves === 'lv' ? MOVES_LV : MOVES_TM;
+    return `
+        <div class="section"><h3>General Information</h3><div class="tiles">
+            <div class="tile"><small>Height</small><b>${P.height}</b></div>
+            <div class="tile"><small>Weight</small><b>${P.weight}</b></div>
+            <div class="tile"><small>Region</small><b>${P.region}</b></div>
+            <div class="tile"><small>Generation</small><b>${P.generation}</b></div>
+            <div class="tile"><small>Color</small><b>${P.color}</b></div>
+            <div class="tile"><small>Gender</small><b>${P.gender}</b></div>
+            <div class="tile tile--wide"><small>Abilities</small><b>${P.abilities}</b></div>
+            <div class="tile tile--wide"><small>Recommended Nature</small><b>${P.natures}</b></div>
+        </div></div>
+        <div class="section"><h3>Base Stats</h3>
+            ${P.stats.map(([l, v]) => `<div class="stat"><span>${l}</span><b>${v}</b><div class="bar"><i class="${statClass(v)}" style="width:${Math.min(v, 160) / 1.6}%"></i></div></div>`).join('')}
+            <div class="total">Total <b>${P.stats.reduce((a, [, v]) => a + v, 0)}</b></div>
+        </div>
+        <blockquote class="quote">${P.flavor}</blockquote>
+        <div class="section"><h3>Type Effectiveness</h3>
+            ${P.eff.map(([m, ts]) => `<div class="eff-row"><span>${m}</span><div class="types">${ts.map(typeIcon).join('')}</div></div>`).join('')}
+        </div>
+        <div class="section"><h3>Species</h3><div class="tiles">
+            <div class="tile tile--wide"><small>Genus</small><b>${P.genus}</b></div>
+            <div class="tile"><small>Egg Groups</small><b>${P.eggGroups}</b></div>
+            <div class="tile"><small>Growth Rate</small><b>${P.growth}</b></div>
+            <div class="tile"><small>Habitat</small><b>${P.habitat}</b></div>
+            <div class="tile"><small>Capture Rate</small><b>${P.capture}</b></div>
+        </div></div>
+        <div class="section"><h3>Moves</h3>
+            <div class="moves-tabs">
+                <button type="button" data-act="moves" data-v="lv" class="${s.moves === 'lv' ? 'on' : ''}">Level up (${MOVES_TOTAL.lv})</button>
+                <button type="button" data-act="moves" data-v="tm" class="${s.moves === 'tm' ? 'on' : ''}">TM (${MOVES_TOTAL.tm})</button>
+            </div>
+            ${moves.map(([lv, n, t, cat, pw, acc]) => `<div class="move"><span class="lv">${lv}</span>
+                <div><b>${n}</b><small>${cat[0].toUpperCase() + cat.slice(1)} · Power ${pw ?? '—'} · Acc. ${acc ?? '—'}</small></div>
+                <span class="mtype mtype--${t}">${t[0] + t.slice(1).toLowerCase()}</span></div>`).join('')}
+        </div>
+        <div class="links">More info: <a href="#">Bulbapedia ↗</a><a href="#">Smogon ↗</a></div>`;
+}
+
+function gamesHtml(s, cls = '') {
+    return `<p class="desc">Games where ${P.name} appears. Select this Pokémon to mark the games you own.</p>
+        <div class="games ${cls}">${GAMES.map(([id, name]) => {
+            const on = s.games.has(id);
+            return `<button type="button" class="game ${on ? 'on' : ''} ${s.visible && !on ? 'dim' : ''}" data-act="game" data-v="${id}">
+                ${s.selected ? `<span class="mini-chk ${on ? 'on' : ''}">${on ? I.check : ''}</span>` : ''}
+                <img src="../public/images/games/${id}.webp" alt=""><small>${esc(name)}</small></button>`;
+        }).join('')}</div>`;
+}
+
+function tcgHtml(s, withSearch = true) {
+    const fold = v => v.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const terms = fold(s.query).split(/\s+/).filter(Boolean);
+    const list = CARDS.filter(c => terms.every(t => fold(`${c.name} ${c.set}`).includes(t) || c.num.replace(/^0+/, '') === t.replace(/^0+/, '')))
+        .filter(c => s.status === 'all' || (s.status === 'owned') === s.cards.has(c.id));
+    const chip = (k, l) => `<button type="button" class="chip ${s.status === k ? 'on' : ''}" data-act="status" data-v="${k}">${l}</button>`;
+    return `${withSearch ? `<label class="search">${I.search}<input type="search" data-act="query" placeholder="Search card, set or number" value="${esc(s.query)}"></label>
+        <div class="chips">${chip('all', 'All')}${chip('owned', 'Owned')}${chip('missing', 'Missing')}</div>
+        <p class="count">${list.length} of ${P.cardTotal} cards (sample of ${CARDS.length})</p>` : ''}
+        <div class="tcg">${list.map(c => {
+            const on = s.cards.has(c.id);
+            return `<button type="button" class="tcard ${on ? 'on' : ''} ${s.visible && !on ? 'dim' : ''}" data-act="card" data-v="${c.id}" title="${esc(c.name)} · ${esc(c.set)}">
+                ${s.selected ? `<span class="mini-chk ${on ? 'on' : ''}">${on ? I.check : ''}</span>` : ''}
+                <img src="${c.img}" alt="" loading="lazy"></button>`;
+        }).join('')}</div>`;
+}
+
+function tabContent(s) {
+    return s.tab === 'info' ? infoNew(s) : s.tab === 'games' ? gamesHtml(s) : tcgHtml(s);
+}
+
+const img = s => s.shiny ? P.shiny : P.xl;
+const chk = s => `<button type="button" class="chk ${s.selected ? 'on' : ''}" data-act="select" title="Collection">${I.check}</button>`;
+const visBtn = (s, label = true) => label
+    ? `<button type="button" class="pill-btn vis ${s.visible ? 'on' : ''}" data-act="visible">${s.visible ? I.eye : I.eyeOff}Visibility</button>`
+    : `<button type="button" class="icon-btn ${s.visible ? 'on' : ''}" data-act="visible" title="Visibility">${s.visible ? I.eye : I.eyeOff}</button>`;
+const shinyBtn = s => `<button type="button" class="icon-btn ${s.shiny ? 'shiny-on' : ''}" data-act="shiny" title="Shiny">${I.sparkles}</button>`;
+const closeBtn = () => `<button type="button" class="icon-btn" title="Close">${I.x}</button>`;
+
+/* ---------- layouts ---------- */
+const LAYOUTS = {
+    current(s) {
+        const tab = k => `<button type="button" class="cur__tab ${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${I[k].replace('<svg', '<svg width="16" height="16"')} ${TAB_LABEL[k]}</button>`;
+        const row = (l, v) => `<div class="cur__row"><i></i><div><small>${l}</small><b>${v}</b></div></div>`;
+        let panel;
+        if (s.tab === 'info') {
+            panel = `<h3>General Information</h3>${row('Height', P.height)}${row('Weight', P.weight)}${row('Color', P.color)}${row('Abilities', P.abilities)}${row('Recommended Nature', P.natures)}${row('Region', P.region)}${row('Generation', P.generation)}${row('Gender Ratio', P.gender)}
+                <h3 style="margin-top:18px">Base Stats</h3>${P.stats.map(([l, v]) => `<div class="stat" style="grid-template-columns:70px 30px 1fr"><span>${l}</span><b>${v}</b><div class="bar"><i style="width:${v / 1.6}%"></i></div></div>`).join('')}
+                <blockquote class="quote" style="margin-top:16px">${P.flavor}</blockquote>
+                <h3>Moves learnt by level up</h3>
+                <div class="cur__table"><table><thead><tr><th>Lv./TM</th><th>Move</th><th>Type</th><th>Cat.</th><th>Power</th><th>Acc.</th></tr></thead><tbody>
+                ${MOVES_LV.map(([lv, n, t, c, p, a]) => `<tr><td>${lv}</td><td>${n}</td><td><span class="mtype mtype--${t}">${t}</span></td><td>${c}</td><td>${p ?? '—'}</td><td>${a ?? '—'}</td></tr>`).join('')}
+                </tbody></table></div>`;
+        } else if (s.tab === 'games') {
+            panel = gamesHtml(s);
+        } else {
+            panel = tcgHtml(s, false);
+        }
+        return `<div class="cur"><div class="cur__sheet">
+            <div class="cur__head">${chk(s)}${visBtn(s)}<button type="button" class="pill-btn">Close</button></div>
+            <div class="cur__body" data-scroll>
+                <div class="cur__nav"><span data-act="nav" data-v="-1">${prevDex() ? '‹ ' + prevDex() : ''}</span><span data-act="nav" data-v="1">${nextDex() ? nextDex() + ' ›' : ''}</span></div>
+                <div class="cur__card">
+                    <img class="hero-img" src="${img(s)}" alt="">
+                    <div class="info"><span class="dex">${P.dex}</span><b class="name">${P.name}</b><div class="types">${P.types.map(typeIcon).join('')}</div></div>
+                    <button type="button" class="cur__shiny ${s.shiny ? 'on' : ''}" data-act="shiny">✦ Shiny</button>
+                </div>
+                <div class="cur__tabs">${tab('info')}${tab('games')}${tab('tcg')}</div>
+                <div class="cur__panel">${panel}</div>
+            </div>
+            <div class="cur__foot">More information at: <a href="#">Bulbapedia ↗</a><a href="#">Smogon ↗</a></div>
+        </div></div>`;
+    },
+
+    A(s) {
+        const seg = k => `<button type="button" class="${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${I[k]}${TAB_LABEL[k]}</button>`;
+        return `<div class="scroll" data-scroll>
+            <div class="a-top">
+                <div class="a-bar">${chk(s)}${visBtn(s, false)}${shinyBtn(s)}<span class="spacer"></span>${closeBtn()}</div>
+                <div class="a-id">
+                    <img class="sprite" src="${img(s)}" alt="">
+                    <div class="who"><span class="dex">${P.dex}</span><div class="name">${P.name}</div><div class="types">${P.types.map(typeIcon).join('')}</div></div>
+                    <div class="a-nav"><button type="button" class="icon-btn" data-act="nav" data-v="-1" ${prevDex() ? '' : 'disabled style="opacity:.3"'}>${I.left}</button><button type="button" class="icon-btn" data-act="nav" data-v="1" ${nextDex() ? '' : 'disabled style="opacity:.3"'}>${I.right}</button></div>
+                </div>
+                <div class="seg">${seg('info')}${seg('games')}${seg('tcg')}</div>
+            </div>
+            <div class="content">${tabContent(s)}</div>
+        </div>`;
+    },
+
+    B(s) {
+        const tab = k => `<button type="button" class="${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${TAB_LABEL[k]}</button>`;
+        return `<div class="b-float">${closeBtn()}<span class="spacer"></span>${shinyBtn(s)}${visBtn(s, false)}${chk(s)}</div>
+            <div class="b-mini ${s.scroll > 250 ? 'show' : ''}" data-mini="250"><img src="${img(s)}" alt=""><b>${P.name}</b><span class="dex">${P.dex}</span></div>
+            <div class="scroll" data-scroll>
+                <div class="b-hero">
+                    ${prevDex() ? `<button type="button" class="b-arrow" style="left:12px" data-act="nav" data-v="-1">${I.left}</button>` : ''}
+                    ${nextDex() ? `<button type="button" class="b-arrow" style="right:12px" data-act="nav" data-v="1">${I.right}</button>` : ''}
+                    <img class="hero-img" src="${img(s)}" alt="">
+                    <span class="dex">${P.dex} · ${P.genus}</span>
+                    <div class="name">${P.name}</div>
+                    <div class="types">${P.types.map(typeIcon).join('')}</div>
+                </div>
+                <div class="b-tabs">${tab('info')}${tab('games')}${tab('tcg')}</div>
+                <div class="content">${tabContent(s)}</div>
+            </div>`;
+    },
+
+    C(s) {
+        const tab = k => `<button type="button" class="${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${I[k]}${TAB_LABEL[k]}</button>`;
+        return `<div class="scroll" data-scroll style="bottom:70px">
+                <div class="c-top">${closeBtn()}<div class="title">${P.name}<small class="dex">${P.dex}</small></div>
+                    <button type="button" class="icon-btn" data-act="nav" data-v="-1" ${prevDex() ? '' : 'disabled style="opacity:.3"'}>${I.left}</button><button type="button" class="icon-btn" data-act="nav" data-v="1" ${nextDex() ? '' : 'disabled style="opacity:.3"'}>${I.right}</button></div>
+                ${s.tab === 'info' ? `<div class="c-hero">
+                    <img class="hero-img" src="${img(s)}" alt="">
+                    <div class="facts"><div class="types">${P.types.map(typeIcon).join('')}</div>
+                        <span class="dex">${P.genus}</span>
+                        <button type="button" class="pill-btn ${s.shiny ? 'on' : ''}" data-act="shiny">${I.sparkles}Shiny</button>
+                        ${visBtn(s)}</div>
+                </div>` : ''}
+                <div class="content">${tabContent(s)}</div>
+            </div>
+            <button type="button" class="c-fab ${s.selected ? 'on' : ''}" data-act="select">${s.selected ? I.check + 'In collection' : I.plus + 'Add'}</button>
+            <nav class="c-tabbar">${tab('info')}${tab('games')}${tab('tcg')}</nav>`;
+    },
+
+    D(s) {
+        const tab = k => `<button type="button" class="${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${TAB_LABEL[k]}</button>`;
+        return `<div class="scroll" data-scroll>
+            <div class="d-head">
+                <div class="d-bar">${closeBtn()}<span class="spacer"></span>${shinyBtn(s)}${visBtn(s, false)}${chk(s)}</div>
+                <div class="d-main">
+                    <div class="who"><span class="dex">${P.dex}</span><div class="name">${P.name}</div>
+                        <div class="types" style="margin-top:8px">${P.types.map(typeIcon).join('')}</div></div>
+                    <img class="hero-img" src="${img(s)}" alt="">
+                </div>
+            </div>
+            <div class="d-swipe"><button type="button" data-act="nav" data-v="-1" style="visibility:${prevDex() ? 'visible' : 'hidden'}">${I.left}${prevDex()}</button><span>swipe to switch</span><button type="button" data-act="nav" data-v="1" style="visibility:${nextDex() ? 'visible' : 'hidden'}">${nextDex()}${I.right}</button></div>
+            <div class="d-tabs">${tab('info')}${tab('games')}${tab('tcg')}</div>
+            <div class="content">${tabContent(s)}</div>
+        </div>`;
+    },
+
+    E(s) {
+        const tab = k => `<button type="button" class="${s.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${I[k]}${TAB_LABEL[k]}</button>`;
+        // Compact bar slides in once the big header (~240px) has scrolled out of view.
+        return `<div class="e-mini ${s.scroll > 220 ? 'show' : ''}" data-mini="220">
+                ${closeBtn()}<img src="${img(s)}" alt="">
+                <div class="who"><span class="dex">${P.dex}</span><b>${P.name}</b></div>
+                ${shinyBtn(s)}${visBtn(s, false)}${chk(s)}
+            </div>
+            <div class="scroll" data-scroll style="bottom:70px">
+                <div class="d-head">
+                    <div class="d-bar">${closeBtn()}<span class="spacer"></span>${shinyBtn(s)}${visBtn(s, false)}${chk(s)}</div>
+                    <div class="d-main">
+                        <div class="who"><span class="dex">${P.dex}</span><div class="name">${P.name}</div>
+                            <div class="types" style="margin-top:8px">${P.types.map(typeIcon).join('')}</div></div>
+                        <img class="hero-img" src="${img(s)}" alt="">
+                    </div>
+                </div>
+                <div class="d-swipe"><button type="button" data-act="nav" data-v="-1" style="visibility:${prevDex() ? 'visible' : 'hidden'}">${I.left}${prevDex()}</button><span>swipe to switch</span><button type="button" data-act="nav" data-v="1" style="visibility:${nextDex() ? 'visible' : 'hidden'}">${nextDex()}${I.right}</button></div>
+                <div class="content">${tabContent(s)}</div>
+            </div>
+            <nav class="c-tabbar e-tabbar">${tab('info')}${tab('games')}${tab('tcg')}</nav>`;
+    },
+};
+
+const OPTIONS = [
+    { key: 'A', title: 'A · Cabeçalho compacto',
+      what: 'É o layout do mock da busca: imagem pequena ao lado do nome, ações como ícones numa linha e abas em "segmentos" logo abaixo. O cabeçalho fica preso no topo e o resto da tela é do conteúdo.',
+      pros: ['Mais espaço para o conteúdo (cartas, jogos, moves)', 'As abas e o botão de coleção nunca somem', 'Menor mudança em relação a hoje'],
+      cons: ['A imagem do Pokémon fica pequena'] },
+    { key: 'B', title: 'B · Imagem grande que encolhe',
+      what: 'Abre com a imagem grande e centralizada. Ao rolar, ela sai de cena e aparece uma barra fina com o nome no topo; as abas grudam logo abaixo.',
+      pros: ['Mantém o "momento" de ver o Pokémon grande', 'Depois de rolar, se comporta como a opção A'],
+      cons: ['Na primeira tela, o conteúdo começa mais embaixo', 'Mais trabalho para implementar (efeito de rolagem)'] },
+    { key: 'C', title: 'C · Abas embaixo (estilo app)',
+      what: 'Abas como barra de navegação no rodapé, como em apps nativos, e o botão "Adicionar / Na coleção" flutuando acima dela. A imagem grande só aparece na aba Info.',
+      pros: ['Abas ao alcance do polegar', 'Botão de coleção grande e claro', 'Cara de app instalado (combina com o PWA)'],
+      cons: ['A barra e o botão ocupam a parte de baixo da tela', 'É a opção mais diferente da versão de computador'] },
+    { key: 'D', title: 'D · Cartão na cor do tipo',
+      what: 'Cabeçalho com degradê na cor do tipo (amarelo para Elétrico), nome grande e imagem ao lado. Abas sublinhadas, na mesma cor, e anterior/próximo como "deslize".',
+      pros: ['Visual mais marcante, cada Pokémon com sua cor', 'Cabeçalho compacto, mas a imagem ainda é grande'],
+      cons: ['Precisa definir uma cor para cada um dos 18 tipos', 'Pokémon com dois tipos precisam de uma regra (cor do primeiro tipo)'] },
+    { key: 'E', title: 'E · Cartão na cor do tipo + abas embaixo',
+      what: 'O cabeçalho da D (degradê na cor do tipo, nome grande, imagem ao lado) com a barra de abas no rodapé da C. A aba ativa usa a cor do tipo. Ao rolar para baixo, uma barra compacta (Pokémon pequeno, nome, fechar, Shiny, Visibility e coleção) desce no topo, então os botões nunca somem.',
+      pros: ['O visual marcante da D, com as abas ao alcance do polegar', 'As abas nunca somem, mesmo rolando listas longas', 'Cara de app instalado (combina com o PWA)'],
+      cons: ['Precisa definir uma cor para cada um dos 18 tipos', 'Mais um elemento para implementar (a barra que aparece ao rolar)'] },
+];
+
+let current = OPTIONS.find(o => o.key === 'E');
+const states = { current: newState(), option: newState() };
+
+function render(which) {
+    const el = document.getElementById(`phone-${which}`);
+    const s = states[which];
+    const prevScroll = el.querySelector('[data-scroll]')?.scrollTop ?? 0;
+    if (!s.keepScroll) s.scroll = 0; // tab change scrolls back to top, so the compact bar must start hidden
+    const focused = document.activeElement?.dataset.act === 'query' && el.contains(document.activeElement);
+    const caret = focused ? document.activeElement.selectionStart : null;
+    el.innerHTML = which === 'current' ? LAYOUTS.current(s) : LAYOUTS[current.key](s);
+    const sc = el.querySelector('[data-scroll]');
+    if (sc) {
+        sc.scrollTop = s.keepScroll ? prevScroll : 0;
+        sc.addEventListener('scroll', () => {
+            s.scroll = sc.scrollTop;
+            const mini = el.querySelector('[data-mini]');
+            mini?.classList.toggle('show', sc.scrollTop > Number(mini.dataset.mini));
+        });
+    }
+    s.keepScroll = false;
+    if (focused) {
+        const input = el.querySelector('[data-act="query"]');
+        input.focus();
+        input.setSelectionRange(caret, caret);
+    }
+}
+
+function renderAll() { render('current'); render('option'); }
+
+function renderPicker() {
+    document.getElementById('picker').innerHTML = OPTIONS.map(o =>
+        `<button type="button" data-key="${o.key}" aria-pressed="${o === current}">${o.title}</button>`).join('');
+    document.getElementById('info').innerHTML = `<strong>${current.title}</strong><div>${current.what}</div>
+        <ul>${current.pros.map(p => `<li>👍 ${p}</li>`).join('')}${current.cons.map(c => `<li>👎 ${c}</li>`).join('')}</ul>`;
+    document.getElementById('opt-label').textContent = `Opção ${current.title}`;
+}
+
+document.getElementById('picker').addEventListener('click', e => {
+    const b = e.target.closest('[data-key]');
+    if (!b) return;
+    current = OPTIONS.find(o => o.key === b.dataset.key);
+    states.option = newState();
+    renderPicker();
+    render('option');
+});
+
+document.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    const screen = e.target.closest('.screen');
+    if (!screen) return;
+    if (e.target.closest('a')) e.preventDefault();
+    if (!el) return;
+    const which = screen.id.replace('phone-', '');
+    const s = states[which];
+    const { act, v } = el.dataset;
+    s.keepScroll = act !== 'tab';
+    if (act === 'tab') s.tab = v;
+    else if (act === 'select') s.selected = !s.selected;
+    else if (act === 'visible') s.visible = !s.visible;
+    else if (act === 'shiny') s.shiny = !s.shiny;
+    else if (act === 'moves') s.moves = v;
+    else if (act === 'status') s.status = v;
+    else if (act === 'game' && s.selected) s.games.has(v) ? s.games.delete(v) : s.games.add(v);
+    else if (act === 'card' && s.selected) s.cards.has(v) ? s.cards.delete(v) : s.cards.add(v);
+    else if (act === 'query') return;
+    else if (act === 'nav') { navigate(Number(v), screen); return; }
+    render(which);
+});
+
+document.addEventListener('input', e => {
+    if (e.target.dataset.act !== 'query') return;
+    const which = e.target.closest('.screen').id.replace('phone-', '');
+    states[which].query = e.target.value;
+    states[which].keepScroll = true;
+    render(which);
+});
+
+// Both phones show the same Pokémon, so navigating re-renders both.
+function navigate(step, screen) {
+    const target = dexIndex + step;
+    if (!DEX[target]) {
+        if (screen) { screen.classList.remove('edge-bump'); void screen.offsetWidth; screen.classList.add('edge-bump'); }
+        return;
+    }
+    loadPokemon(target);
+    for (const which of ['current', 'option']) {
+        const keep = states[which];
+        states[which] = { ...newState(), tab: keep.tab, visible: keep.visible };
+        render(which);
+        const el = document.getElementById(`phone-${which}`);
+        el.classList.remove('slide-from-right', 'slide-from-left'); void el.offsetWidth;
+        el.classList.add(step > 0 ? 'slide-from-right' : 'slide-from-left');
+    }
+}
+
+// Horizontal swipe anywhere on the option phone. It works at any scroll position because it is
+// read from the gesture's overall direction, not from the scroll container's position.
+const SWIPE_MIN_X = 60;
+let swipeStart = null;
+let suppressClick = false;
+function swipeBegin(x, y, target) {
+    const screen = target.closest('#phone-option');
+    if (!screen || target.closest('input, .chips')) { swipeStart = null; return; }
+    swipeStart = { x, y, screen };
+}
+function swipeEnd(x, y) {
+    if (!swipeStart) return;
+    const dx = x - swipeStart.x, dy = y - swipeStart.y;
+    const screen = swipeStart.screen;
+    swipeStart = null;
+    if (Math.abs(dx) < SWIPE_MIN_X || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 0);
+    navigate(dx < 0 ? 1 : -1, screen);
+}
+document.addEventListener('touchstart', e => swipeBegin(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+document.addEventListener('touchend', e => swipeEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+// Mouse drag, so it can be tried on the computer too.
+document.addEventListener('mousedown', e => swipeBegin(e.clientX, e.clientY, e.target));
+document.addEventListener('mouseup', e => swipeEnd(e.clientX, e.clientY));
+document.addEventListener('click', e => { if (suppressClick) { suppressClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+document.getElementById('phone-option').addEventListener('dragstart', e => e.preventDefault());
+
+renderPicker();
+renderAll();
+</script>
+</body>
+</html>

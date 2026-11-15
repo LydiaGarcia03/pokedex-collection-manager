@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de filtros — mock</title>
+<style>
+    :root {
+        --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72); --faint: rgba(226, 232, 240, 0.5);
+        --accent: #9cc8ed; --accent-ink: #092f58; --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --field: rgba(3, 24, 51, 0.28); --panel: #051629; --chip: #0A2F59;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+        min-height: 100vh;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .page { max-width: 1500px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 18px; color: var(--muted); max-width: 900px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button { padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600; border: 1px solid rgba(147, 197, 253, 0.62); }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .frames { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .desktop-wrap { flex: 1 1 900px; min-width: 0; }
+    .desktop { position: relative; height: 760px; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: radial-gradient(circle at top, rgba(37,99,235,.25), transparent 35%), linear-gradient(180deg,#0b3360,#082744); }
+    .phone { width: 360px; height: 740px; padding: 10px; border-radius: 38px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); flex: 0 0 auto; }
+    .screen { position: relative; height: 100%; overflow: hidden; border-radius: 28px; background: radial-gradient(circle at top, rgba(37,99,235,.25), transparent 35%), linear-gradient(180deg,#0b3360,#082744); }
+    .notes { margin-top: 36px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- fake page behind ---------- */
+    .bg-scroll { position: absolute; inset: 0; overflow: hidden; }
+    .toolbar { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 22px 24px 12px; position: relative; z-index: 5; }
+    .phone .toolbar { padding: 12px; gap: 8px; }
+    .search { flex: 1; max-width: 560px; height: 50px; display: flex; align-items: center; padding: 0 22px; border-radius: 999px; background: var(--field); border: 1px solid rgba(96,165,250,.55); color: rgba(229,242,255,.65); font-style: italic; }
+    .phone .search { height: 44px; padding: 0 16px; font-size: .9rem; }
+    .filters-btn { position: relative; height: 50px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: var(--field); border: 1px solid rgba(96,165,250,.55); font-weight: 600; }
+    .phone .filters-btn { height: 44px; padding: 0 14px; font-size: .85rem; }
+    .filters-btn.active { border-color: var(--accent); }
+    .filters-btn .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font-size: .72rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+    .filters-btn svg { width: 15px; height: 15px; }
+    .showing { text-align: center; color: var(--muted); font-style: italic; font-size: .85rem; margin: 6px 0 14px; }
+    .fake-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 16px; padding: 0 24px; }
+    .phone .fake-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 12px; }
+    .fake-card { aspect-ratio: 1; border-radius: 16px; background: rgba(147,197,253,.08); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
+    .fake-card img { width: 80%; }
+    .dim-layer { position: absolute; inset: 0; z-index: 20; background: rgba(1,10,25,.55); animation: fade .15s; }
+    @keyframes fade { from { opacity: 0; } }
+
+    /* ---------- shared controls ---------- */
+    .sec-title { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 8px; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .sec-title button { border: 0; background: none; color: #9fc9f8; font-size: .75rem; font-weight: 700; text-transform: none; letter-spacing: 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: var(--chip); color: #9fc9f8; border: 1px solid rgba(147,197,253,.45); font-size: .82rem; font-weight: 600; }
+    .chip small { font-weight: 500; opacity: .7; }
+    .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .chip img { width: 16px; height: 16px; border-radius: 4px; }
+    .gen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .gen { padding: 7px 8px; border-radius: 12px; background: var(--chip); border: 1px solid rgba(147,197,253,.4); text-align: left; line-height: 1.15; }
+    .gen b { display: block; font-size: .82rem; }
+    .gen small { color: var(--muted); font-size: .7rem; }
+    .gen.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .gen.on small { color: rgba(9,47,88,.75); }
+    .type-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .phone .type-grid { grid-template-columns: repeat(6, 1fr); }
+    .type { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; border-radius: 10px; border: 1px solid transparent; background: rgba(147,197,253,.06); font-size: .62rem; color: var(--muted); }
+    .type img { width: 26px; height: 26px; border-radius: 6px; opacity: .55; filter: saturate(.6); transition: opacity .12s; }
+    .type.on { border-color: var(--accent); background: rgba(156,200,237,.16); color: var(--text); }
+    .type.on img { opacity: 1; filter: none; }
+    .seg { display: flex; padding: 3px; gap: 3px; border-radius: 12px; background: rgba(3,24,51,.55); border: 1px solid var(--line-soft); }
+    .seg button { flex: 1; height: 34px; border: 0; border-radius: 9px; background: transparent; color: #9fc9f8; font-weight: 700; font-size: .82rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .seg button small { font-weight: 500; opacity: .7; }
+    .seg button.on { background: var(--accent); color: var(--accent-ink); }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; font-size: .88rem; }
+    .switch-row small { display: block; color: var(--faint); font-size: .72rem; }
+    .sw { width: 42px; height: 24px; border-radius: 99px; background: rgba(96,165,250,.15); border: 1px solid rgba(96,165,250,.35); position: relative; flex: 0 0 auto; }
+    .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #f1f2f4; transition: transform .15s; }
+    .sw.on { background: #3b82f6; border-color: #3b82f6; }
+    .sw.on::after { transform: translateX(18px); }
+    .game-list { display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+    .game-group { margin: 6px 0 2px; font-size: .7rem; color: var(--faint); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .game { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 9px; border: 0; background: transparent; text-align: left; font-size: .84rem; }
+    .game img { width: 22px; height: 22px; object-fit: contain; }
+    .game .box { margin-left: auto; width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid rgba(147,197,253,.6); display: inline-flex; align-items: center; justify-content: center; }
+    .game.on { background: rgba(156,200,237,.14); }
+    .game.on .box { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .game .box svg { width: 12px; height: 12px; }
+    .game-search { width: 100%; height: 36px; padding: 0 12px; margin-bottom: 6px; border-radius: 10px; background: var(--field); border: 1px solid var(--line); outline: none; font-size: .85rem; }
+    .dlc { margin-top: 10px; padding: 10px; border-radius: 12px; background: rgba(156,200,237,.08); border: 1px dashed var(--line); }
+    .footer { display: flex; gap: 10px; align-items: center; }
+    .btn-ghost { height: 42px; padding: 0 16px; border-radius: 999px; background: transparent; border: 1px solid rgba(229,242,255,.25); color: rgba(229,242,255,.75); font-weight: 600; }
+    .btn-primary { flex: 1; height: 42px; padding: 0 16px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 800; }
+    .x { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: rgba(9,47,88,.15); }
+    .x svg { width: 11px; height: 11px; }
+
+    /* ---------- TODAY ---------- */
+    .today { position: absolute; z-index: 30; top: 82px; right: max(24px, calc(50% - 360px)); width: 480px; max-width: calc(100% - 24px); padding: 12px; border-radius: 12px; background: var(--panel); border: 1px solid #0b3360; box-shadow: 0 16px 40px rgba(0,0,0,.4); display: flex; flex-direction: column; gap: 12px; }
+    .phone .today { top: 64px; right: 10px; left: 10px; width: auto; }
+    .today .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .phone .today .grid2 { grid-template-columns: 1fr; }
+    .combo label { display: block; margin-bottom: 6px; font-size: .88rem; color: #e5f2ff; }
+    .combo div { height: 40px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; border-radius: 10px; background: #12305a; border: 1px solid rgba(96,165,250,.35); font-size: .9rem; }
+    .combo svg { width: 14px; height: 14px; }
+    .ghost-slot { visibility: hidden; }
+
+    /* ---------- A: chips panel ---------- */
+    .a-panel { position: absolute; z-index: 30; top: 82px; right: max(24px, calc(50% - 380px)); width: 560px; max-width: calc(100% - 24px); max-height: calc(100% - 100px); display: flex; flex-direction: column; border-radius: 18px; background: var(--panel); border: 1px solid rgba(96,165,250,.4); box-shadow: 0 18px 50px rgba(0,0,0,.5); overflow: hidden; }
+    .phone .a-panel { top: 64px; left: 8px; right: 8px; width: auto; max-height: calc(100% - 74px); }
+    .a-body { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 16px; scrollbar-width: thin; }
+    .a-foot { padding: 10px 14px; border-top: 1px solid var(--line-soft); background: #04111f; }
+
+    /* ---------- B: drawer / sheet ---------- */
+    .drawer { position: absolute; z-index: 30; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100%; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid rgba(96,165,250,.4); box-shadow: -18px 0 50px rgba(0,0,0,.45); animation: slide-in .22s ease-out; }
+    @keyframes slide-in { from { transform: translateX(40px); opacity: .4; } }
+    .phone .drawer { top: auto; left: 0; height: 86%; width: 100%; border-left: 0; border-top: 1px solid rgba(96,165,250,.5); border-radius: 22px 22px 0 0; animation: sheet-up .22s ease-out; }
+    @keyframes sheet-up { from { transform: translateY(30%); } }
+    .grab { width: 40px; height: 4px; margin: 8px auto 0; border-radius: 4px; background: rgba(147,197,253,.4); }
+    .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; }
+    .drawer-head b { font-size: 1.1rem; }
+    .round { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(147,197,253,.14); border: 1px solid rgba(147,197,253,.32); }
+    .round svg { width: 16px; height: 16px; }
+    .acc { flex: 1; overflow-y: auto; padding: 0 12px; scrollbar-width: thin; }
+    .acc-item { border-bottom: 1px solid var(--line-soft); }
+    .acc-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 14px 4px; background: none; border: 0; text-align: left; }
+    .acc-head b { font-size: .95rem; }
+    .acc-head .sum { margin-left: auto; color: var(--muted); font-size: .82rem; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acc-head .sum.set { color: var(--accent); font-weight: 700; }
+    .acc-head svg { width: 16px; height: 16px; flex: 0 0 auto; transition: transform .15s; }
+    .acc-item.open .acc-head svg { transform: rotate(90deg); }
+    .acc-body { padding: 0 4px 14px; }
+    .drawer-foot { padding: 12px 16px 16px; border-top: 1px solid var(--line-soft); }
+
+    /* ---------- C: pill bar ---------- */
+    .pillbar { position: relative; z-index: 6; display: flex; gap: 8px; justify-content: center; padding: 0 24px 6px; flex-wrap: wrap; }
+    .phone .pillbar { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 0 12px 6px; scrollbar-width: none; }
+    .pill { flex: 0 0 auto; height: 36px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: var(--field); border: 1px solid rgba(96,165,250,.5); font-size: .85rem; font-weight: 600; white-space: nowrap; }
+    .pill svg { width: 14px; height: 14px; }
+    .pill.set { background: rgba(156,200,237,.18); border-color: var(--accent); color: #dff0ff; }
+    .pill.open { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .active-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; padding: 4px 24px 0; }
+    .phone .active-row { justify-content: flex-start; padding: 4px 12px 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .tag { flex: 0 0 auto; height: 28px; padding: 0 6px 0 10px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: .76rem; font-weight: 700; border: 0; }
+    .clear-all { flex: 0 0 auto; height: 28px; padding: 0 10px; border-radius: 999px; background: none; border: 1px solid rgba(229,242,255,.25); color: rgba(229,242,255,.75); font-size: .76rem; }
+    .pop { position: absolute; z-index: 30; width: 380px; max-width: calc(100% - 24px); padding: 14px; border-radius: 16px; background: var(--panel); border: 1px solid rgba(96,165,250,.4); box-shadow: 0 18px 50px rgba(0,0,0,.5); animation: fade .12s; }
+    .phone .pop { left: 0 !important; right: 0; bottom: 0; top: auto !important; width: 100%; max-width: none; border-radius: 22px 22px 0 0; padding-bottom: 18px; animation: sheet-up .2s ease-out; }
+    .pop-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+
+    /* ---------- D: side tabs ---------- */
+    .d-panel { position: absolute; z-index: 30; top: 82px; right: max(24px, calc(50% - 400px)); width: 640px; max-width: calc(100% - 24px); height: 470px; display: grid; grid-template-columns: 170px 1fr; grid-template-rows: 1fr auto; border-radius: 18px; background: var(--panel); border: 1px solid rgba(96,165,250,.4); box-shadow: 0 18px 50px rgba(0,0,0,.5); overflow: hidden; }
+    .d-nav { grid-row: 1 / 3; display: flex; flex-direction: column; gap: 2px; padding: 10px; background: #04111f; border-right: 1px solid var(--line-soft); }
+    .d-nav button { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 10px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-weight: 700; font-size: .88rem; color: #9fc9f8; }
+    .d-nav button em { font-style: normal; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font-size: .68rem; display: inline-flex; align-items: center; justify-content: center; }
+    .d-nav button.on { background: rgba(156,200,237,.16); color: var(--text); }
+    .d-content { padding: 16px; overflow-y: auto; scrollbar-width: thin; }
+    .d-foot { grid-column: 2; padding: 10px 16px; border-top: 1px solid var(--line-soft); }
+    .m-full { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: var(--panel); animation: fade .15s; }
+    .m-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; border-bottom: 1px solid var(--line-soft); }
+    .m-head b { flex: 1; font-size: 1.05rem; }
+    .m-list { flex: 1; overflow-y: auto; }
+    .m-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 16px; border: 0; border-bottom: 1px solid var(--line-soft); background: none; text-align: left; }
+    .m-row b { font-size: .95rem; }
+    .m-row span { margin-left: auto; color: var(--muted); font-size: .82rem; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .m-row span.set { color: var(--accent); font-weight: 700; }
+    .m-row svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .m-body { flex: 1; overflow-y: auto; padding: 14px; }
+    .m-foot { padding: 12px 14px 16px; border-top: 1px solid var(--line-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Painel de filtros da listagem</h1>
+    <p class="lede">
+        Comparação entre o painel de hoje e quatro formas novas, no computador e no celular. Tudo é
+        clicável: marque gerações, tipos, jogos, coleção e opções. O "Show N Pokémon" calcula com os
+        dados reais dos 1.288 Pokémon (a coleção é de mentira, só para o exemplo). Escolher um único
+        jogo com DLC (Sword, Shield, Scarlet ou Violet) faz aparecer o campo de DLC. Abra este arquivo
+        direto no navegador, a partir da pasta <code>docs/</code>, para as imagens carregarem.
+    </p>
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="frames">
+        <div class="desktop-wrap"><p class="frame-label">Computador</p><div class="desktop" id="frame-desktop"></div></div>
+        <div><p class="frame-label">Celular</p><div class="phone"><div class="screen" id="frame-phone"></div></div></div>
+    </div>
+    <div class="notes">
+        <h2>Em todas as opções novas</h2>
+        <ul>
+            <li>Gerações viram botões com a região embaixo; tipos viram uma grade com os ícones do app, em vez de uma lista comprida.</li>
+            <li>Jogos continuam em lista (são 38), agrupados por geração, com o ícone de cada jogo e uma busca.</li>
+            <li>"Show N Pokémon" mostra quantos vão aparecer antes de fechar o painel.</li>
+            <li>Os filtros aplicam na hora, como hoje. O botão "Show N Pokémon" só fecha o painel.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const P=[[1,3,7,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,3,7,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,3,7,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,3,7,12,[7,8,9,10,11,12,19]],[1,3,7,12,[13,14]],[1,1,-1,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,1,-1,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,1,9,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,1,9,12,[8,9,10,11,12,19]],[1,1,9,12,[7,9,10,11,12,19]],[1,1,9,12,[13,14]],[1,2,-1,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,2,-1,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,2,-1,4,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]],[1,2,-1,12,[7,8,9,10,11,12,19]],[1,2,-1,12,[13,14]],[1,11,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,27,7,8,28,29,9,10,11,12,13,14,16]],[1,11,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,27,7,8,28,29,9,10,11,12,13,14,16]],[1,11,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,27,7,8,28,29,9,10,11,12,13,14,16]],[1,11,9,8,[13,14]],[1,11,7,0,[0,1,20,21,22,3,4,23,24,25,5,6,30,31,7,8,32,33,9,10,11,12,15,19]],[1,11,7,0,[0,1,20,21,22,3,4,23,24,25,5,6,30,31,7,8,32,33,9,10,11,12,15,19]],[1,11,7,0,[0,1,20,21,22,3,4,23,24,25,5,6,30,31,7,8,32,33,9,10,11,12,15,19]],[1,11,7,8,[32,33,11,12,19]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,9,10,11,12,15,16,19]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,9,10,11,12,15,16,19]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,9,10,11,12,15,16,19]],[1,0,9,8,[32,33,11,12,19]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,32,33,11,12,15,16]],[1,0,-1,8,[28,29,9,10,11,12]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,32,33,11,12,15,16]],[1,0,-1,8,[28,29,9,10,11,12]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,15,16]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,15,16]],[1,7,-1,0,[0,20,21,22,4,23,24,25,5,6,7,8,9,10,11,16,17,18,19]],[1,7,-1,0,[0,20,21,22,4,23,24,25,5,6,7,8,9,10,11,16,17,18,19]],[1,4,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,4,-1,8,[13,14]],[1,4,-1,0,[0,1,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,9,10,11,12,13,14,15,16,37,17,18,19]],[1,4,-1,8,[28,29,9,10,11,12,13,14,19]],[1,4,-1,8,[0,1,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,9,10,11,12,13,14,15,16,37,17,18,19]],[1,4,-1,8,[0,1,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,9,10,11,12,13,14,15,16,37,17,18,19]],[1,8,-1,0,[1,2,20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,7,8,32,33,12,13,14,15,17,18]],[1,8,-1,8,[28,9,12,13,14,17]],[1,8,-1,0,[1,2,20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,7,8,32,33,12,13,14,15,17,18]],[1,8,-1,8,[28,9,12,13,14,17]],[1,7,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,7,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,7,8,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,7,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,7,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,7,8,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16]],[1,17,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,17,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,17,9,8,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,1,-1,0,[1,2,20,34,35,3,36,23,24,25,5,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,1,-1,8,[28,29,9,10,11,12,13,14,37,18]],[1,1,-1,0,[1,2,20,34,35,3,36,23,24,25,5,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,1,-1,8,[28,29,9,10,11,12,13,14,37,18]],[1,0,17,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,0,17,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,7,9,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,7,9,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,3,7,0,[0,2,20,21,22,34,35,4,36,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,17,18]],[1,3,7,0,[0,2,20,21,22,34,35,4,36,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,17,18]],[1,3,7,0,[0,2,20,21,22,34,35,4,36,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,17,18]],[1,11,3,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,7,8,32,33,28,29,9,10,11,12,15,16,37]],[1,11,3,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,7,8,32,33,28,29,9,10,11,12,15,16,37]],[1,11,7,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,15,16,17,18]],[1,11,7,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,15,16,17,18]],[1,8,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18]],[1,8,-1,8,[28,29,9,10,11,12,13,14,17,18]],[1,8,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18]],[1,8,-1,8,[28,29,9,10,11,12,13,14,17,18]],[1,0,-1,0,[1,20,22,3,4,23,24,25,5,27,31,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,0,-1,8,[28,29,9,10,11,12,13,14,19]],[1,0,-1,8,[13,14,17,18,19]],[1,0,-1,8,[13,14]],[1,0,-1,0,[1,20,22,3,4,23,24,25,5,27,31,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,0,-1,8,[28,29,9,10,11,12,13,14,19]],[1,2,-1,0,[0,1,2,20,21,22,34,35,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,2,-1,0,[0,1,2,20,21,22,34,35,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,6,-1,0,[0,2,21,3,4,23,24,25,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18,19]],[1,6,-1,0,[0,2,21,3,4,23,24,25,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18,19]],[1,1,-1,0,[0,2,21,22,4,23,24,25,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18]],[1,1,-1,8,[37,17,18]],[1,1,-1,0,[0,2,21,22,4,23,24,25,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18]],[1,1,-1,8,[37,17,18]],[1,2,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,2,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,2,6,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,10,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,10,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,10,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,10,-1,8,[7,8,32,33,19]],[1,6,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,6,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,6,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,19]],[1,6,-1,8,[13,14]],[1,3,7,0,[1,2,20,21,22,3,23,24,25,5,6,26,30,7,8,11,12,15,16,17,18,19]],[1,3,7,0,[1,2,20,21,22,3,23,24,25,5,6,26,30,7,8,11,12,15,16,17,18,19]],[1,3,7,0,[1,2,20,21,22,3,23,24,25,5,6,26,30,7,8,11,12,15,16,17,18,19]],[1,3,7,8,[19]],[1,2,7,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,2,7,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,12,8,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,15,16,37,17,18]],[1,12,8,8,[28,29,9,10,11,12,17,18]],[1,12,8,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,15,16,37,17,18]],[1,12,8,8,[28,29,9,10,11,12,17,18]],[1,12,8,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,7,8,32,33,28,29,9,10,11,12,15,16,37,17,18]],[1,12,8,8,[28,29,9,10,11,12,17,18]],[1,1,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,37]],[1,1,-1,8,[13,14]],[1,1,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,37]],[1,1,-1,8,[13,14]],[1,2,10,0,[0,1,2,20,21,22,3,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,2,10,8,[13,14,17,18,19]],[1,2,10,0,[0,1,2,20,21,22,3,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,2,10,8,[32,33,11,12,19]],[1,2,10,8,[13,14,17,18,19]],[1,4,16,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,4,16,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,0,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,11,12,13,14,15,16,19]],[1,0,9,8,[13,14,19]],[1,0,9,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,15,16,17,18]],[1,0,9,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,15,16,17,18]],[1,2,-1,0,[0,1,2,20,21,22,3,4,24,25,5,6,26,30,27,31,7,8,32,33,9,10,11,12,15,16,17,18]],[1,2,5,0,[0,1,2,20,21,22,3,4,24,25,5,6,26,30,27,31,7,8,32,33,9,10,11,12,15,16,17,18]],[1,7,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18]],[1,7,-1,8,[28,29,9,10,11,12,17,18]],[1,7,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18]],[1,7,-1,8,[28,29,9,10,11,12,17,18]],[1,2,-1,0,[0,1,2,20,21,22,4,23,24,25,5,6,26,30,27,31,7,28,29,9,10,11,12,13,14,15,16,17,18]],[1,2,5,0,[0,1,2,20,21,22,4,23,24,25,5,6,26,30,27,31,7,28,29,9,10,11,12,13,14,15,16,17,18]],[1,13,7,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,13,7,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,13,7,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,13,7,8,[7,8,19]],[1,13,7,8,[13,14]],[1,12,8,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,11,12,13,14,15,16,37,19]],[1,10,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18]],[1,10,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,15,16,17,18]],[1,2,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16]],[1,2,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16]],[1,2,-1,8,[13,14]],[1,4,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,11,12,15,16,17,18]],[1,4,-1,8,[37]],[1,4,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,11,12,15,16,17,18]],[1,4,-1,8,[37]],[1,3,10,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,3,10,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,3,10,8,[28,29,9,10,11,12,13,14,17,18]],[1,8,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,19]],[1,8,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,19]],[1,8,-1,8,[28,29,9,10,11,12,13,14,19]],[1,6,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,17,18]],[1,6,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,11,12,13,14,15,16,17,18]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,9,10,11,12,13,14,15,16,37]],[1,7,-1,0,[0,1,20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,32,33,11,12,13,14,15,16,17,18]],[1,7,-1,0,[0,1,20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,32,33,11,12,13,14,15,16,17,18]],[1,7,-1,8,[13,14]],[1,8,12,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16,37,17,18]],[1,8,12,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16,37,17,18]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,3,-1,0,[0,1,2,20,21,22,3,4,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16,37]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,11,12,13,14,15,16,19]],[1,0,-1,8,[7,8,19]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16,17,18]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,11,12,13,14,15,16,17,18]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,8,32,33,28,29,9,10,11,12,13,14,15,16,19]],[1,2,10,0,[0,1,2,20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,8,32,33,28,29,9,10,11,12,13,14,15,16,19]],[1,2,10,8,[0,1,2,20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,8,32,33,28,29,9,10,11,12,13,14,15,16,19]],[1,10,17,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,7,8,9,10,11,12,13,14,15,16,37,19]],[1,10,17,8,[13,14,19]],[1,11,9,0,[0,2,20,21,22,4,24,25,5,6,7,8,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,5,10,0,[0,1,20,21,22,3,4,23,24,25,5,6,26,30,7,8,9,10,11,12,13,14,15,16]],[1,4,-1,0,[0,20,21,22,4,23,24,25,5,6,26,30,27,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,1,-1,0,[1,20,21,22,3,23,24,25,5,6,26,30,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,11,-1,0,[1,2,20,21,22,34,35,3,36,23,25,5,6,26,30,27,8,32,33,28,29,9,10,11,12,13,14,15,16,19]],[1,11,-1,8,[8,32,33,19]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,0,-1,8,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18]],[1,0,-1,8,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18]],[1,0,-1,8,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18]],[1,2,-1,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,2,9,0,[0,1,2,20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,2,9,8,[7,8,32,33,19]],[1,2,5,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18]],[1,2,5,8,[13,14]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,17,18]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,0,-1,8,[13,14]],[1,2,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,4,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,1,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,32,33,28,29,9,10,11,12,13,14,15,16,37,17,18,19]],[1,12,2,0,[0,1,2,3,4,23,24,25,5,6,26,30,27,31,7,32,9,10,11,12,13,14,15,16]],[1,12,2,0,[0,1,2,3,4,23,24,25,5,6,26,30,27,31,7,32,9,10,11,12,13,14,15,16]],[1,12,2,0,[0,1,2,3,4,23,24,25,5,6,26,30,27,31,7,33,9,10,11,12,13,14,15,16]],[1,12,2,0,[0,1,2,3,4,23,24,25,5,6,26,30,27,31,7,33,9,10,11,12,13,14,15,16]],[1,12,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,11,12,13,14,15,16,19]],[1,12,9,8,[7,8,32,33,19]],[1,0,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,37,17,18]],[1,0,-1,8,[13,14]],[1,5,9,1,[0,1,2,3,4,5,6,7,8,11,12,13,14,15,16,17,18]],[1,5,9,9,[13,14]],[1,4,9,1,[0,1,2,3,4,5,6,7,8,11,12,13,14,15,16,17,18]],[1,4,9,9,[13,14]],[1,1,9,1,[0,1,2,3,4,5,6,7,8,11,12,13,14,15,16,17,18]],[1,1,9,9,[13,14]],[1,14,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,14,-1,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,14,9,0,[0,1,2,20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,11,12,13,14,15,16,17,18,19]],[1,14,9,8,[19]],[1,10,-1,1,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]],[1,10,-1,9,[8,9,10,11,12]],[1,10,-1,9,[7,9,10,11,12]],[1,10,-1,2,[15,16]],[2,3,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,3,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,3,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,3,17,12,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,1,-1,4,[20,21,22,5,6,32,33,15,16,37,17,18]],[2,1,-1,4,[20,21,22,5,6,32,33,15,16,37,17,18]],[2,1,-1,4,[20,21,22,5,6,32,33,15,16,17,18]],[2,1,-1,12,[37]],[2,2,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,2,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,2,-1,4,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,2,14,12,[20,21,22,5,6,32,33,15,16,17,18,19]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,17,18]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,17,18]],[2,0,9,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,9,10,13,14,15,16,17,18]],[2,0,9,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,9,10,13,14,15,16,17,18]],[2,11,9,0,[20,22,3,4,23,24,25,5,26,30,27,7,8,28,29,9,10,15,16]],[2,11,9,0,[20,22,3,4,23,24,25,5,26,30,27,7,8,28,29,9,10,15,16]],[2,11,7,0,[21,22,3,4,23,24,25,6,26,30,31,7,8,32,33,28,29,9,10,15,16,17,18,19]],[2,11,7,0,[21,22,3,4,23,24,25,6,26,30,31,7,8,32,33,28,29,9,10,15,16,17,18,19]],[2,7,9,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,19]],[2,2,4,0,[20,21,22,34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[2,2,4,0,[20,21,22,34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[2,4,-1,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[2,17,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[2,0,17,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[2,17,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[2,17,9,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[2,10,9,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,7,8,32,33,9,10,13,14,15,16]],[2,10,9,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,27,31,7,8,32,33,9,10,13,14,15,16]],[2,4,-1,0,[20,21,23,24,25,5,6,26,30,27,31,7,8,9,10,15,16,17,18,19]],[2,4,-1,0,[20,21,23,24,25,5,6,26,30,27,31,7,8,9,10,15,16,17,18,19]],[2,4,-1,0,[20,21,23,24,25,5,6,26,30,27,31,7,8,9,10,15,16,17,18,19]],[2,4,-1,8,[7,8,19]],[2,3,-1,0,[20,21,22,34,35,4,36,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,17,18]],[2,2,17,0,[20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18]],[2,2,17,0,[20,21,22,34,35,3,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18]],[2,12,-1,0,[20,21,22,23,24,25,5,6,31,7,8,28,29,9,10,13,14,15,16,37,17,18]],[2,2,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,17,18]],[2,3,9,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,17,18]],[2,3,9,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,17,18]],[2,3,9,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,17,18]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,27,31,7,8,32,33,9,10,15,16,37,17]],[2,3,-1,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,32,33,15,16,17,18]],[2,3,-1,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,32,33,15,16,17,18]],[2,11,9,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,15,16,37,17,18]],[2,2,8,0,[20,21,22,4,23,24,25,5,6,27,31,7,8,13,14,15,16,17,18]],[2,2,8,8,[17,18]],[2,2,8,0,[20,21,22,4,23,24,25,5,6,27,31,7,8,13,14,15,16,17,18]],[2,10,-1,0,[20,21,22,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[2,15,-1,0,[20,21,22,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[2,15,9,0,[20,21,22,4,24,5,6,30,27,31,7,8,32,33,28,29,9,10,15,16,37,17,18]],[2,2,10,0,[20,21,22,3,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[2,2,10,8,[13,14,17,18,19]],[2,13,-1,0,[20,21,22,3,23,5,6,26,32,33,28,29,9,10,15,16,37,17]],[2,10,-1,0,[20,21,22,3,4,23,24,25,5,6,32,33,15,16,37]],[2,10,-1,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16]],[2,0,10,0,[20,21,34,35,36,23,24,25,5,6,27,31,7,8,32,33,15,16,17,18]],[2,11,-1,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,15,16,17,18]],[2,11,16,0,[20,21,22,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,15,16,17,18]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,9,10,13,14,15,16,17,18]],[2,8,9,0,[21,22,23,24,25,6,26,30,27,31,7,8,15,16,37,18]],[2,16,8,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,37,19]],[2,16,8,8,[32,33,19]],[2,17,-1,0,[20,21,22,23,24,25,5,6,27,31,7,8,28,29,9,10,15,16,17,18]],[2,17,-1,0,[20,21,22,23,24,25,5,6,27,31,7,8,28,29,9,10,15,16,17,18]],[2,2,7,0,[20,21,22,4,23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,17,18,19]],[2,2,7,8,[37,17,18,19]],[2,11,16,0,[20,21,22,4,24,25,5,6,7,8,28,29,9,10,13,14,15,16,37,17,18,19]],[2,11,16,8,[7,8,19]],[2,11,12,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,13,14,15,16]],[2,11,6,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,31,7,32,33,9,10,13,14,15,16,37,17,18,19]],[2,11,6,8,[7,32,33,19]],[2,15,5,0,[20,21,22,3,23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18]],[2,15,5,8,[37]],[2,0,-1,0,[21,22,23,24,25,5,27,31,7,8,15,16,37,17,18]],[2,0,-1,0,[21,22,23,24,25,5,27,31,7,8,15,16,37,17,18]],[2,1,-1,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,15,16,17,18]],[2,1,12,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,7,8,32,33,15,16,17,18]],[2,5,8,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[2,5,8,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[2,2,12,0,[20,21,22,34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16]],[2,2,12,8,[13,14]],[2,2,-1,0,[20,21,3,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,37]],[2,2,-1,0,[20,21,3,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,37]],[2,5,9,0,[20,22,4,23,24,25,5,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[2,2,9,0,[21,22,3,23,24,25,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,37]],[2,16,9,0,[20,22,34,35,4,36,23,24,25,5,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[2,16,9,8,[20,22,34,35,4,36,23,24,25,5,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[2,15,1,0,[20,21,22,23,25,5,6,30,8,9,10,15,16,17,18,19]],[2,15,1,0,[20,21,22,23,25,5,6,30,8,9,10,15,16,17,18,19]],[2,15,1,8,[8,19]],[2,2,14,0,[20,21,22,34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18]],[2,8,-1,0,[20,22,34,35,3,4,36,23,24,25,6,27,31,7,8,32,33,15,16,17,18]],[2,8,-1,0,[20,22,34,35,3,4,36,23,24,25,6,27,31,7,8,32,33,15,16,17,18]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[2,0,-1,0,[20,21,22,3,4,23,25,5,6,26,30,32,33,15,16,37,17,18]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,7,8,28,29,9,10,15,16,17,18]],[2,6,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,17,18]],[2,6,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,17,18]],[2,5,10,0,[20,21,22,3,4,23,24,25,5,6,26,30,7,8,9,10,13,14,15,16]],[2,4,-1,0,[20,21,22,4,23,24,25,5,6,26,30,27,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[2,1,-1,0,[20,21,22,3,23,24,25,5,6,26,30,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[2,0,-1,0,[20,21,22,23,24,25,5,6,7,8,28,29,9,10,13,14,15,16]],[2,0,-1,0,[20,21,22,3,4,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[2,4,-1,1,[20,21,22,3,4,5,6,32,33,13,14,15,16,17,18]],[2,1,-1,1,[20,21,22,3,4,5,6,32,33,13,14,15,16,17,18]],[2,2,-1,1,[20,21,22,3,4,5,6,32,33,13,14,15,16,17,18]],[2,12,8,0,[20,21,22,3,4,24,25,5,6,26,30,27,31,7,9,10,13,14,15,16,18,19]],[2,12,8,0,[20,21,22,3,4,24,25,5,6,26,30,27,31,7,9,10,13,14,15,16,18,19]],[2,12,15,0,[20,21,22,3,4,24,25,5,6,26,30,27,31,7,9,10,13,14,15,16,18,19]],[2,12,15,8,[7,19]],[2,10,9,1,[20,21,22,5,6,32,13,14,15,16,17,18]],[2,1,9,1,[20,21,22,5,6,33,13,14,15,16,17,18]],[2,10,3,2,[22]],[3,3,-1,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,3,-1,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,3,-1,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,3,-1,12,[32,33]],[3,1,-1,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,1,6,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,1,6,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,1,6,12,[32,33]],[3,2,-1,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,2,8,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,2,8,4,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,2,8,12,[32,33]],[3,15,-1,0,[34,35,36,24,25,5,6,26,8,32,33,15,16,17,18]],[3,15,-1,0,[34,35,36,24,25,5,6,26,8,32,33,15,16,17,18]],[3,0,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16]],[3,0,-1,8,[13,14]],[3,0,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16]],[3,0,-1,8,[13,14]],[3,11,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37]],[3,11,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37]],[3,11,9,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37]],[3,11,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37]],[3,11,7,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37]],[3,2,3,0,[34,36,23,24,25,5,6,26,30,27,31,7,8,32,13,14,15,16,17,18]],[3,2,3,0,[34,36,23,24,25,5,6,26,30,27,31,7,8,32,13,14,15,16,17,18]],[3,2,3,0,[34,36,23,24,25,5,6,26,30,27,31,7,8,32,13,14,15,16,17,18]],[3,3,-1,0,[35,36,23,24,25,5,6,26,30,27,31,7,8,33,13,14,15,16,17,18]],[3,3,15,0,[35,36,23,24,25,5,6,26,30,27,31,7,8,33,13,14,15,16,17,18]],[3,3,15,0,[35,36,23,24,25,5,6,26,30,27,31,7,8,33,13,14,15,16,17,18]],[3,0,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,15,16]],[3,0,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,15,16]],[3,2,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,2,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,10,17,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18,19]],[3,10,17,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18,19]],[3,10,17,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18,19]],[3,10,17,8,[7,8,32,33,19]],[3,11,2,0,[34,35,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,15,16,17,18]],[3,11,9,0,[34,35,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,15,16,17,18]],[3,3,-1,0,[34,35,36,23,24,25,5,6,30,27,31,7,8,32,33,15,16,17,18]],[3,3,6,0,[34,35,36,23,24,25,5,6,30,27,31,7,8,32,33,15,16,17,18]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,32,33,15,16,17,18]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,32,33,15,16,17,18]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,32,33,15,16,17,18]],[3,11,8,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16]],[3,11,9,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16]],[3,11,13,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16]],[3,0,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,13,14,15,16]],[3,6,-1,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,15,16,17,18]],[3,6,-1,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,15,16,17,18]],[3,0,17,0,[34,35,3,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18]],[3,12,-1,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,15,16,37,17,18]],[3,0,-1,0,[34,35,36,23,24,25,5,6,27,7,8,32,33,15,16]],[3,0,-1,0,[34,35,36,23,24,25,5,6,27,7,8,32,33,15,16]],[3,15,13,0,[34,36,23,24,25,6,26,30,27,31,7,8,32,28,29,9,10,13,14,15,16,17,18,19]],[3,15,13,8,[32,19]],[3,16,17,0,[35,36,23,24,25,5,26,30,27,31,7,8,33,9,10,13,14,15,16,19]],[3,16,17,8,[7,8,33,19]],[3,16,12,0,[34,35,36,24,25,5,6,26,30,27,31,8,32,33,13,14,15,16,19]],[3,16,12,0,[34,35,36,24,25,5,6,26,30,27,31,8,32,33,13,14,15,16,19]],[3,16,12,0,[34,35,36,24,25,5,6,26,30,27,31,8,32,33,13,14,15,16,19]],[3,16,12,8,[8,32,33,19]],[3,6,10,0,[34,35,23,24,25,5,6,27,31,7,8,32,33,15,16,17,18,19]],[3,6,10,0,[34,35,23,24,25,5,6,27,31,7,8,32,33,15,16,17,18,19]],[3,6,10,8,[7,8,32,33,19]],[3,4,-1,0,[34,35,36,23,24,25,5,6,27,31,7,32,33,9,10,13,14,15,16,19]],[3,4,-1,0,[34,35,36,23,24,25,5,6,27,31,7,32,33,9,10,13,14,15,16,19]],[3,4,-1,8,[7,32,33,19]],[3,4,-1,0,[34,35,36,23,24,25,5,6,30,31,7,8,32,33,15,16,17,18]],[3,4,-1,0,[34,35,36,23,24,25,5,6,26,27,7,8,32,33,15,16,17,18]],[3,11,-1,0,[34,35,36,23,24,25,5,6,30,31,7,8,32,33,15,16,17,18]],[3,11,-1,0,[34,35,36,23,24,25,5,6,26,27,7,8,32,33,15,16,17,18]],[3,3,7,0,[34,35,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,19]],[3,7,-1,0,[34,35,36,23,24,25,5,27,31,7,8,32,33,15,16,17,19]],[3,7,-1,0,[34,35,36,23,24,25,5,27,31,7,8,32,33,15,16,17,19]],[3,2,15,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,19]],[3,2,15,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,19]],[3,2,15,8,[32,33,19]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16]],[3,1,8,0,[34,35,36,23,24,25,5,6,27,7,8,32,33,15,16,17,18,19]],[3,1,8,0,[34,35,36,23,24,25,5,6,27,7,8,32,33,15,16,17,18,19]],[3,1,8,8,[32,33,19]],[3,1,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,10,-1,0,[34,35,36,23,24,25,5,6,31,7,8,32,33,15,16,17,18,19]],[3,10,-1,0,[34,35,36,23,24,25,5,6,31,7,8,32,33,15,16,17,18,19]],[3,0,-1,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,28,29,9,10,15,16]],[3,8,-1,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,8,14,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,8,14,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18]],[3,3,-1,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,15,16,17,18]],[3,3,15,0,[34,35,36,23,24,25,5,6,27,31,7,8,32,33,15,16,17,18]],[3,0,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18,19]],[3,14,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,17,18,19]],[3,14,9,8,[32,33,19]],[3,0,-1,0,[35,23,24,25,5,6,26,30,27,31,7,8,33,15,16,17,18,19]],[3,7,-1,0,[34,36,23,24,25,5,6,26,30,27,31,7,8,32,15,16,17,18,19]],[3,12,10,0,[34,23,24,25,5,6,26,30,27,31,7,8,32,13,14,15,16]],[3,12,10,0,[35,36,23,24,25,5,6,26,30,27,31,7,8,33,13,14,15,16]],[3,2,8,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[3,2,8,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,17,18]],[3,2,15,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,17,18]],[3,8,10,0,[34,35,36,23,24,25,6,26,30,27,31,32,33,9,10,13,14,15,16]],[3,8,10,0,[34,35,36,23,24,25,6,26,30,27,31,32,33,9,10,13,14,15,16]],[3,12,3,0,[34,35,36,23,24,25,5,6,26,30,27,31,8,32,33,9,10,13,14,15,16]],[3,12,3,0,[34,35,36,23,24,25,5,6,26,30,27,31,8,32,33,9,10,13,14,15,16]],[3,12,11,0,[34,35,36,23,24,25,5,6,26,30,27,31,8,32,33,9,10,13,14,15,16]],[3,12,11,0,[34,35,36,23,24,25,5,6,26,30,27,31,8,32,33,9,10,13,14,15,16]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,32,33,28,29,9,10,13,14,15,16,17,18,19]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,32,33,28,29,9,10,13,14,15,16,17,18,19]],[3,0,-1,0,[34,35,36,23,24,25,5,6,27,31,32,33,28,29,9,10,15,16]],[3,0,-1,8,[34,35,36,23,24,25,5,6,27,31,32,33,15,16]],[3,0,-1,8,[34,35,36,23,24,25,5,6,27,31,32,33,15,16]],[3,0,-1,8,[34,35,36,23,24,25,5,6,27,31,32,33,15,16]],[3,0,-1,0,[34,35,36,24,25,5,6,27,31,7,8,32,33,9,10,15,16,19]],[3,13,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,15,16,17,18,19]],[3,13,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,15,16,17,18,19]],[3,13,-1,8,[7,8,32,33,19]],[3,13,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16,37,17,18]],[3,13,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,13,14,15,16,37,17,18]],[3,3,9,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,9,10,15,16,17,18]],[3,10,-1,0,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37,17,18,19]],[3,10,16,8,[34,35,36,23,24,25,5,6,26,30,7,8,32,33,15,16,37,17,18,19]],[3,15,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,19]],[3,15,-1,8,[7,8,32,33,19]],[3,15,13,8,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,19]],[3,10,-1,0,[34,35,3,4,36,23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16]],[3,5,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[3,5,-1,0,[34,35,36,23,24,25,5,6,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[3,5,-1,8,[32,33,19]],[3,5,2,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[3,5,2,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[3,5,2,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[3,2,-1,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,9,10,15,16]],[3,2,-1,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,9,10,15,16]],[3,2,-1,0,[34,35,36,23,24,5,6,26,30,27,31,7,8,32,33,9,10,15,16]],[3,2,12,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16]],[3,2,-1,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,15,16,17,18]],[3,14,-1,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,19]],[3,14,-1,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,19]],[3,14,9,0,[34,35,36,23,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,19]],[3,14,9,8,[32,33,19]],[3,16,10,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[3,16,10,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[3,16,10,0,[34,35,36,23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,17,18,19]],[3,16,10,8,[32,33,19]],[3,12,-1,1,[34,35,36,27,31,32,33,13,14,15,16]],[3,5,-1,1,[34,35,36,27,31,32,33,13,14,15,16]],[3,16,-1,1,[34,35,36,27,31,32,33,13,14,15,16]],[3,14,10,1,[34,36,5,6,27,32,33,13,14,15,16,17,18,19]],[3,14,10,9,[32,33,19]],[3,14,10,1,[35,36,5,6,31,32,33,13,14,15,16,17,18,19]],[3,14,10,9,[32,33,19]],[3,2,-1,1,[34,36,6,32,13,14,15,16,17,18,19]],[3,2,-1,9,[32,9,10,19]],[3,8,-1,1,[35,36,5,33,13,14,15,16,17,18,19]],[3,8,-1,9,[33,9,10,19]],[3,14,9,1,[34,35,36,5,6,32,33,13,14,15,16,17,18,19]],[3,14,9,9,[32,33,19]],[3,16,10,2,[15,16]],[0,10,-1,10,[]],[3,10,-1,10,[32,33]],[3,10,-1,10,[32,33]],[3,10,-1,10,[32,33]],[4,3,-1,4,[23,24,25,32,33,15,16,37,17,18]],[4,3,-1,4,[23,24,25,32,33,15,16,37,17,18]],[4,3,8,4,[23,24,25,32,33,15,16,37,17,18]],[4,1,-1,4,[23,24,25,32,33,15,16,37,17,18]],[4,1,6,4,[23,24,25,32,33,15,16,37,17,18]],[4,1,6,4,[23,24,25,32,33,15,16,37,17,18]],[4,2,-1,4,[23,24,25,32,33,15,16,37,17,18]],[4,2,-1,4,[23,24,25,32,33,15,16,37,17,18]],[4,2,16,4,[23,24,25,32,33,15,16,37,17,18]],[4,0,9,0,[23,24,25,5,6,26,30,7,8,15,16,37,17,18,19]],[4,0,9,0,[23,24,25,5,6,26,30,7,8,15,16,37,17,18,19]],[4,0,9,0,[23,24,25,5,6,26,30,7,8,15,16,37,17,18,19]],[4,6,9,8,[23,24,25,5,6,26,30,7,8,15,16,37,17,18,19]],[4,0,-1,0,[23,24,25,5,6,26,30,27,31,7,8,15,16,37]],[4,0,2,0,[23,24,25,5,6,26,30,27,31,7,8,15,16,37]],[4,11,-1,0,[23,24,25,5,6,26,30,32,33,15,16,37,17,18]],[4,11,-1,0,[23,24,25,5,6,26,30,32,33,15,16,37,17,18]],[4,4,-1,0,[23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,37,17,18]],[4,4,-1,0,[23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,37,17,18]],[4,4,-1,0,[23,24,25,5,6,26,30,7,8,32,33,13,14,15,16,37,17,18]],[4,3,7,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,19]],[4,3,7,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,19]],[4,12,-1,0,[24,25,26,30,27,31,7,8,32,28,29,9,10,15,16,37,18]],[4,12,-1,0,[24,25,26,30,27,31,7,8,32,28,29,9,10,15,16,37,18]],[4,12,16,0,[23,25,26,30,27,31,7,8,33,28,29,9,10,15,16,37,17]],[4,12,16,0,[23,25,26,30,27,31,7,8,33,28,29,9,10,15,16,37,17]],[4,11,-1,8,[23,24,25,5,6,7,8,15,16,37]],[4,11,-1,8,[23,24,25,5,6,7,8,15,16,37]],[4,11,-1,8,[23,24,25,5,6,7,8,15,16,37]],[0,11,3,8,[]],[4,11,3,8,[23,24,25,5,6,7,8,15,16,37]],[4,11,3,8,[23,24,25,5,6,7,8,15,16,37]],[4,11,9,0,[23,24,25,5,6,7,8,15,16,37]],[4,11,9,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[4,11,9,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[4,4,-1,0,[23,24,25,5,6,27,31,7,8,15,16,37,17,18]],[4,2,-1,0,[23,24,25,5,6,26,30,27,31,7,8,15,16,37,17,18]],[4,2,-1,0,[23,24,25,5,6,26,30,27,31,7,8,15,16,37,17,18]],[4,3,-1,0,[23,24,25,5,6,26,30,32,33,13,14,15,16,37]],[4,3,-1,0,[23,24,25,5,6,26,30,32,33,13,14,15,16,37]],[4,3,-1,8,[23,24,25,5,6,26,30,32,33,13,14,15,16,37]],[4,2,-1,0,[23,24,25,5,6,27,31,7,8,33,28,29,9,10,13,14,15,16,37,17,18]],[4,2,8,0,[23,24,25,5,6,27,31,7,8,33,28,29,9,10,13,14,15,16,37,17,18]],[4,0,-1,0,[23,24,25,5,6,27,31,7,8,32,33,9,10,15,16,37,17]],[4,13,9,0,[23,24,25,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,18]],[4,13,9,0,[23,24,25,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,18]],[4,0,-1,0,[23,24,25,5,6,31,32,33,9,10,13,14,15,16,37,19]],[4,0,-1,0,[23,24,25,5,6,31,32,33,9,10,13,14,15,16,37,19]],[4,0,-1,8,[32,33,19]],[4,13,-1,0,[23,5,6,26,32,33,28,29,9,10,15,16,37,17]],[4,15,9,0,[24,5,6,30,27,31,7,8,32,33,28,29,9,10,15,16,37,17,18]],[4,0,-1,0,[23,27,31,32,33,15,16,37]],[4,0,-1,0,[23,27,31,32,33,15,16,37]],[4,10,-1,0,[23,24,25,5,6,26,30,7,8,32,33,15,16,37,17,18,19]],[4,7,15,0,[24,27,31,7,8,13,14,15,16,37,18]],[4,7,15,0,[24,27,31,7,8,13,14,15,16,37,18]],[4,16,10,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18]],[4,16,10,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18]],[4,12,-1,0,[23,24,25,5,6,31,7,8,28,29,9,10,13,14,15,16,37,17,18]],[4,10,17,0,[23,24,25,5,6,27,7,8,9,10,13,14,15,16,37,19]],[4,0,-1,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[4,0,9,0,[23,24,25,5,6,27,31,7,8,32,33,15,16,37]],[4,13,15,0,[23,24,25,5,6,27,31,7,8,32,33,13,14,15,16,37,17,18]],[4,14,8,0,[23,24,25,5,6,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,14,8,0,[23,24,25,5,6,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,14,8,0,[23,24,25,5,6,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,14,8,8,[7,8,32,33,19]],[4,14,-1,8,[23,24,25,5,6,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,0,-1,0,[23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18]],[4,6,-1,0,[23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18,19]],[4,6,16,0,[23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18,19]],[4,6,16,8,[7,8,19]],[4,6,16,8,[23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18,19]],[4,8,-1,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,8,-1,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,7,11,0,[23,24,25,5,6,27,31,7,8,32,33,13,14,15,16,37]],[4,7,15,0,[23,24,25,5,6,27,31,7,8,32,33,13,14,15,16,37]],[4,7,6,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[4,7,6,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[4,3,-1,0,[23,24,25,5,6,27,31,7,8,15,16,37]],[4,2,-1,0,[23,24,25,5,6,26,30,27,31,32,33,28,29,9,10,15,16,37,17,18]],[4,2,-1,0,[23,24,25,5,6,26,30,27,31,32,33,28,29,9,10,15,16,37,17,18]],[4,2,9,0,[23,24,25,6,26,30,27,31,7,8,32,33,9,10,13,14,15,16,37]],[4,3,5,0,[23,24,25,5,6,7,8,13,14,15,16,37,17,18,19]],[4,3,5,0,[23,24,25,5,6,7,8,13,14,15,16,37,17,18,19]],[4,3,5,8,[7,8,19]],[4,15,5,0,[23,24,25,5,6,26,30,27,31,7,8,28,29,9,10,13,14,15,16,37,17,18]],[4,4,16,0,[23,24,25,26,30,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[4,0,-1,0,[23,24,25,5,6,26,30,27,31,7,8,9,10,13,14,15,16,37]],[4,8,12,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18]],[4,3,-1,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[4,4,-1,0,[23,24,25,5,6,26,30,27,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[4,1,-1,0,[23,24,25,5,6,26,30,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18]],[4,17,9,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37]],[4,11,9,0,[23,24,25,5,6,26,30,27,31,7,8,15,16,37,17,18]],[4,3,-1,0,[23,24,25,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,5,-1,0,[23,24,25,27,31,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,8,9,0,[23,24,25,6,26,30,27,31,7,8,15,16,37,18]],[4,5,8,0,[23,24,25,5,6,26,30,27,31,7,8,13,14,15,16,37,17,18]],[4,0,-1,0,[23,24,25,5,6,26,30,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,10,6,0,[23,24,25,5,6,26,30,27,31,7,8,32,33,13,14,15,16,37,17,18,19]],[4,10,6,8,[32,33,19]],[4,12,16,0,[23,24,25,27,31,7,8,32,33,28,29,9,10,15,16,37,17,18]],[4,13,-1,0,[23,24,25,5,6,7,8,32,33,13,14,15,16,37,17,18]],[4,5,13,0,[23,24,25,5,6,7,8,32,33,28,29,9,10,13,14,15,16,37,17,18,19]],[4,5,13,8,[19]],[4,4,13,0,[23,24,25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,4,13,8,[25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,4,13,8,[25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,4,13,8,[25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,4,13,8,[25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,4,13,8,[25,26,30,27,31,7,8,13,14,15,16,37,17,18,19]],[4,10,-1,1,[23,24,25,27,31,32,33,13,14,15,16,37]],[4,10,-1,1,[23,24,25,27,31,32,33,13,14,15,16,37]],[4,10,-1,1,[23,24,25,27,31,32,33,13,14,15,16,37]],[4,16,14,1,[24,25,5,6,32,13,14,15,16,37]],[4,16,14,9,[37]],[4,2,14,1,[23,25,5,6,33,13,14,15,16,37]],[4,2,14,9,[37]],[4,1,16,1,[23,24,25,27,31,32,33,13,14,15,16,37,19]],[4,1,16,9,[23,24,25,27,31,32,33,13,14,15,16,37,19]],[4,0,-1,1,[23,24,25,27,31,32,33,13,14,15,16,37]],[0,13,14,9,[]],[4,13,14,9,[25,5,6,32,33,13,14,15,16,37]],[4,10,-1,1,[23,24,25,27,31,32,33,13,14,15,16,37]],[4,2,-1,2,[37]],[4,2,-1,2,[37]],[4,15,-1,2,[15,16,37,19]],[4,15,-1,10,[15,16,37,19]],[0,3,-1,2,[]],[0,3,9,10,[]],[4,0,-1,2,[15,16,37]],[5,10,1,2,[26,30]],[5,3,-1,4,[26,30,27,31,32,33,17,18]],[5,3,-1,4,[26,30,27,31,32,33,17,18]],[5,3,-1,4,[26,30,27,31,32,33,17,18]],[5,1,-1,4,[26,30,27,31,32,33,17,18,19]],[5,1,6,4,[26,30,27,31,32,33,17,18,19]],[5,1,6,4,[26,30,27,31,32,33,17,18,19]],[5,1,6,12,[26,30,27,31,32,33,17,18,19]],[5,2,-1,4,[26,30,27,31,32,33,37,17,18]],[5,2,-1,4,[26,30,27,31,32,33,37,17,18]],[5,2,-1,4,[26,30,27,31,32,33,17,18]],[5,2,-1,12,[37]],[5,0,-1,0,[26,30,27,31,7,8,19]],[5,0,-1,0,[26,30,27,31,7,8,19]],[5,0,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,0,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,0,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,15,-1,0,[26,30,27,31,7,13,14,19]],[5,15,-1,0,[26,30,27,31,7,13,14,19]],[5,3,-1,0,[26,30,27,31,7,8,19]],[5,3,-1,0,[26,30,27,31,7,8,19]],[5,1,-1,0,[26,30,27,31,7,8,19]],[5,1,-1,0,[26,30,27,31,7,8,19]],[5,2,-1,0,[26,30,27,31,7,8,19]],[5,2,-1,0,[26,30,27,31,7,8,19]],[5,10,-1,0,[26,30,27,31,7,8,32,33,13,14,19]],[5,10,-1,0,[26,30,27,31,7,8,32,33,13,14,19]],[5,0,9,0,[26,30,27,31,7,8,32,33,13,14]],[5,0,9,0,[26,30,27,31,7,8,32,33,13,14]],[5,0,9,0,[26,30,27,31,7,8,32,33,13,14]],[5,4,-1,0,[26,30,27,31,7,8,32,33,17,18]],[5,4,-1,0,[26,30,27,31,7,8,32,33,17,18]],[5,12,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,12,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,12,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14]],[5,10,9,0,[26,30,27,31,7,8,13,14]],[5,10,9,0,[26,30,27,31,7,8,13,14]],[5,8,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18,19]],[5,8,16,0,[26,30,27,31,7,8,32,33,13,14,17,18,19]],[5,8,16,8,[26,30,27,31,7,8,32,33,13,14,17,18,19]],[5,0,-1,0,[26,30,27,31,7,8,32,33,13,14,19]],[5,0,-1,8,[32,33,19]],[5,6,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,6,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,6,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,2,-1,0,[26,30,27,31,7,8,32,33,13,14]],[5,2,8,0,[26,30,27,31,7,8,32,33,13,14]],[5,2,8,0,[26,30,27,31,7,8,32,33,13,14]],[5,6,-1,0,[26,30,27,31,7,33,13,14,19]],[5,6,-1,0,[26,30,27,31,8,32,13,14,19]],[5,11,3,0,[26,30,27,31,7,8,32,33,17,18]],[5,11,3,0,[26,30,27,31,7,8,32,33,17,18]],[5,11,3,0,[26,30,27,31,7,8,32,33,17,18]],[5,11,7,0,[26,30,27,31,7,8,13,14,19]],[5,11,7,0,[26,30,27,31,7,8,13,14,19]],[5,11,7,0,[26,30,27,31,7,8,13,14,19]],[5,11,7,8,[26,30,27,31,7,8,13,14,19]],[5,3,17,0,[30,27,31,32,33,28,29,9,10,13,14,17,18]],[5,3,17,0,[30,27,31,32,33,28,29,9,10,13,14,17,18]],[5,3,-1,0,[26,27,31,7,8,32,33,28,29,9,10,13,14,37,17,18]],[5,3,-1,0,[26,27,31,7,8,32,33,28,29,9,10,13,14,17,18]],[5,3,-1,8,[37]],[0,2,-1,8,[]],[5,2,-1,8,[26,30,27,31,7,8,9,10,13,14,17,18]],[5,2,-1,8,[37,17,18]],[5,8,15,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18,19]],[5,8,15,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18,19]],[5,8,15,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14,17,18,19]],[5,1,-1,0,[26,30,27,31,32,33,13,14]],[5,1,-1,8,[13,14]],[0,1,-1,8,[]],[5,1,-1,8,[13,14]],[0,5,1,8,[]],[0,1,10,8,[]],[5,3,-1,0,[26,30,27,31,7,8,32,33,13,14]],[5,11,12,0,[26,30,27,31,7,8,32,33,13,14]],[5,11,12,0,[26,30,27,31,7,8,32,33,13,14]],[5,15,6,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18,19]],[5,15,6,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18,19]],[5,15,6,8,[26,30,27,31,7,8,32,33,9,10,13,14,17,18,19]],[5,10,9,0,[26,30,27,31,7,8,13,14]],[5,13,-1,0,[26,30,27,31,32,33,13,14,19]],[5,13,-1,8,[13,14,19]],[5,13,-1,0,[26,30,27,31,32,33,13,14,19]],[5,2,12,0,[26,30,27,31,7,8,32,28,29,9,10,13,14]],[5,2,12,0,[26,30,27,31,7,8,32,28,29,9,10,13,14]],[5,12,9,0,[26,30,27,31,7,8,33,28,29,9,10,13,14]],[5,12,9,0,[26,30,27,31,7,8,33,28,29,9,10,13,14]],[5,7,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14,19]],[5,7,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,13,14,19]],[5,7,-1,8,[13,14]],[5,15,-1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,15,-1,8,[37]],[5,15,-1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,15,-1,8,[37]],[5,0,-1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,0,-1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,10,-1,0,[30,31,7,8,32,33,13,14,17,18]],[5,10,-1,0,[30,31,7,8,32,33,13,14,17,18]],[5,10,-1,0,[30,31,7,8,32,33,13,14,17,18]],[5,10,-1,0,[26,27,7,8,13,14,17,18]],[5,10,-1,0,[26,27,7,8,13,14,17,18]],[5,10,-1,0,[26,27,7,8,13,14,17,18]],[5,2,9,0,[26,30,27,31,7,8,17,18]],[5,2,9,0,[26,30,27,31,7,8,17,18]],[5,5,-1,0,[26,30,27,31,7,8,28,29,9,10,13,14,19]],[5,5,-1,0,[26,30,27,31,7,8,28,29,9,10,13,14,19]],[5,5,-1,0,[26,30,27,31,7,8,28,29,9,10,13,14,19]],[5,0,3,0,[26,30,27,31,7,8,32,33,17,18]],[5,0,3,0,[26,30,27,31,7,8,32,33,17,18]],[5,4,9,0,[26,30,27,31,7,8,28,29,9,10,13,14,19]],[5,11,-1,0,[26,30,27,31,7,8,13,14]],[5,11,16,0,[26,30,27,31,7,8,13,14]],[5,3,7,0,[26,30,27,31,7,8,13,14,17,18,19]],[5,3,7,0,[26,30,27,31,7,8,13,14,17,18,19]],[0,2,13,0,[]],[0,2,13,0,[]],[5,2,-1,0,[26,30,27,31,7,8,32,33,28,29,9,10,17,18]],[5,11,4,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,11,4,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,3,16,0,[26,30,27,31,7,8,13,14]],[5,3,16,0,[26,30,27,31,7,8,13,14]],[5,16,-1,0,[26,30,27,31,7,8,32,33,13,14]],[5,16,-1,0,[26,30,27,31,7,8,32,33,13,14]],[5,16,-1,0,[26,30,27,31,7,8,32,33,13,14]],[5,4,-1,0,[26,30,27,31,32,33,17,18,19]],[5,4,-1,0,[26,30,27,31,32,33,17,18,19]],[5,4,-1,0,[26,30,27,31,32,33,17,18,19]],[5,4,-1,8,[26,30,27,31,32,33,17,18,19]],[5,10,-1,0,[26,30,27,31,32,33,9,10,13,14]],[5,10,-1,0,[26,30,27,31,32,33,9,10,13,14]],[5,13,1,0,[26,30,27,31,7,8,13,14,17,18,19]],[5,13,1,0,[26,30,27,31,7,8,13,14,17,18,19]],[5,13,1,0,[26,30,27,31,7,8,13,14,17,18,19]],[5,13,1,8,[26,30,27,31,7,8,13,14,17,18,19]],[5,14,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,14,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,14,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,5,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,5,-1,0,[26,30,27,31,7,8,32,33,13,14,17,18]],[5,5,-1,0,[26,30,27,31,7,8,13,14,17,18,19]],[5,11,-1,0,[26,30,27,31,7,8,13,14]],[5,11,-1,0,[26,30,27,31,7,8,13,14]],[5,8,4,0,[26,30,27,31,7,8,13,14,19]],[5,8,4,8,[13,14,19]],[5,6,-1,0,[26,30,27,31,7,8,9,10,13,14,17,18]],[5,6,-1,0,[26,30,27,31,7,8,9,10,13,14,17,18]],[5,14,-1,0,[26,30,27,31,7,8,32,33,9,10,13,14]],[5,8,13,0,[26,30,27,31,7,8,9,10,13,14,17,18,19]],[5,8,13,0,[26,30,27,31,7,8,9,10,13,14,17,18,19]],[5,8,13,8,[26,30,27,31,7,8,9,10,13,14,17,18,19]],[5,15,16,0,[26,30,27,31,7,8,9,10,13,14,17,18]],[5,15,16,0,[26,30,27,31,7,8,9,10,13,14,17,18]],[5,0,-1,0,[26,30,27,31,32,33,13,14]],[5,0,9,0,[26,27,7,8,32,33,28,29,9,10,13,14,37,17,18]],[5,0,9,0,[26,27,7,8,32,33,28,29,9,10,13,14,17,18]],[5,0,9,8,[37]],[5,15,9,0,[30,31,7,8,32,33,28,29,9,10,13,14,17,18]],[5,15,9,0,[30,31,7,8,32,33,28,29,9,10,13,14,17,18]],[5,1,-1,0,[26,30,27,31,7,8,13,14]],[5,11,16,0,[26,30,27,31,7,8,13,14]],[5,15,14,0,[26,30,27,31,7,8,32,33,13,14,18]],[5,15,14,0,[26,30,27,31,7,8,32,33,13,14,18]],[5,15,14,0,[26,30,27,31,7,8,32,33,13,14,18]],[5,11,1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,11,1,0,[26,30,27,31,7,8,32,33,9,10,13,14,17,18]],[5,16,6,1,[26,30,27,31,32,33,13,14,17,18,19]],[5,12,6,1,[26,30,27,31,32,33,13,14,17,18,19]],[5,3,6,1,[26,30,27,31,32,33,13,14,17,18,19]],[0,9,-1,9,[]],[5,9,-1,9,[33,13,14,37]],[0,4,9,9,[]],[5,4,9,9,[32,13,14,37]],[5,14,1,1,[30,27,33,13,14,17,18]],[5,14,4,1,[26,31,32,13,14,17,18]],[0,8,9,9,[]],[5,8,9,9,[32,33,13,14,37]],[5,14,5,1,[26,30,27,31,32,33,13,14,17,18]],[5,14,5,9,[27,32,33,13,14,17,18]],[5,14,5,9,[31,32,33,13,14,17,18]],[0,2,6,10,[]],[5,2,6,10,[13,14,19]],[0,0,10,10,[]],[5,0,10,10,[17,18,19]],[5,11,16,2,[19]],[6,3,-1,4,[7,8,17,18,19]],[6,3,-1,4,[7,8,17,18,19]],[6,3,6,4,[7,8,17,18,19]],[6,3,6,12,[7,8,17,18,19]],[6,1,-1,4,[7,8,17,18,19]],[6,1,-1,4,[7,8,17,18,19]],[6,1,10,4,[7,8,17,18,19]],[6,1,10,12,[7,8,17,18,19]],[6,2,-1,4,[7,8,17,18,19]],[6,2,-1,4,[7,8,17,18,19]],[6,2,15,4,[7,8,17,18,19]],[6,2,15,12,[28,29]],[6,2,15,12,[7,8,17,18,19]],[6,0,-1,0,[7,8,13,14,19]],[6,0,8,0,[7,8,13,14,19]],[6,0,9,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,1,9,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,1,9,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,11,-1,0,[7,8,17,18,19]],[6,11,-1,0,[7,8,17,18,19]],[6,11,9,0,[7,8,17,18]],[6,1,0,0,[7,8,9,10,17,18,19]],[0,1,0,0,[]],[0,1,0,8,[]],[6,17,-1,0,[7,8,9,10,17,18,19]],[6,17,-1,0,[7,8,9,10,17,18,19]],[6,17,-1,8,[7,8,9,10,17,18,19]],[6,17,-1,8,[7,8,9,10,17,18,19]],[6,17,-1,0,[7,8,9,10,17,18,19]],[6,3,-1,0,[7,8,17,18,19]],[6,3,-1,0,[7,8,17,18,19]],[6,6,-1,0,[7,8,28,29,9,10,13,14,19]],[6,6,15,0,[7,8,28,29,9,10,13,14,19]],[6,0,-1,0,[7,8,9,10,19]],[6,10,-1,0,[7,8,13,14,17,18,19]],[0,10,-1,8,[]],[6,10,-1,8,[7,8,32,33,28,29,9,10,13,14,17,18,19]],[0,10,-1,8,[]],[6,16,13,0,[7,8,13,14,19]],[6,16,13,0,[7,8,13,14,19]],[0,16,13,8,[]],[6,16,13,8,[7,8,13,14,19]],[6,17,-1,0,[7,13,14,19]],[6,17,-1,0,[7,13,14,19]],[6,17,-1,0,[8,13,14,19]],[6,17,-1,0,[8,13,14,19]],[6,15,10,0,[7,8,9,10,13,14,17,18,19]],[6,15,10,0,[7,8,9,10,13,14,17,18,19]],[6,15,10,8,[19]],[6,12,2,0,[7,8,32,33,13,14,19]],[6,12,2,0,[7,8,32,33,13,14,19]],[6,12,6,8,[7,8,32,33,13,14,19]],[6,7,2,0,[7,33,9,10,13,14,18,19]],[6,7,14,0,[7,33,9,10,13,14,18,19]],[6,7,14,8,[7,33,9,10,13,14,18,19]],[6,2,-1,0,[8,32,9,10,13,14,17,19]],[6,2,-1,0,[8,32,9,10,13,14,17,19]],[6,4,0,0,[7,8,13,14,19]],[6,4,0,0,[7,8,13,14,19]],[6,12,14,0,[7,8,9,10,13,14,19]],[6,12,14,0,[7,8,9,10,13,14,19]],[6,12,5,0,[7,8,9,10,13,14,19]],[6,12,5,0,[7,8,9,10,13,14,19]],[6,17,-1,0,[7,8,32,33,28,29,9,10,13,14,37,17,18,19]],[6,6,9,0,[7,8,9,10,13,14,17,18,19]],[6,6,9,8,[19]],[6,4,17,0,[7,8,9,10,13,14,17,18,19]],[6,12,17,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,14,-1,0,[7,8,28,29,9,10,13,14,37,17,18,19]],[6,14,-1,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,14,-1,8,[37,19]],[6,14,-1,0,[7,8,28,29,9,10,13,14,17,18,19]],[6,14,-1,8,[37,19]],[6,16,17,0,[7,8,32,33,28,29,9,10,13,14,17,18,19]],[6,13,3,0,[7,8,32,33,28,29,9,10,13,14,17,18,19]],[6,13,3,0,[7,8,32,33,28,29,9,10,13,14,17,18,19]],[0,13,3,8,[]],[6,13,3,8,[7,8,13,14,19]],[6,13,3,8,[7,8,13,14,19]],[6,13,3,8,[7,8,13,14,19]],[0,13,3,8,[]],[6,13,3,8,[7,8,13,14,19]],[6,13,3,8,[7,8,13,14,19]],[6,13,3,8,[7,8,13,14,19]],[6,5,-1,0,[7,8,13,14,37,17,18,19]],[6,5,-1,0,[7,8,13,14,17,18,19]],[6,5,-1,8,[37,19]],[6,9,14,0,[7,8,9,10,13,14,17,18,19]],[6,9,14,0,[7,8,9,10,13,14,17,18,19]],[6,17,-1,1,[8,13,14,19]],[6,15,9,1,[7,13,14,19]],[0,14,8,9,[]],[6,14,8,9,[28,29,9,10,13,14,19]],[6,14,8,9,[28,29,9,10,13,14,19]],[0,14,8,9,[]],[6,12,17,2,[]],[6,12,17,10,[]],[6,10,13,10,[19]],[6,10,13,10,[19]],[6,1,2,2,[19]],[7,3,9,4,[28,29,9,10,13,14,37,17,18]],[7,3,9,4,[28,29,9,10,13,14,37,17,18]],[7,3,13,4,[28,29,9,10,13,14,17,18]],[7,3,13,12,[37]],[7,1,-1,4,[28,29,9,10,13,14,17,18]],[7,1,-1,4,[28,29,9,10,13,14,17,18]],[7,1,15,4,[28,29,9,10,13,14,17,18]],[7,2,-1,4,[28,29,9,10,13,14,17,18]],[7,2,-1,4,[28,29,9,10,13,14,17,18]],[7,2,17,4,[28,29,9,10,13,14,17,18]],[7,0,9,0,[28,29,9,10,17,18]],[7,0,9,0,[28,29,9,10,17,18]],[7,0,9,0,[28,29,9,10,17,18]],[7,0,-1,0,[28,29,9,10,17,18]],[7,0,-1,0,[28,29,9,10,17,18]],[7,11,-1,0,[28,29,9,10,13,14,17,18]],[7,11,4,0,[28,29,9,10,13,14,17,18]],[7,11,4,0,[28,29,9,10,13,14,17,18]],[7,6,-1,0,[28,29,9,10,17,18,19]],[7,6,5,0,[28,29,9,10,17,18,19]],[7,6,5,8,[28,29,9,10,17,18,19]],[0,1,9,8,[]],[7,1,9,8,[28,29,9,10,17,18]],[0,1,9,8,[]],[7,1,9,8,[28,29,9,10,17,18]],[7,11,17,0,[28,29,9,10,13,14,17,18]],[7,11,17,0,[28,29,9,10,13,14,17,18]],[7,12,-1,0,[28,29,9,10,13,14,17,18]],[7,12,-1,8,[9,10,13,14,17,18]],[0,12,-1,8,[]],[7,12,-1,8,[28,29,9,10,13,14,17,18]],[7,12,-1,8,[9,10,13,14,17,18]],[0,2,-1,8,[]],[7,2,-1,8,[28,29,9,10,13,14]],[7,7,2,0,[28,29,9,10,13,14,17,18]],[7,7,2,0,[28,29,9,10,13,14,17,18]],[7,8,-1,0,[28,29,9,10,13,14,17,18]],[7,8,-1,0,[28,29,9,10,13,14,17,18]],[7,2,11,0,[28,29,9,10,13,14,17,18]],[7,2,11,0,[28,29,9,10,13,14,17,18]],[7,3,-1,0,[28,29,9,10,13,14,17,18]],[7,3,-1,0,[28,29,9,10,13,14,17,18]],[7,3,17,0,[28,29,9,10,13,14]],[7,3,17,0,[28,29,9,10,13,14]],[7,7,1,0,[28,29,9,10,13,14,17,18]],[7,7,1,0,[28,29,9,10,13,14,17,18]],[7,0,6,0,[28,29,9,10,13,14]],[7,0,6,0,[28,29,9,10,13,14]],[7,3,-1,0,[28,29,9,10,13,14,17,18]],[7,3,-1,0,[28,29,9,10,13,14,17,18]],[7,3,-1,0,[28,29,9,10,13,14,17,18]],[7,17,-1,0,[28,29,9,10,13,14,17,18]],[7,0,10,0,[28,29,9,10,13,14,18]],[7,6,-1,0,[28,29,9,10,13,14,17]],[7,11,2,0,[28,29,9,10,13,14,19]],[7,11,2,0,[28,29,9,10,13,14,19]],[7,11,16,8,[28,29,9,10,13,14,19]],[7,13,8,0,[28,29,9,10,13,14,17,18,19]],[7,13,8,0,[28,29,9,10,13,14,17,18,19]],[7,2,-1,0,[28,29,9,10,13,14]],[7,0,-1,1,[28,29,9,10,13,14]],[7,0,-1,1,[28,29,9,10,13,14]],[0,12,9,8,[]],[0,12,9,8,[]],[7,0,-1,0,[28,29,9,10,17,18]],[7,1,14,0,[28,29,9,10,13,14]],[7,4,16,0,[28,29,9,10,13,14]],[0,13,17,0,[]],[7,2,10,0,[28,29,9,10,17,18]],[7,0,14,0,[28,29,9,10,13,14,19]],[7,0,14,8,[28,29,9,10,13,14,19]],[7,13,3,0,[28,29,9,10,13,14]],[7,14,-1,0,[28,29,9,10,13,14,17,18]],[7,14,6,0,[28,29,9,10,13,14,17,18]],[7,14,6,0,[28,29,9,10,13,14,17,18]],[7,4,17,1,[28,29,9,10,13,14]],[7,10,17,1,[28,29,9,10,13,14]],[7,3,17,1,[28,29,9,10,13,14]],[7,2,17,1,[28,29,9,10,13,14]],[7,10,-1,1,[28,29,9,10,13,14]],[7,10,-1,1,[28,29,9,10,13,14]],[7,10,16,1,[28,29,9,10,13,14,17,18]],[7,10,13,1,[28,29,9,10,13,14,17,18]],[7,12,7,0,[28,29,9,10,13,14]],[7,11,6,0,[28,29,9,10,13,14]],[7,11,6,0,[28,29,9,10,13,14]],[7,4,-1,0,[28,29,9,10,13,14]],[7,16,9,0,[28,29,9,10,13,14]],[7,3,16,0,[28,29,9,10,13,14]],[7,15,14,0,[28,29,9,10,13,14]],[7,10,-1,1,[28,29,9,10,13,14,17,18]],[7,10,-1,9,[9,10,13,14,17,18]],[7,10,-1,9,[9,10,13,14,17,18]],[7,10,-1,9,[9,10]],[7,16,17,2,[9,10,19]],[7,16,17,10,[9,10,19]],[7,6,13,2,[19]],[7,7,-1,0,[9,10,13,14]],[7,7,14,0,[9,10,13,14]],[7,12,16,0,[9,10,13,14]],[7,1,13,0,[9,10,13,14]],[7,4,-1,2,[19]],[7,4,-1,10,[19]],[7,16,-1,2,[19]],[7,16,-1,2,[19]],[7,16,-1,10,[19]],[8,3,-1,4,[13,14,17,18]],[8,3,-1,4,[13,14,17,18]],[8,3,-1,4,[13,14,17,18]],[8,3,-1,12,[13,14]],[8,1,-1,4,[13,14,17,18]],[8,1,-1,4,[13,14,17,18]],[8,1,-1,4,[13,14,17,18]],[8,1,-1,12,[13,14]],[8,2,-1,4,[13,14,17,18]],[8,2,-1,4,[13,14,17,18]],[8,2,-1,4,[13,14,17,18]],[8,2,-1,12,[13,14]],[8,0,-1,0,[13,14,17,18]],[8,0,-1,0,[13,14,17,18]],[8,9,-1,0,[13,14,17,18,19]],[8,9,-1,0,[13,14,17,18,19]],[8,9,16,0,[13,14,17,18,19]],[8,9,16,8,[13,14]],[8,11,-1,0,[13,14]],[8,11,10,0,[13,14]],[8,11,10,0,[13,14]],[8,11,10,8,[13,14]],[8,15,-1,0,[13,14,19]],[8,15,-1,0,[13,14,19]],[8,3,-1,0,[13,14]],[8,3,-1,0,[13,14]],[8,0,-1,0,[13,14]],[8,0,-1,0,[13,14]],[8,2,-1,0,[13,14,17,18]],[8,2,12,0,[13,14,17,18]],[8,2,12,8,[13,14]],[8,4,-1,0,[13,14]],[8,4,-1,0,[13,14]],[8,12,-1,0,[13,14,17,18]],[8,12,1,0,[13,14,17,18]],[8,12,1,0,[13,14,17,18]],[8,12,1,8,[13,14]],[8,3,14,0,[13,14,17,18]],[8,3,14,0,[13,14,17,18]],[8,3,14,8,[13,14]],[8,3,14,0,[13,14,17,18]],[8,3,14,8,[13,14]],[8,8,-1,0,[13,14,17,18]],[8,8,-1,0,[13,14,17,18]],[8,8,-1,8,[13,14]],[8,9,2,0,[13,14,18]],[8,2,-1,0,[13,14,17,18]],[8,2,-1,0,[13,14,17,18]],[8,4,7,0,[13,14,17,18,19]],[0,4,7,0,[]],[0,4,7,8,[]],[8,1,11,0,[13,14]],[8,1,11,0,[13,14]],[8,1,11,8,[13,14]],[8,6,-1,0,[13,14,19]],[8,6,-1,0,[13,14,19]],[8,13,-1,0,[13,14,17,18]],[8,13,-1,0,[13,14,17,18]],[8,10,-1,0,[13,14,17,18]],[8,10,-1,0,[13,14,17,18]],[8,10,17,0,[13,14,17,18]],[8,10,17,8,[13,14]],[8,15,17,0,[13,14,17,18]],[8,15,17,0,[13,14,17,18]],[8,15,17,0,[13,14,17,18]],[8,15,17,8,[13,14]],[8,15,0,0,[13,14]],[8,16,-1,0,[13,14,17,18,19]],[8,13,-1,0,[13,14]],[8,6,-1,0,[13,14,19]],[8,5,10,0,[13,14,19]],[8,8,13,0,[13,14,19]],[8,17,-1,0,[13,14,17,18]],[8,17,-1,0,[13,14,17,18]],[8,17,-1,8,[13,14]],[8,6,-1,0,[13,14,17,18,19]],[8,6,-1,8,[13,14,17,18,19]],[8,4,-1,0,[13,14,17,18]],[8,5,11,0,[13,14,17,18]],[8,5,11,0,[13,14,17,18]],[8,12,-1,0,[13,14,18]],[0,5,-1,8,[]],[8,5,-1,8,[13,14,17]],[0,10,0,8,[]],[8,10,0,8,[13,14,17,18,19]],[0,4,15,8,[]],[8,4,15,8,[13,14,17,19]],[8,16,-1,0,[13,14,17,18]],[8,16,-1,0,[13,14,17,18]],[8,16,-1,8,[13,14]],[8,4,14,0,[13,14]],[8,4,5,0,[13,14]],[8,2,14,0,[13,14]],[8,2,5,0,[13,14]],[8,16,14,0,[13,14,17,18]],[8,16,14,8,[13,14]],[8,14,13,0,[13,14,17]],[8,14,13,0,[13,14,17]],[8,14,13,0,[13,14,17]],[8,17,-1,9,[13,14]],[8,17,-1,9,[13,14,17,18]],[8,6,-1,9,[13,14]],[8,6,-1,9,[13,14,17,18]],[8,7,14,1,[13,14]],[8,7,14,9,[13,14]],[8,6,-1,1,[13,14,17,18]],[0,6,15,9,[]],[8,6,15,9,[13,14,17,18]],[8,6,15,9,[]],[8,6,15,9,[13,14]],[8,15,3,2,[]],[8,4,-1,1,[13,14]],[8,14,-1,1,[13,14]],[8,5,-1,1,[13,14,17,18]],[8,13,-1,1,[13,14,17,18]],[8,10,3,1,[13,14]],[8,10,3,9,[13,14,17,18]],[8,10,3,9,[13,14,17,18]],[8,0,10,0,[37]],[8,11,12,0,[37,17,18,19]],[8,8,0,0,[37]],[8,8,0,8,[17,18]],[0,2,13,8,[]],[8,2,13,8,[17,18]],[8,6,7,0,[37]],[8,15,7,0,[37,17,18,19]],[0,17,9,9,[]],[8,17,9,9,[37]],[9,3,-1,4,[17,18]],[9,3,-1,4,[17,18]],[9,3,15,4,[17,18]],[9,1,-1,4,[17,18]],[9,1,-1,4,[17,18]],[9,1,13,4,[17,18]],[9,2,-1,4,[17,18]],[9,2,-1,4,[17,18]],[9,2,6,4,[17,18]],[9,0,-1,0,[17,18]],[0,0,-1,0,[]],[9,11,-1,0,[17,18]],[9,11,-1,0,[17,18]],[9,11,-1,0,[17,18]],[9,11,15,0,[17,18]],[9,4,-1,0,[17,18]],[9,4,6,0,[17,18]],[9,4,6,0,[17,18]],[9,0,-1,0,[17,18]],[0,0,-1,8,[]],[9,0,-1,8,[17,18]],[9,17,-1,0,[17,18,19]],[9,17,-1,0,[17,18,19]],[9,3,0,0,[17,18]],[9,3,0,0,[17,18]],[9,3,0,0,[17,18]],[0,0,9,0,[]],[9,12,-1,0,[17,18,19]],[9,12,-1,0,[17,18,19]],[9,12,-1,0,[17,18,19]],[9,1,-1,0,[17,18,19]],[9,1,10,0,[18,19]],[9,1,13,0,[17,19]],[9,4,-1,0,[17,18]],[9,4,-1,0,[17,18]],[9,4,9,0,[17,18]],[9,4,9,0,[17,18]],[9,15,-1,0,[17,18,19]],[9,15,-1,0,[17,18,19]],[9,7,0,0,[17,18,19]],[9,7,0,0,[17,18,19]],[9,3,13,0,[17,18]],[9,3,13,0,[17,18]],[9,8,3,0,[17,18]],[9,8,3,0,[17,18]],[9,12,-1,0,[17,18]],[9,3,-1,0,[17,18,19]],[9,3,1,0,[17,18,19]],[9,3,1,8,[17,18,19]],[9,11,-1,0,[17,18]],[9,11,10,0,[17,18]],[9,10,-1,0,[17,18]],[9,10,-1,0,[17,18]],[9,17,16,0,[17,18,19]],[9,17,16,0,[17,18,19]],[9,17,16,0,[17,18,19]],[9,2,-1,0,[17,18]],[9,2,-1,0,[17,18]],[9,9,15,0,[17,18]],[9,2,-1,0,[17,18]],[0,2,-1,8,[]],[9,2,-1,8,[17,18]],[9,16,7,0,[17,18]],[9,16,7,0,[17,18]],[9,14,0,0,[17,18,19]],[9,16,-1,0,[17,18]],[9,12,7,0,[17,18,19]],[9,12,7,0,[17,18,19]],[9,12,7,8,[17,18,19]],[9,13,-1,0,[17,18,19]],[9,13,-1,0,[17,18,19]],[9,9,6,0,[17,18,19]],[9,5,-1,0,[17,18]],[9,5,-1,0,[17,18]],[9,2,10,0,[17,18]],[9,2,-1,0,[17,18,19]],[0,14,2,8,[]],[9,14,2,8,[17,18,19]],[9,14,2,8,[17,18,19]],[0,14,2,8,[]],[9,6,13,0,[17,18,19]],[9,7,8,0,[17,18]],[9,0,10,0,[17,18]],[0,0,-1,8,[]],[9,0,-1,8,[17,18]],[9,15,16,0,[17,18]],[9,8,6,0,[18]],[9,17,10,0,[18]],[9,3,15,0,[18]],[9,13,17,0,[18]],[9,11,6,0,[18]],[9,4,8,0,[18]],[9,8,16,0,[17]],[9,5,2,0,[17]],[9,6,4,0,[17]],[9,15,9,0,[17]],[9,1,7,0,[17]],[9,12,4,0,[17]],[9,14,5,0,[17,18,19]],[9,14,5,0,[17,18,19]],[9,14,5,0,[17,18,19]],[9,14,5,8,[17,18,19]],[9,13,-1,8,[17,18,19]],[9,13,-1,8,[17,18,19]],[9,16,13,0,[17,18,19]],[9,15,3,1,[17,18]],[9,15,5,1,[17,18]],[9,15,8,1,[17,18]],[9,15,1,1,[17,18]],[9,14,15,0,[18]],[9,17,6,0,[17]],[9,6,14,1,[18]],[9,4,14,1,[17]],[9,2,14,0,[18]],[9,3,10,0,[17]],[9,3,14,0,[17,18]],[9,3,13,0,[17,18]],[9,3,13,0,[17,18]],[9,7,6,1,[17,18]],[9,7,10,1,[17,18]],[9,7,17,1,[17,18]],[9,3,-1,9,[17,18]],[9,3,-1,9,[17,18]],[9,3,-1,9,[17,18]],[9,3,-1,9,[17,18]],[9,16,14,0,[17,18]],[9,3,14,0,[17,18]],[9,1,14,0,[18]],[9,4,14,0,[18]],[9,12,10,0,[17]],[9,16,10,0,[17]],[9,0,-1,9,[17,18]],[9,0,-1,9,[17,18]],[9,0,-1,9,[17,18]],[9,7,13,2,[]]];
+const GAMES=[["rb-r","Red",1,false],["rb-b","Blue",1,false],["y","Yellow",1,false],["frlg-lg","LeafGreen",3,false],["frlg-fr","FireRed",3,false],["hgss-ss","SoulSilver",4,false],["hgss-hg","HeartGold",4,false],["xy-y","Y",6,false],["xy-x","X",6,false],["usum-um","Ultra Moon",7,false],["usum-us","Ultra Sun",7,false],["lgpe-lge","Let's Go, Eevee!",7,false],["lgpe-lgp","Let's Go, Pikachu!",7,false],["swsh-sh","Shield",8,true],["swsh-sw","Sword",8,true],["bdsp-sp","Shining Pearl",8,false],["bdsp-bd","Brilliant Diamond",8,false],["sv-v","Violet",9,true],["sv-s","Scarlet",9,true],["lza","Legends: Z-A",9,false],["gs-s","Silver",2,false],["gs-g","Gold",2,false],["c","Crystal",2,false],["dp-p","Pearl",4,false],["dp-d","Diamond",4,false],["pt","Platinum",4,false],["bw-w","White",5,false],["b2w2-w2","White 2",5,false],["sm-m","Moon",7,false],["sm-s","Sun",7,false],["bw-b","Black",5,false],["b2w2-b2","Black 2",5,false],["oras-as","Alpha Sapphire",6,false],["oras-or","Omega Ruby",6,false],["rs-s","Sapphire",3,false],["rs-r","Ruby",3,false],["e","Emerald",3,false],["la","Legends: Arceus",8,false]];
+const TYPES = ['NORMAL','FIRE','WATER','GRASS','ELECTRIC','ICE','FIGHTING','POISON','GROUND','FLYING','PSYCHIC','BUG','ROCK','GHOST','DRAGON','DARK','STEEL','FAIRY'];
+const CATEGORIES = [['LEGENDARY', 'Legendary', 1], ['MYTHICAL', 'Mythical', 2], ['STARTER', 'Starter', 4]];
+const GENS = [[1,'Kanto'],[2,'Johto'],[3,'Hoenn'],[4,'Sinnoh'],[5,'Unova'],[6,'Kalos'],[7,'Alola'],[8,'Galar'],[9,'Paldea']];
+const ROMAN = ['', 'I','II','III','IV','V','VI','VII','VIII','IX'];
+const DLC_BY_GAME = { 'swsh-sw': ['Isle of Armor', 'Crown Tundra'], 'swsh-sh': ['Isle of Armor', 'Crown Tundra'], 'sv-s': ['The Teal Mask', 'The Indigo Disk'], 'sv-v': ['The Teal Mask', 'The Indigo Disk'] };
+const OWNED = new Set(P.map((_, i) => i).filter(i => i % 3 === 0 || i % 7 === 0)); // sample collection
+
+const I = {
+    filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z"/></svg>',
+};
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const cap = t => t[0] + t.slice(1).toLowerCase();
+
+const state = { gens: new Set(), types: new Set(), games: new Set(), dlc: 'none', collection: 'all', shiny: false, noForms: false,
+                open: true, section: null, gameQuery: '', pop: null, mView: null };
+
+// ---------- filtering on real data ----------
+function matches(row, idx, s, skip = '') {
+    const [gen, t1, t2, flags, games] = row;
+    if (skip !== 'gens' && s.gens.size && !s.gens.has(gen)) return false;
+    if (skip !== 'types' && s.types.size) {
+        const ok = [...s.types].some(t => {
+            const cat = CATEGORIES.find(c => c[0] === t);
+            if (cat) return (flags & cat[2]) !== 0;
+            const ti = TYPES.indexOf(t);
+            return t1 === ti || t2 === ti;
+        });
+        if (!ok) return false;
+    }
+    if (skip !== 'games' && s.games.size && !games.some(g => s.games.has(GAMES[g][0]))) return false;
+    if (s.noForms && (flags & 8)) return false;
+    if (skip !== 'collection' && s.collection !== 'all' && OWNED.has(idx) !== (s.collection === 'owned')) return false;
+    return true;
+}
+const countWith = (s, skip) => P.reduce((n, row, i) => n + (matches(row, i, s, skip) ? 1 : 0), 0);
+function collectionCounts(s) {
+    let all = 0, owned = 0;
+    P.forEach((row, i) => { if (matches(row, i, s, 'collection')) { all++; if (OWNED.has(i)) owned++; } });
+    return { all, owned, missing: all - owned };
+}
+const activeCount = s => (s.gens.size ? 1 : 0) + (s.types.size ? 1 : 0) + (s.games.size ? 1 : 0) + (s.collection !== 'all' ? 1 : 0) + (s.noForms ? 1 : 0) + (dlcGame(s) && s.dlc !== 'none' ? 1 : 0);
+const dlcGame = s => (s.games.size === 1 && DLC_BY_GAME[[...s.games][0]]) ? [...s.games][0] : null;
+
+// ---------- summaries ----------
+function summary(kind, s) {
+    if (kind === 'gens') return s.gens.size ? [...s.gens].sort((a, b) => a - b).map(g => 'Gen ' + ROMAN[g]).join(', ') : 'All';
+    if (kind === 'types') return s.types.size ? [...s.types].map(t => CATEGORIES.find(c => c[0] === t)?.[1] ?? cap(t)).join(', ') : 'All';
+    if (kind === 'games') return s.games.size ? (s.games.size === 1 ? GAMES.find(g => g[0] === [...s.games][0])[1] : `${s.games.size} games`) : 'All';
+    if (kind === 'collection') return { all: 'All', owned: 'Owned', missing: 'Missing' }[s.collection];
+    if (kind === 'options') return [s.shiny && 'Shiny', s.noForms && 'No forms'].filter(Boolean).join(', ') || 'Off';
+}
+
+// ---------- building blocks (new options) ----------
+function genBlock(s) {
+    return `<div class="gen-grid">${GENS.map(([g, r]) => `<button type="button" class="gen ${s.gens.has(g) ? 'on' : ''}" data-act="gen" data-v="${g}"><b>Gen ${ROMAN[g]}</b><small>${r}</small></button>`).join('')}</div>`;
+}
+function typeBlock(s) {
+    return `<div class="type-grid">${TYPES.map(t => `<button type="button" class="type ${s.types.has(t) ? 'on' : ''}" data-act="type" data-v="${t}"><img src="../public/images/types/type-${t.toLowerCase()}.png" alt="">${cap(t)}</button>`).join('')}</div>
+        <div class="chips" style="margin-top:8px">${CATEGORIES.map(([id, label]) => `<button type="button" class="chip ${s.types.has(id) ? 'on' : ''}" data-act="type" data-v="${id}">${I.star.replace('<svg', '<svg width="13" height="13"')}${label}</button>`).join('')}</div>`;
+}
+function gameBlock(s) {
+    const q = s.gameQuery.toLowerCase();
+    const list = GAMES.filter(g => !q || g[1].toLowerCase().includes(q));
+    let html = `<input class="game-search" data-act="gameQuery" placeholder="Search games" value="${esc(s.gameQuery)}"><div class="game-list">`;
+    let lastGen = 0;
+    for (const [id, name, gen] of [...list].sort((a, b) => a[2] - b[2])) {
+        if (gen !== lastGen) { html += `<div class="game-group">Gen ${ROMAN[gen]} · ${GENS[gen - 1][1]}</div>`; lastGen = gen; }
+        const on = s.games.has(id);
+        html += `<button type="button" class="game ${on ? 'on' : ''}" data-act="game" data-v="${id}"><img src="../public/images/games/${id}.webp" alt="">${esc(name)}<span class="box">${on ? I.check : ''}</span></button>`;
+    }
+    html += '</div>';
+    const dg = dlcGame(s);
+    if (dg) {
+        const opts = [['none', 'Base game'], ['all', 'All DLCs'], ...DLC_BY_GAME[dg].map(d => [d, d])];
+        html += `<div class="dlc"><div class="sec-title" style="margin-bottom:6px">DLC</div><div class="chips">${opts.map(([v, l]) => `<button type="button" class="chip ${s.dlc === v ? 'on' : ''}" data-act="dlc" data-v="${esc(v)}">${esc(l)}</button>`).join('')}</div></div>`;
+    }
+    return html;
+}
+function collectionBlock(s) {
+    const n = collectionCounts(s);
+    const b = (v, l) => `<button type="button" class="${s.collection === v ? 'on' : ''}" data-act="collection" data-v="${v}">${l} <small>${n[v]}</small></button>`;
+    return `<div class="seg">${b('all', 'All')}${b('owned', 'Owned')}${b('missing', 'Missing')}</div>`;
+}
+function optionsBlock(s) {
+    return `<div class="switch-row" data-act="shiny"><span>Shiny<small>Show shiny sprites in the grid</small></span><span class="sw ${s.shiny ? 'on' : ''}"></span></div>
+        <div class="switch-row" data-act="noForms"><span>Exclude forms<small>Hide Mega, Gigantamax, regional forms…</small></span><span class="sw ${s.noForms ? 'on' : ''}"></span></div>`;
+}
+const section = (title, body, clearAct) => `<section><div class="sec-title">${title}${clearAct ? `<button type="button" data-act="clear" data-v="${clearAct}">Clear</button>` : ''}</div>${body}</section>`;
+const showBtn = s => `<button type="button" class="btn-primary" data-act="close">Show ${countWith(s)} Pokémon</button>`;
+const resetBtn = s => `<button type="button" class="btn-ghost" data-act="reset" ${activeCount(s) || s.shiny ? '' : 'disabled style="opacity:.4"'}>Reset</button>`;
+
+// ---------- page behind ----------
+function page(s, phone, extraToolbar = '', opts = {}) {
+    const n = activeCount(s);
+    const sprites = ['0001', '0004', '0007', '0025', '0133', '0150', '0152', '0155', '0158', '0172', '0001', '0004'];
+    return `<div class="bg-scroll">
+        <div class="toolbar"><div class="search">Search Pokémon…</div>
+            ${opts.noFiltersButton ? '' : `<button type="button" class="filters-btn ${n ? 'active' : ''}" data-act="toggle">${I.filter}Filters${n ? `<span class="badge">${n}</span>` : ''}${I.down.replace('<svg', '<svg width="14" height="14"')}</button>`}
+        </div>
+        ${extraToolbar}
+        <p class="showing">Showing ${countWith(s)} Pokémon · Selected ${OWNED.size}</p>
+        <div class="fake-grid">${sprites.slice(0, phone ? 9 : 12).map(c => `<div class="fake-card"><img src="../public/images/pokemon/${c}.webp" alt=""></div>`).join('')}</div>
+    </div>`;
+}
+
+// ---------- layouts ----------
+const LAYOUTS = {
+    today(s, phone) {
+        if (!s.open) return page(s, phone);
+        const combo = (label, value) => `<div class="combo"><label>${label}</label><div>${esc(value)}${I.down}</div></div>`;
+        const dg = dlcGame(s);
+        const collection = phone
+            ? combo('Collection', `${summary('collection', s)} (${collectionCounts(s)[s.collection]})`)
+            : `<div><div class="combo"><label>Collection</label></div><div class="chips" style="display:grid;grid-template-columns:repeat(3,1fr)">${['all', 'owned', 'missing'].map(v => `<button type="button" class="chip ${s.collection === v ? 'on' : ''}" style="justify-content:center" data-act="collection" data-v="${v}">${cap(v)} <small>${collectionCounts(s)[v]}</small></button>`).join('')}</div></div>`;
+        return page(s, phone) + `<div class="today">
+            <div class="grid2">${combo('Generation / Region', summary('gens', s))}${combo('Type / Category', summary('types', s))}
+                ${combo('Game', summary('games', s))}<div class="${dg ? '' : 'ghost-slot'}" ${phone && !dg ? 'style="display:none"' : ''}>${combo('DLC', dg ? s.dlc : '─')}</div></div>
+            ${collection}
+            <div><div class="combo"><label>Options</label></div><div class="grid2" style="grid-template-columns:1fr 1fr">${optionsBlock(s).replace(/<small>.*?<\/small>/g, '')}</div></div>
+            ${activeCount(s) || s.shiny ? `<button type="button" class="btn-ghost" style="align-self:flex-end;height:34px" data-act="reset">Reset</button>` : ''}
+            <p style="margin:0;color:var(--faint);font-size:.75rem">(Hoje os campos abrem listas de marcar; aqui eles só mostram o valor. Use as outras opções para clicar.)</p>
+        </div>`;
+    },
+
+    A(s, phone) {
+        if (!s.open) return page(s, phone);
+        return page(s, phone) + `<div class="a-panel">
+            <div class="a-body">
+                ${section('Collection', collectionBlock(s))}
+                ${section('Generation / Region', genBlock(s), s.gens.size && 'gens')}
+                ${section('Type / Category', typeBlock(s), s.types.size && 'types')}
+                ${section('Game', gameBlock(s), s.games.size && 'games')}
+                ${section('Options', optionsBlock(s))}
+            </div>
+            <div class="a-foot footer">${resetBtn(s)}${showBtn(s)}</div>
+        </div>`;
+    },
+
+    B(s, phone) {
+        if (!s.open) return page(s, phone);
+        const item = (key, title, body) => {
+            const open = s.section === key;
+            const sum = summary(key, s);
+            const set = !['All', 'Off'].includes(sum);
+            return `<div class="acc-item ${open ? 'open' : ''}"><button type="button" class="acc-head" data-act="section" data-v="${key}"><b>${title}</b><span class="sum ${set ? 'set' : ''}">${esc(sum)}</span>${I.right}</button>
+                ${open ? `<div class="acc-body">${body}</div>` : ''}</div>`;
+        };
+        return page(s, phone) + `<div class="dim-layer" data-act="close"></div>
+            <aside class="drawer">
+                ${phone ? '<div class="grab"></div>' : ''}
+                <div class="drawer-head"><b>Filters</b><button type="button" class="round" data-act="close">${I.x}</button></div>
+                <div class="acc">
+                    ${item('collection', 'Collection', collectionBlock(s))}
+                    ${item('gens', 'Generation / Region', genBlock(s))}
+                    ${item('types', 'Type / Category', typeBlock(s))}
+                    ${item('games', 'Game', gameBlock(s))}
+                    ${item('options', 'Options', optionsBlock(s))}
+                </div>
+                <div class="drawer-foot footer">${resetBtn(s)}${showBtn(s)}</div>
+            </aside>`;
+    },
+
+    C(s, phone) {
+        const pills = [['gens', 'Generation'], ['types', 'Type'], ['games', 'Game'], ['collection', 'Collection'], ['options', 'Options']];
+        const pillCount = k => k === 'gens' ? s.gens.size : k === 'types' ? s.types.size : k === 'games' ? s.games.size : k === 'collection' ? (s.collection !== 'all' ? 1 : 0) : (s.shiny ? 1 : 0) + (s.noForms ? 1 : 0);
+        const bar = `<div class="pillbar">${pills.map(([k, l]) => {
+            const n = pillCount(k);
+            const label = k === 'collection' && n ? summary('collection', s) : (n ? `${l} · ${n}` : l);
+            return `<button type="button" class="pill ${n ? 'set' : ''} ${s.pop === k ? 'open' : ''}" data-act="pop" data-v="${k}" data-pill="${k}">${esc(label)}${I.down}</button>`;
+        }).join('')}</div>`;
+        const tags = [];
+        s.gens.forEach(g => tags.push([`Gen ${ROMAN[g]}`, 'gen', g]));
+        s.types.forEach(t => tags.push([CATEGORIES.find(c => c[0] === t)?.[1] ?? cap(t), 'type', t]));
+        s.games.forEach(id => tags.push([GAMES.find(g => g[0] === id)[1], 'game', id]));
+        if (s.collection !== 'all') tags.push([summary('collection', s), 'collection', 'all']);
+        if (s.noForms) tags.push(['No forms', 'noForms', '']);
+        const tagRow = tags.length ? `<div class="active-row">${tags.map(([l, act, v]) => `<button type="button" class="tag" data-act="${act}" data-v="${esc(v)}">${esc(l)}<span class="x">${I.x}</span></button>`).join('')}<button type="button" class="clear-all" data-act="reset">Clear all</button></div>` : '';
+        let pop = '';
+        if (s.pop) {
+            const body = { gens: genBlock(s), types: typeBlock(s), games: gameBlock(s), collection: collectionBlock(s), options: optionsBlock(s) }[s.pop];
+            const title = pills.find(p => p[0] === s.pop)[1];
+            const pos = phone ? '' : `style="top:${s.popTop ?? 136}px;left:${s.popLeft ?? 200}px"`;
+            pop = `${phone ? '<div class="dim-layer" data-act="pop" data-v=""></div>' : ''}<div class="pop" ${pos}>
+                ${phone ? '<div class="grab" style="margin:0 auto 10px"></div>' : ''}
+                <div class="sec-title">${title}${s.pop !== 'collection' && s.pop !== 'options' && pillCount(s.pop) ? `<button type="button" data-act="clear" data-v="${s.pop}">Clear</button>` : ''}</div>
+                ${body}
+                ${phone ? `<div class="pop-foot">${showBtn(s).replace('data-act="close"', 'data-act="pop" data-v=""')}</div>` : ''}
+            </div>`;
+        }
+        return page(s, phone, bar + tagRow, { noFiltersButton: true }) + pop;
+    },
+
+    D(s, phone) {
+        const nav = [['collection', 'Collection'], ['gens', 'Generation'], ['types', 'Type'], ['games', 'Game'], ['options', 'Options']];
+        const bodyOf = k => ({ gens: genBlock(s), types: typeBlock(s), games: gameBlock(s), collection: collectionBlock(s), options: optionsBlock(s) }[k]);
+        const badge = k => k === 'gens' ? s.gens.size : k === 'types' ? s.types.size : k === 'games' ? s.games.size : k === 'collection' ? (s.collection !== 'all' ? 1 : 0) : (s.noForms ? 1 : 0) + (s.shiny ? 1 : 0);
+        if (!s.open) return page(s, phone);
+        if (phone) {
+            if (s.mView) {
+                const title = nav.find(n => n[0] === s.mView)[1];
+                return page(s, phone) + `<div class="m-full">
+                    <div class="m-head"><button type="button" class="round" data-act="mView" data-v="">${I.left}</button><b>${title}</b>${badge(s.mView) && s.mView !== 'options' && s.mView !== 'collection' ? `<button type="button" class="btn-ghost" style="height:32px" data-act="clear" data-v="${s.mView}">Clear</button>` : ''}</div>
+                    <div class="m-body">${bodyOf(s.mView)}</div>
+                    <div class="m-foot footer">${showBtn(s)}</div></div>`;
+            }
+            return page(s, phone) + `<div class="m-full">
+                <div class="m-head"><b>Filters</b><button type="button" class="round" data-act="close">${I.x}</button></div>
+                <div class="m-list">${nav.map(([k, l]) => {
+                    const sum = summary(k, s);
+                    return `<button type="button" class="m-row" data-act="mView" data-v="${k}"><b>${l}</b><span class="${['All', 'Off'].includes(sum) ? '' : 'set'}">${esc(sum)}</span>${I.right}</button>`;
+                }).join('')}</div>
+                <div class="m-foot footer">${resetBtn(s)}${showBtn(s)}</div></div>`;
+        }
+        const cur = s.section ?? 'collection';
+        return page(s, phone) + `<div class="d-panel">
+            <nav class="d-nav">${nav.map(([k, l]) => `<button type="button" class="${cur === k ? 'on' : ''}" data-act="dSection" data-v="${k}">${l}${badge(k) ? `<em>${badge(k)}</em>` : ''}</button>`).join('')}</nav>
+            <div class="d-content"><div class="sec-title">${nav.find(n => n[0] === cur)[1]}${badge(cur) && cur !== 'options' && cur !== 'collection' ? `<button type="button" data-act="clear" data-v="${cur}">Clear</button>` : ''}</div>${bodyOf(cur)}</div>
+            <div class="d-foot footer">${resetBtn(s)}${showBtn(s)}</div>
+        </div>`;
+    },
+};
+
+const OPTIONS = [
+    { key: 'today', title: 'Hoje',
+      what: 'O painel atual: campos que abrem listas de marcar, seção Collection e Options.',
+      pros: ['Compacto'], cons: ['Tudo fica escondido dentro de listas: não dá para ver as opções sem abrir cada uma', 'No celular vira uma coluna longa de campos iguais', 'Não mostra quantos Pokémon vão aparecer'] },
+    { key: 'A', title: 'A · Painel com botões',
+      what: 'O mesmo painel suspenso de hoje, mas com as opções à vista: gerações como botões com a região, tipos como grade de ícones, coleção como seletor de 3, jogos em lista com ícones e busca. Rodapé fixo com "Reset" e "Show N Pokémon".',
+      pros: ['Menor mudança em relação a hoje', 'Tudo visível, 1 toque para filtrar', 'No celular só rola para baixo'],
+      cons: ['Painel mais alto (rola por dentro)'] },
+    { key: 'B', title: 'B · Gaveta (PC) / folha de baixo (celular)',
+      what: 'Os filtros abrem numa gaveta lateral no computador e numa folha que sobe de baixo no celular. Cada filtro é uma linha que mostra o que está escolhido ("Gen I, Gen II") e abre ao tocar (acordeão).',
+      pros: ['Resumo de tudo numa olhada', 'Padrão de apps de compras no celular', 'Espaço de sobra'],
+      cons: ['Tapa a grade enquanto está aberta', 'Um toque a mais para abrir cada seção'] },
+    { key: 'C', title: 'C · Barra de filtros',
+      what: 'Sem botão "Filters": uma barra de botões abaixo da busca (Generation, Type, Game, Collection, Options), cada um abre só o seu filtro. Os filtros ativos aparecem como etiquetas com × para remover, mais "Clear all". No celular a barra rola para o lado e cada filtro abre embaixo.',
+      pros: ['Filtros ativos sempre à vista, remove com 1 toque', 'Cada filtro abre sozinho, sem painel grande', 'Combina com a busca + filtros da aba TCG'],
+      cons: ['Ocupa uma ou duas linhas fixas no topo da página', 'Mais diferente de hoje'] },
+    { key: 'D', title: 'D · Abas laterais (PC) / páginas (celular)',
+      what: 'No computador, um painel com o menu à esquerda (Collection, Generation, Type, Game, Options) e o conteúdo à direita, como uma tela de configurações. No celular, tela cheia com a lista de filtros e o resumo de cada um; tocar abre a página daquele filtro.',
+      pros: ['Organizado; cada filtro tem espaço próprio', 'Números mostram onde há filtro ativo', 'No celular, navegação de configurações que todo mundo conhece'],
+      cons: ['Mais toques para mudar vários filtros', 'É o maior em tela'] },
+];
+
+let current = OPTIONS[1];
+
+function render() {
+    for (const [id, phone] of [['frame-desktop', false], ['frame-phone', true]]) {
+        const el = document.getElementById(id);
+        const focused = document.activeElement?.dataset.act === 'gameQuery' && el.contains(document.activeElement);
+        const scrolls = [...el.querySelectorAll('.a-body, .acc, .game-list, .d-content, .m-body')].map(x => x.scrollTop);
+        el.innerHTML = LAYOUTS[current.key](state, phone);
+        [...el.querySelectorAll('.a-body, .acc, .game-list, .d-content, .m-body')].forEach((x, i) => { if (scrolls[i] != null) x.scrollTop = scrolls[i]; });
+        if (focused) { const input = el.querySelector('[data-act="gameQuery"]'); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+    }
+}
+
+function renderPicker() {
+    document.getElementById('picker').innerHTML = OPTIONS.map(o => `<button type="button" data-key="${o.key}" aria-pressed="${o === current}">${o.title}</button>`).join('');
+    document.getElementById('info').innerHTML = `<strong>${current.title}</strong><div>${current.what}</div>
+        <ul>${current.pros.map(p => `<li>👍 ${p}</li>`).join('')}${current.cons.map(c => `<li>👎 ${c}</li>`).join('')}</ul>`;
+}
+
+document.getElementById('picker').addEventListener('click', e => {
+    const b = e.target.closest('[data-key]');
+    if (!b) return;
+    current = OPTIONS.find(o => o.key === b.dataset.key);
+    Object.assign(state, { open: current.key !== 'C', section: current.key === 'B' ? 'gens' : null, pop: null, mView: null });
+    renderPicker();
+    render();
+});
+
+function toggleSet(set, v) { set.has(v) ? set.delete(v) : set.add(v); }
+
+document.addEventListener('click', e => {
+    const frame = e.target.closest('#frame-desktop, #frame-phone');
+    if (!frame) return;
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const { act, v } = el.dataset;
+    if (act === 'gameQuery') return;
+    if (act === 'toggle') state.open = !state.open;
+    else if (act === 'close') state.open = false;
+    else if (act === 'gen') toggleSet(state.gens, Number(v));
+    else if (act === 'type') toggleSet(state.types, v);
+    else if (act === 'game') { toggleSet(state.games, v); state.dlc = 'none'; }
+    else if (act === 'dlc') state.dlc = v;
+    else if (act === 'collection') state.collection = v;
+    else if (act === 'shiny') state.shiny = !state.shiny;
+    else if (act === 'noForms') state.noForms = !state.noForms;
+    else if (act === 'section') state.section = state.section === v ? null : v;
+    else if (act === 'dSection') state.section = v;
+    else if (act === 'mView') state.mView = v || null;
+    else if (act === 'clear') { if (v === 'gens') state.gens.clear(); if (v === 'types') state.types.clear(); if (v === 'games') { state.games.clear(); state.dlc = 'none'; } }
+    else if (act === 'reset') { state.gens.clear(); state.types.clear(); state.games.clear(); state.dlc = 'none'; state.collection = 'all'; state.shiny = false; state.noForms = false; }
+    else if (act === 'pop') {
+        state.pop = state.pop === v || !v ? null : v;
+        if (state.pop && frame.id === 'frame-desktop') {
+            const r = el.getBoundingClientRect(), fr = frame.getBoundingClientRect();
+            state.popTop = r.bottom - fr.top + 8;
+            state.popLeft = Math.max(12, Math.min(r.left - fr.left, fr.width - 392));
+        }
+    }
+    e.stopPropagation();
+    render();
+});
+document.addEventListener('input', e => {
+    if (e.target.dataset.act !== 'gameQuery') return;
+    state.gameQuery = e.target.value;
+    render();
+});
+
+renderPicker();
+render();
+</script>
+</body>
+</html>

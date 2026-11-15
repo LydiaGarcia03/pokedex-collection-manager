@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "compile-data": "node scripts/compile-pokedata.mjs",
-    "collect-tcg": "node scripts/collect-tcg-data.mjs",
+    "collect-tcg": "node scripts/collect-tcg-data.mjs && node scripts/collect-tcg-sets.mjs",
     "fetch-serebii-tcg": "node scripts/fetch-serebii-tcg-images.mjs",
     "fetch-fallback-tcg": "node scripts/fetch-fallback-tcg-images.mjs",
     "download-images": "node scripts/download-images.mjs",

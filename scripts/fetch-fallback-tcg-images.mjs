@@ -33,9 +33,6 @@
  * imageUrl once its file is actually on disk. The source URL is still recorded in the download
  * manifest so the pipeline stays reproducible.
  *
- * Also adds whole sets that exist in pokemon-tcg-data but not in TCGdex at all
- * (EXTRA_PTCG_SETS), for Pokémon already in pokemon-compiled.json.
- *
  * Additive only: never removes a card or touches a card that already has an image.
  *
  * Run from the pokedex-static root (after collect-tcg and fetch-serebii-tcg):
@@ -61,7 +58,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR  = join(__dirname, '../public/data');
 const TCG_IMG_DIR = join(__dirname, '../public/images/tcg');
 
-const COMPILED_PATH  = join(DATA_DIR, 'pokemon-compiled.json');
 const CARDS_PATH     = join(DATA_DIR, 'tcg-cards.json');
 const MANIFEST_PATH  = join(DATA_DIR, 'tcg-download-manifest.json');
 const OVERRIDES_PATH = join(__dirname, 'tcg-image-overrides.json');
@@ -112,16 +108,13 @@ const PTCG_SET_BY_TCGDEX_SET = {
 };
 const SAME_ID_PTCG_SETS = [
     'smp', 'svp', 'swshp', 'xyp', 'bwp', 'mep', 'ecard2', 'ecard3', 'sm6', 'pop6', 'cel25', 'pl2',
-    'swsh9tg', 'swsh10tg', 'swsh11tg', 'swsh12tg', 'fut20',
+    'swsh9tg', 'swsh10tg', 'swsh11tg', 'swsh12tg',
 ];
 for (const id of SAME_ID_PTCG_SETS) PTCG_SET_BY_TCGDEX_SET[id] ??= id;
 
 // Classic Collection reprints keep the original card's number, so several cards share one
 // number within the set — match by name instead.
 const MATCH_BY_NAME_SETS = new Set(['cel25cc', '30th-c']);
-
-// Sets pokemon-tcg-data has that TCGdex doesn't list at all — added to the catalog.
-const EXTRA_PTCG_SETS = ['fut20'];
 
 const PKMNCARDS_SET_BY_TCGDEX_SET = {
     'tk-xy-p':     'xy-trainer-kit-pikachu-libre',
@@ -201,7 +194,6 @@ async function fetchImage(url) {
 // ---------------------------------------------------------------------------
 // Load data
 // ---------------------------------------------------------------------------
-const allPokemon  = JSON.parse(readFileSync(COMPILED_PATH, 'utf-8'));
 const cardCatalog = JSON.parse(readFileSync(CARDS_PATH, 'utf-8'));
 const manifest    = existsSync(MANIFEST_PATH) ? JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8')) : {};
 const overrides   = existsSync(OVERRIDES_PATH) ? JSON.parse(readFileSync(OVERRIDES_PATH, 'utf-8')) : {};
@@ -220,26 +212,6 @@ async function ptcgCards(ptcgSet) {
     }
     return ptcgSetCache.get(ptcgSet);
 }
-
-// ---------------------------------------------------------------------------
-// Extra sets missing from TCGdex entirely
-// ---------------------------------------------------------------------------
-const catalogKeyByDex = new Map();
-for (const p of allPokemon) if (!catalogKeyByDex.has(p.dexNumber)) catalogKeyByDex.set(p.dexNumber, p.name.toLowerCase());
-const knownCardIds = new Set(Object.values(cardCatalog).flat().map(c => c.id));
-let addedCards = 0;
-
-for (const ptcgSet of EXTRA_PTCG_SETS) {
-    for (const pc of await ptcgCards(ptcgSet)) {
-        if (pc.supertype !== 'Pokémon' || knownCardIds.has(pc.id)) continue;
-        const key = catalogKeyByDex.get(pc.nationalPokedexNumbers?.[0]);
-        if (!key) continue;
-        (cardCatalog[key] ??= []).push({ id: pc.id, name: pc.name, number: pc.number, imageUrl: null, setId: ptcgSet });
-        knownCardIds.add(pc.id);
-        addedCards++;
-    }
-}
-console.log(`Added ${addedCards} cards from sets TCGdex doesn't list (${EXTRA_PTCG_SETS.join(', ')}).`);
 
 // ---------------------------------------------------------------------------
 // Sources

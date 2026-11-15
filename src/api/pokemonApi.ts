@@ -51,6 +51,30 @@ async function loadTcgCardCatalog(): Promise<Record<string, TcgCard[]>> {
     return tcgCardCache;
 }
 
+let tcgSetNameCache: Record<string, string> | null = null;
+
+// Synchronous reads of TCG data that is already loaded (null if not yet), so the TCG tab can
+// render cards on its first frame instead of flashing a spinner after every Pokémon switch.
+export function getLoadedTcgCards(pokemonName: string): TcgCard[] | null {
+    return tcgCardCache ? tcgCardCache[pokemonName.toLowerCase()] ?? [] : null;
+}
+
+export function getLoadedTcgSetNames(): Record<string, string> | null {
+    return tcgSetNameCache;
+}
+
+// { setId: setName } — lets the TCG tab search by set name. Missing file just means no set names.
+export async function loadTcgSetNames(): Promise<Record<string, string>> {
+    if (tcgSetNameCache !== null) return tcgSetNameCache;
+    try {
+        const res = await fetch(`${BASE}data/tcg-sets.json`);
+        tcgSetNameCache = res.ok ? ((await res.json()) as Record<string, string>) : {};
+    } catch {
+        tcgSetNameCache = {};
+    }
+    return tcgSetNameCache;
+}
+
 // Accepts pokemon name (not ID) — keyed by name.toLowerCase() in tcg-cards.json
 export async function fetchTcgCards(pokemonName: string): Promise<TcgCardsApiResponse> {
     try {

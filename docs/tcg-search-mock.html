@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Busca na aba TCG — mock</title>
+<style>
+    :root {
+        --bg-1: #0b3360; --bg-2: #0a2d55; --bg-3: #082744;
+        --text: #eef6ff; --muted: rgba(226, 232, 240, 0.72);
+        --accent: #9cc8ed; --accent-ink: #092f58;
+        --line: rgba(147, 197, 253, 0.32); --line-strong: rgba(96, 165, 250, 0.55);
+        --field: rgba(3, 24, 51, 0.28); --panel: rgba(3, 28, 61, 0.35);
+        --foil: #7c5cb8;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text);
+        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+        min-height: 100vh;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    .page { max-width: 1400px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 20px; color: var(--muted); max-width: 820px; line-height: 1.5; }
+
+    /* Option picker */
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button {
+        padding: 8px 14px; border-radius: 999px; cursor: pointer;
+        background: #0A2F59; border: 1px solid rgba(147, 197, 253, 0.62); color: #9fc9f8; font-weight: 600;
+    }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info {
+        margin: 0 0 22px; padding: 14px 16px; border-radius: 14px;
+        background: var(--panel); border: 1px solid var(--line); line-height: 1.5;
+    }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+
+    /* Frames */
+    .frames { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { margin: 0 0 8px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .desktop { flex: 1 1 640px; min-width: 0; }
+    .phone-wrap { flex: 0 0 auto; }
+    .phone {
+        width: 375px; height: 720px; border-radius: 36px; padding: 12px;
+        background: #04172e; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,.4);
+    }
+    .phone__screen {
+        position: relative; height: 100%; overflow: hidden; border-radius: 26px;
+        background: linear-gradient(180deg, var(--bg-1), var(--bg-3));
+    }
+    @media (max-width: 440px) {
+        .phone { width: 100%; padding: 6px; border-radius: 24px; }
+    }
+
+    /* Simplified detail modal */
+    .modal { border-radius: 22px; background: rgba(8, 39, 68, 0.85); border: 1px solid var(--line); overflow: hidden; }
+    .modal__head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; }
+    .modal__head img { width: 56px; height: 56px; object-fit: contain; }
+    .modal__head b { font-size: 1.1rem; }
+    .modal__head small { color: var(--muted); display: block; }
+    .tabs { display: flex; gap: 10px; padding: 14px 20px 0; }
+    .tab {
+        min-width: 96px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+        border: 1px solid rgba(147, 197, 253, 0.62); border-bottom: 0; border-radius: 12px 12px 0 0;
+        background: #0A2F59; color: #9fc9f8; font-weight: 600; font-size: .9rem;
+    }
+    .tab--active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+    .panel {
+        position: relative; height: 560px; overflow-y: auto; padding: 22px 24px 28px;
+        border-top: 2px solid var(--accent); scrollbar-width: thin; scrollbar-color: rgba(156,200,237,.8) transparent;
+    }
+    .phone .modal { border-radius: 0; border: 0; height: 100%; display: flex; flex-direction: column; background: transparent; }
+    .phone .modal__head { padding: 14px 14px 0; }
+    .phone .tabs { padding: 10px 10px 0; gap: 6px; }
+    .phone .tab { min-width: 0; flex: 1; font-size: .78rem; height: 34px; }
+    .phone .panel { flex: 1; height: auto; padding: 14px 12px 24px; }
+
+    /* Shared controls */
+    .search {
+        position: relative; display: flex; align-items: center; flex: 1; min-width: 0;
+    }
+    .search svg.lead { position: absolute; left: 16px; width: 18px; height: 18px; opacity: .75; pointer-events: none; }
+    .search input {
+        width: 100%; height: 46px; padding: 0 42px 0 44px; border-radius: 999px; outline: none;
+        background: var(--field); border: 1px solid var(--line-strong); color: #e5f2ff;
+        box-shadow: 0 8px 24px rgba(0,0,0,.14);
+    }
+    .search input::placeholder { color: rgba(229, 242, 255, 0.65); font-style: italic; }
+    .search input:focus { border-color: rgba(159, 212, 255, 0.95); box-shadow: 0 0 0 3px rgba(156, 200, 237, .22); }
+    .search .clear {
+        position: absolute; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer;
+        display: none; align-items: center; justify-content: center; background: rgba(156,200,237,.18);
+    }
+    .search.has-value .clear { display: inline-flex; }
+    .phone .search input { height: 42px; font-size: 16px; } /* 16px avoids iOS zoom-on-focus */
+
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .count { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+    .select {
+        height: 46px; padding: 0 36px 0 16px; border-radius: 999px; cursor: pointer; appearance: none;
+        background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239cc8ed' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+        border: 1px solid var(--line-strong); max-width: 240px;
+    }
+    .select option { background: #0b3360; }
+    .phone .select { height: 42px; max-width: none; width: 100%; font-size: 15px; }
+
+    .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+        flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600;
+        background: #0A2F59; color: #9fc9f8; border: 1px solid rgba(147, 197, 253, 0.5);
+    }
+    .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .chip em { font-style: normal; opacity: .7; font-weight: 500; }
+
+    .icon-btn {
+        width: 42px; height: 42px; border-radius: 50%; cursor: pointer; flex: 0 0 auto;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(11, 51, 96, .85); border: 1px solid rgba(147, 197, 253, .5);
+    }
+    .icon-btn svg { width: 19px; height: 19px; }
+
+    /* Grid (mirrors .pokemon-tcg-grid / .pokemon-tcg-card) */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 22px; }
+    .phone .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .card {
+        position: relative; aspect-ratio: 5 / 7; overflow: hidden; border-radius: 16px;
+        background: rgba(147, 197, 253, 0.08); border: 1px solid var(--line);
+    }
+    .phone .card { border-radius: 10px; }
+    .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card--checked { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(156, 200, 237, 0.4); }
+    .card__check {
+        position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 7px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--accent); color: var(--accent-ink); box-shadow: 0 2px 5px rgba(0,0,0,.3);
+    }
+    .card__foil {
+        position: absolute; bottom: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center; background: var(--foil); color: #eaeaee;
+    }
+    .card__check svg, .card__foil svg { width: 14px; height: 14px; }
+
+    .empty { padding: 40px 10px; text-align: center; color: var(--muted); line-height: 1.5; }
+    .empty b { color: var(--text); display: block; margin-bottom: 4px; }
+
+    /* E: grouped */
+    .group { margin-bottom: 22px; }
+    .group__head {
+        position: sticky; top: -22px; z-index: 1; display: flex; justify-content: space-between; align-items: baseline;
+        gap: 10px; margin: 0 -4px 10px; padding: 8px 4px; background: rgba(8, 39, 68, 0.96);
+        border-bottom: 1px solid var(--line); font-weight: 700; font-size: .92rem;
+    }
+    .phone .group__head { top: -14px; font-size: .84rem; }
+    .group__head span { color: var(--muted); font-weight: 500; font-size: .8rem; white-space: nowrap; }
+
+    /* D: collapsible */
+    .collapsible { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 14px; min-height: 46px; }
+    .collapsible .search { display: none; }
+    .collapsible.open .search { display: flex; animation: grow .18s ease-out; }
+    .collapsible.open .icon-btn--toggle { display: none; }
+    .collapsible .count { margin-right: auto; }
+    @keyframes grow { from { opacity: 0; transform: scaleX(.85); transform-origin: right; } to { opacity: 1; transform: none; } }
+
+    /* F: sticky top on desktop / floating bottom on phone */
+    .sticky-top {
+        position: sticky; top: -22px; z-index: 2; margin: -22px -24px 16px; padding: 14px 24px;
+        background: rgba(8, 39, 68, 0.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
+    }
+    .floating {
+        position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 3;
+        display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 999px;
+        background: rgba(8, 39, 68, 0.94); border: 1px solid var(--line-strong); backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    }
+    .floating .search input { height: 40px; box-shadow: none; }
+    .phone .panel--floating { padding-bottom: 86px; }
+
+    /* B: set suggestions */
+    .suggest {
+        position: absolute; top: 50px; left: 0; right: 0; z-index: 5; display: none;
+        padding: 6px; border-radius: 16px; background: #0b3360; border: 1px solid var(--line-strong);
+        box-shadow: 0 16px 36px rgba(0,0,0,.45); max-height: 260px; overflow-y: auto;
+    }
+    .suggest.show { display: block; }
+    .suggest button {
+        display: flex; justify-content: space-between; width: 100%; padding: 9px 12px; border: 0; border-radius: 10px;
+        background: transparent; cursor: pointer; text-align: left; font-size: .9rem;
+    }
+    .suggest button:hover { background: rgba(156, 200, 237, .14); }
+    .suggest small { color: var(--muted); }
+    .suggest .label { padding: 6px 12px 4px; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .pill-active {
+        display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 12px; border-radius: 999px;
+        background: var(--accent); color: var(--accent-ink); font-size: .82rem; font-weight: 700; border: 0;
+    }
+    .pill-active button { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer; background: rgba(9,47,88,.15); display: inline-flex; align-items: center; justify-content: center; color: var(--accent-ink); }
+
+    .notes { margin-top: 36px; padding: 18px 20px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .notes code { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Busca na aba TCG</h1>
+    <p class="lede">
+        Mock com cartas reais do Pikachu (247 no catálogo; aqui uma amostra de 48). Escolha uma opção,
+        digite na busca e use os filtros. O mesmo estado aparece no computador e no celular. Exemplos:
+        <i>mcdonald</i>, <i>25</i>, <i>promo</i>, <i>ex</i>, <i>kit</i>. Abra este arquivo direto no
+        navegador, a partir da pasta <code>docs/</code>, para as imagens carregarem.
+    </p>
+
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+
+    <div class="frames">
+        <div class="desktop">
+            <p class="frame-label">Computador</p>
+            <div id="desktop"></div>
+        </div>
+        <div class="phone-wrap">
+            <p class="frame-label">Celular</p>
+            <div class="phone"><div class="phone__screen" id="phone"></div></div>
+        </div>
+    </div>
+
+    <div class="notes">
+        <h2>Observações para qualquer opção</h2>
+        <ul>
+            <li>A busca procura no nome da carta, no nome do set e no número. Vários termos se combinam:
+                <i>mcdonald 2019</i> encontra só a carta do McDonald's 2019.</li>
+            <li>Hoje o <code>tcg-cards.json</code> guarda só o id do set (ex.: <code>swsh4.5sv</code>), não o nome
+                ("Shining Fates Shiny Vault"). Para buscar pelo nome do set é preciso incluir os nomes
+                nos dados, seja num arquivo pequeno de sets (~221 linhas) ou num campo novo em cada carta.
+                Isso é uma mudança de formato de dado e precisa ser decidida antes.</li>
+            <li>A busca reinicia quando você troca de Pokémon. No celular o campo usa fonte de 16px para o
+                iPhone não dar zoom ao tocar.</li>
+            <li>Os filtros Owned/Missing/Foil só fazem sentido quando o Pokémon está selecionado (é aí
+                que as cartas podem ser marcadas). Nas outras situações eles podem ficar escondidos.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const RAW = [["fut2020-1","Pikachu on the Ball","1","Pokémon Futsal 2020","/images/tcg/fut2020-1/low.webp"],["basep-1","Pikachu","1","Wizards Black Star Promos","/images/tcg/basep-1/low.webp"],["tk-hs-r-2","Pikachu","2","HS trainer Kit (Raichu)","/images/tcg/tk-hs-r-2/low.webp"],["2024sv-2","Pikachu","2","McDonald's Collection 2024","/images/tcg/2024sv-2/low.webp"],["2018sm-4","Pikachu","4","McDonald's Collection 2018","/images/tcg/2018sm-4/low.webp"],["basep-4","Pikachu","4","Wizards Black Star Promos","/images/tcg/basep-4/low.webp"],["ex5.5-5","Pikachu","5","Poké Card Creator Pack","/images/tcg/ex5.5-5/low.webp"],["2014xy-5","Pikachu","5","McDonald's Collection 2014","/images/tcg/2014xy-5/low.webp"],["2017sm-5","Pikachu","5","McDonald's Collection 2017","/images/tcg/2017sm-5/low.webp"],["cel25-5","Pikachu","5","Celebrations","/images/tcg/cel25-5/low.webp"],["tk-ex-latio-6","Pikachu","6","EX trainer Kit (Latios)","/images/tcg/tk-ex-latio-6/low.webp"],["2016xy-6","Pikachu","6","McDonald's Collection 2016","/images/tcg/2016xy-6/low.webp"],["2023sv-6","Pikachu","6","McDonald's Collection 2023","/images/tcg/2023sv-6/low.webp"],["2015xy-6","Pikachu","6","McDonald's Collection 2015","/images/tcg/2015xy-6/low.webp"],["2019sm-6","Pikachu","6","McDonald's Collection 2019","/images/tcg/2019sm-6/low.webp"],["cel25-6","Flying Pikachu V","6","Celebrations","/images/tcg/cel25-6/low.webp"],["2022swsh-7","Pikachu","7","McDonald's Collection 2022","/images/tcg/2022swsh-7/low.webp"],["ru1-7","Pikachu","7","Pokémon Rumble","/images/tcg/ru1-7/low.webp"],["30th-c-008","Pikachu & Zekrom GX","008","30th Classic Collection","/images/tcg/30th-c-008/low.webp"],["P-A-009","Pikachu","009","Promos-A","/images/tcg/P-A-009/low.webp"],["pop6-9","Pikachu","9","POP Series 6","/images/tcg/pop6-9/low.webp"],["det1-10","Detective Pikachu","10","Detective Pikachu","/images/tcg/det1-10/low.webp"],["np-12","Pikachu","12","Nintendo Black Star Promos","/images/tcg/np-12/low.webp"],["pop5-12","Pikachu","12","POP Series 5","/images/tcg/pop5-12/low.webp"],["pop5-13","Pikachu δ","13","POP Series 5","/images/tcg/pop5-13/low.webp"],["pop4-13","Pikachu","13","POP Series 4","/images/tcg/pop4-13/low.webp"],["tk-xy-p-14","Pikachu Libre","14","XY trainer Kit (Pikachu Libre)","/images/tcg/tk-xy-p-14/low.webp"],["tk-sm-r-14","Pikachu","14","SM trainer Kit (Alolan Raichu)","/images/tcg/tk-sm-r-14/low.webp"],["30th-c-014","Pikachu","014","30th Classic Collection","/images/tcg/30th-c-014/low.webp"],["P-A-015","Pikachu","015","Promos-A","/images/tcg/P-A-015/low.webp"],["pop9-15","Pikachu","15","POP Series 9","/images/tcg/pop9-15/low.webp"],["tk-hs-r-16","Pikachu","16","HS trainer Kit (Raichu)","/images/tcg/tk-hs-r-16/low.webp"],["pop2-16","Pikachu","16","POP Series 2","/images/tcg/pop2-16/low.webp"],["mfb-17","Pikachu","17","My First Battle","/images/tcg/mfb-17/low.webp"],["sv04.5-018","Pikachu","018","Paldean Fates","/images/tcg/sv04.5-018/low.webp"],["sm115-19","Pikachu","19","Hidden Fates","/images/tcg/sm115-19/low.webp"],["xy6-20","Pikachu","20","Roaring Skies","/images/tcg/xy6-20/low.webp"],["A2b-022","Pikachu ex","022","Shining Revelry","/images/tcg/A2b-022/low.webp"],["30th-023","Pikachu","023","30th Celebration","/images/tcg/30th-023/low.webp"],["30th-024","Pikachu","024","30th Celebration","/images/tcg/30th-024/low.webp"],["A2a-025","Pikachu","025","Triumphant Light","/images/tcg/A2a-025/low.webp"],["2021swsh-25","Pikachu","25","McDonald's Collection 2021","/images/tcg/2021swsh-25/low.webp"],["A1a-025","Pikachu","025","Mythical Island","/images/tcg/A1a-025/low.webp"],["sv03.5-025","Pikachu","025","151","/images/tcg/sv03.5-025/low.webp"],["g1-26","Pikachu","26","Generations","/images/tcg/g1-26/low.webp"],["xy3-27","Pikachu","27","Furious Fists","/images/tcg/xy3-27/low.webp"],["swsh10.5-027","Pikachu","027","Pokémon GO","/images/tcg/swsh10.5-027/low.webp"],["svp-027","Pikachu","027","SVP Black Star Promos","/images/tcg/svp-027/low.webp"]];
+
+// Sample collection state (deterministic) so the status filters have something to show.
+const CARDS = RAW.map(([id, name, number, setName, img], i) => ({
+    id, name, number, setName, img: '../public' + img,
+    owned: i % 3 === 0 || i % 5 === 0,
+    foil: i % 9 === 0,
+}));
+
+const ICON = {
+    search: '<svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    searchPlain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+    sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+};
+
+const fold = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const stripZeros = s => s.replace(/^0+(?=\d)/, '');
+function matches(card, query) {
+    const terms = fold(query).split(/\s+/).filter(Boolean);
+    const hay = fold(`${card.name} ${card.setName}`);
+    return terms.every(t => hay.includes(t) || stripZeros(card.number.toLowerCase()) === stripZeros(t));
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+const state = { query: '', status: 'all', set: '', open: false };
+
+function filtered() {
+    return CARDS.filter(c =>
+        matches(c, state.query) &&
+        (!state.set || c.setName === state.set) &&
+        (state.status === 'all' || (state.status === 'owned' && c.owned) ||
+         (state.status === 'missing' && !c.owned) || (state.status === 'foil' && c.foil)));
+}
+
+function cardHtml(c) {
+    return `<div class="card ${c.owned ? 'card--checked' : ''}" title="${esc(c.name)} · ${esc(c.setName)} #${esc(c.number)}">
+        <img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">
+        ${c.owned ? `<span class="card__check">${ICON.check}</span>` : ''}
+        ${c.foil && c.owned ? `<span class="card__foil">${ICON.sparkle}</span>` : ''}
+    </div>`;
+}
+
+function emptyHtml() {
+    return `<div class="empty"><b>No cards found</b>Try another search or clear the filters.</div>`;
+}
+
+function gridHtml(list) {
+    return list.length ? `<div class="grid">${list.map(cardHtml).join('')}</div>` : emptyHtml();
+}
+
+function searchHtml(placeholder = 'Search by name, set or number') {
+    return `<label class="search ${state.query ? 'has-value' : ''}">
+        ${ICON.search}
+        <input type="search" data-role="query" placeholder="${placeholder}" value="${esc(state.query)}" autocomplete="off">
+        <button type="button" class="clear" data-role="clear" aria-label="Clear search">${ICON.x}</button>
+    </label>`;
+}
+
+function countHtml(list) {
+    return `<span class="count">${list.length} of ${CARDS.length} cards</span>`;
+}
+
+function chipsHtml() {
+    const n = {
+        all: CARDS.length,
+        owned: CARDS.filter(c => c.owned).length,
+        missing: CARDS.filter(c => !c.owned).length,
+        foil: CARDS.filter(c => c.foil).length,
+    };
+    const chip = (key, label) =>
+        `<button type="button" class="chip" data-role="status" data-value="${key}" aria-pressed="${state.status === key}">${label} <em>${n[key]}</em></button>`;
+    return `<div class="chips">${chip('all', 'All')}${chip('owned', 'Owned')}${chip('missing', 'Missing')}${chip('foil', 'Foil')}</div>`;
+}
+
+function setSelectHtml() {
+    const sets = [...new Set(CARDS.map(c => c.setName))].sort((a, b) => a.localeCompare(b));
+    return `<select class="select" data-role="set" aria-label="Filter by set">
+        <option value="">All sets (${sets.length})</option>
+        ${sets.map(s => `<option value="${esc(s)}" ${state.set === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+    </select>`;
+}
+
+const OPTIONS = [
+    {
+        key: 'A', title: 'A · Barra simples',
+        what: 'Um campo de busca no topo da aba, no mesmo estilo da busca da tela inicial, com o contador de resultados ao lado.',
+        pros: ['Mais fácil de entender: parece com a busca que já existe no app', 'Menor mudança no código'],
+        cons: ['Não filtra por coletadas/faltando'],
+        render(list, phone) {
+            return `<div class="toolbar">${searchHtml(phone ? 'Search card, set or number' : undefined)}${phone ? '' : countHtml(list)}</div>
+                ${phone ? `<div class="toolbar">${countHtml(list)}</div>` : ''}${gridHtml(list)}`;
+        },
+    },
+    {
+        key: 'B', title: 'B · Busca + escolha de set',
+        what: 'Busca livre e, ao lado, uma lista para escolher um set (no celular a lista fica embaixo da busca, ocupando a largura toda).',
+        pros: ['Bom para quem pensa por coleção ("o que tenho do 151?")', 'Mostra quantos sets aquele Pokémon tem'],
+        cons: ['A lista de sets fica longa (o Pikachu tem 107 sets)', 'Precisa dos nomes dos sets nos dados'],
+        render(list, phone) {
+            return `<div class="toolbar">${searchHtml(phone ? 'Search card or number' : 'Search by name or number')}${phone ? '' : setSelectHtml()}</div>
+                ${phone ? `<div class="toolbar">${setSelectHtml()}</div>` : ''}
+                <div class="toolbar">${countHtml(list)}</div>${gridHtml(list)}`;
+        },
+    },
+    {
+        key: 'C', title: 'C · Busca + filtros de coleção',
+        what: 'Busca com botões rápidos abaixo: All, Owned, Missing e Foil, cada um com sua contagem. No celular os botões rolam para o lado.',
+        pros: ['Responde direto "quais eu ainda não tenho?"', 'Os filtros combinam com a busca (ex.: Missing + "mcdonald")'],
+        cons: ['Ocupa duas linhas', 'Os filtros só fazem sentido com o Pokémon selecionado'],
+        render(list, phone) {
+            return `<div class="toolbar">${searchHtml(phone ? 'Search card, set or number' : undefined)}</div>
+                <div class="toolbar">${chipsHtml()}${phone ? '' : countHtml(list)}</div>
+                ${phone ? `<div class="toolbar">${countHtml(list)}</div>` : ''}${gridHtml(list)}`;
+        },
+    },
+    {
+        key: 'D', title: 'D · Lupa que abre a busca',
+        what: 'Só um botão de lupa no canto. Ao tocar, ele vira o campo de busca, e o X fecha e limpa.',
+        pros: ['Não ocupa espaço até ser usado', 'Bom no celular, onde a tela é pequena'],
+        cons: ['A busca fica menos visível: quem não sabe pode não perceber', 'Um toque a mais'],
+        render(list) {
+            return `<div class="collapsible ${state.open ? 'open' : ''}">
+                    ${countHtml(list)}
+                    ${searchHtml('Search card, set or number')}
+                    <button type="button" class="icon-btn icon-btn--toggle" data-role="open" aria-label="Open search">${ICON.searchPlain}</button>
+                </div>${gridHtml(list)}`;
+        },
+    },
+    {
+        key: 'E', title: 'E · Agrupado por set',
+        what: 'As cartas ficam separadas por set, cada um com um título e "x de y coletadas". A busca filtra os grupos. Ao rolar, o título do set fica preso no topo.',
+        pros: ['Dá uma visão de coleção (quanto falta em cada set)', 'Fica mais fácil se localizar em Pokémon com muitas cartas'],
+        cons: ['Ocupa mais espaço na vertical', 'Precisa dos nomes dos sets nos dados', 'Muda a ordem das cartas (hoje é uma grade só)'],
+        render(list, phone) {
+            const groups = new Map();
+            for (const c of list) (groups.get(c.setName) ?? groups.set(c.setName, []).get(c.setName)).push(c);
+            const body = list.length ? [...groups].map(([setName, cards]) => {
+                const all = CARDS.filter(c => c.setName === setName);
+                return `<section class="group"><div class="group__head">${esc(setName)}<span>${all.filter(c => c.owned).length} de ${all.length} coletadas</span></div>
+                    <div class="grid">${cards.map(cardHtml).join('')}</div></section>`;
+            }).join('') : emptyHtml();
+            return `<div class="toolbar">${searchHtml(phone ? 'Search card, set or number' : undefined)}${phone ? '' : countHtml(list)}</div>${body}`;
+        },
+    },
+    {
+        key: 'F', title: 'F · Fixa no topo (PC) / flutuante embaixo (celular)',
+        what: 'No computador a busca e os filtros ficam presos no topo do painel enquanto você rola. No celular a busca flutua na parte de baixo, perto do polegar, com um botão de filtros ao lado.',
+        pros: ['A busca nunca some, mesmo rolando 200 cartas', 'No celular dá para alcançar com uma mão só'],
+        cons: ['A barra flutuante cobre um pedaço da grade', 'É o mais trabalhoso de implementar e testar'],
+        render(list, phone) {
+            if (phone) {
+                const statusLabel = { all: '', owned: 'Owned', missing: 'Missing', foil: 'Foil' }[state.status];
+                return `${statusLabel ? `<div class="toolbar"><span class="pill-active">${statusLabel}<button type="button" data-role="status" data-value="all" aria-label="Remove filter">${ICON.x}</button></span>${countHtml(list)}</div>` : `<div class="toolbar">${countHtml(list)}</div>`}
+                    ${gridHtml(list)}`;
+            }
+            return `<div class="sticky-top"><div class="toolbar">${searchHtml()}${countHtml(list)}</div>${chipsHtml()}</div>${gridHtml(list)}`;
+        },
+        floating() {
+            return `<div class="floating">${searchHtml('Search card, set or number')}
+                <button type="button" class="icon-btn" data-role="cycle" aria-label="Filters">${ICON.sliders}</button></div>`;
+        },
+    },
+];
+
+let current = OPTIONS[0];
+
+function frameHtml(phone) {
+    const list = filtered();
+    return `<div class="modal">
+        <div class="modal__head">
+            <img src="../public/images/pokemon/0025.webp" alt="" onerror="this.style.display='none'">
+            <div><b>Pikachu</b><small>#0025 · Electric</small></div>
+        </div>
+        <div class="tabs"><span class="tab">Info</span><span class="tab">Moves</span><span class="tab">Games</span><span class="tab tab--active">TCG</span></div>
+        <div class="panel ${phone && current.floating ? 'panel--floating' : ''}">${current.render(list, phone)}</div>
+        ${phone && current.floating ? current.floating() : ''}
+    </div>`;
+}
+
+function render(focusRole) {
+    const active = document.activeElement;
+    const focusFrame = active?.closest?.('#desktop, #phone')?.id;
+    const caret = active?.selectionStart;
+
+    document.getElementById('desktop').innerHTML = frameHtml(false);
+    document.getElementById('phone').innerHTML = frameHtml(true);
+
+    // Keep typing focus in the frame the user was typing in.
+    if (focusFrame && (focusRole || active?.dataset.role === 'query')) {
+        const input = document.querySelector(`#${focusFrame} [data-role="query"]`);
+        if (input) {
+            input.focus();
+            if (caret != null) input.setSelectionRange(caret, caret);
+        }
+    }
+}
+
+function renderPicker() {
+    document.getElementById('picker').innerHTML = OPTIONS.map(o =>
+        `<button type="button" data-key="${o.key}" aria-pressed="${o === current}">${o.title}</button>`).join('');
+    document.getElementById('info').innerHTML = `<strong>${current.title}</strong>
+        <div>${current.what}</div>
+        <ul>${current.pros.map(p => `<li>👍 ${p}</li>`).join('')}${current.cons.map(c => `<li>👎 ${c}</li>`).join('')}</ul>`;
+}
+
+document.getElementById('picker').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-key]');
+    if (!btn) return;
+    current = OPTIONS.find(o => o.key === btn.dataset.key);
+    Object.assign(state, { query: '', status: 'all', set: '', open: false });
+    renderPicker();
+    render();
+});
+
+document.addEventListener('input', e => {
+    if (e.target.dataset.role === 'query') { state.query = e.target.value; render(); }
+});
+document.addEventListener('change', e => {
+    if (e.target.dataset.role === 'set') { state.set = e.target.value; render(); }
+});
+document.addEventListener('click', e => {
+    const el = e.target.closest('[data-role]');
+    const frameId = el?.closest('#desktop, #phone')?.id;
+    if (!frameId) return;
+    const role = el.dataset.role;
+    if (role === 'clear') {
+        e.preventDefault();
+        state.query = '';
+        if (current.key === 'D') state.open = false;
+        render();
+    } else if (role === 'status') {
+        e.preventDefault();
+        state.status = el.dataset.value;
+        render();
+    } else if (role === 'open') {
+        state.open = true;
+        render();
+        document.querySelector(`#${frameId} [data-role="query"]`)?.focus();
+    } else if (role === 'cycle') {
+        const order = ['all', 'owned', 'missing', 'foil'];
+        state.status = order[(order.indexOf(state.status) + 1) % order.length];
+        render();
+    }
+});
+
+renderPicker();
+render();
+</script>
+</body>
+</html>

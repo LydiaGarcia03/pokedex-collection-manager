@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { memo } from 'react';
 import { getShinyImageUrl } from '../api/pokemonApi';
 import { useImageRetry } from '../hooks/useImageRetry';
 import type { PokemonSummary } from '../types/Pokemon';
@@ -10,11 +11,13 @@ interface PokemonCardProps {
     collectionVisible: boolean;
     shiny: boolean;
     onToggleSelected: (id: string) => void;
-    onOpenDetails: () => void;
+    onOpenDetails: (id: string) => void;
     onCommitDeselection: (id: string) => void;
 }
 
-export function PokemonCard({
+// Memoized: the page re-renders on every Pokémon switch in the detail modal, and redrawing all
+// ~1300 cards each time made switching sluggish. Callers must pass stable callbacks.
+export const PokemonCard = memo(function PokemonCard({
                                 pokemon,
                                 selected,
                                 collectionVisible,
@@ -47,7 +50,7 @@ export function PokemonCard({
             <button
                 type="button"
                 className="pokemon-card__open-area"
-                onClick={onOpenDetails}
+                onClick={() => onOpenDetails(pokemon.id)}
                 aria-label={`Abrir detalhes de ${pokemon.name}`}
             >
                 <div className="pokemon-card__image-wrapper">
@@ -82,4 +85,4 @@ export function PokemonCard({
             </button>
         </article>
     );
-}
+});

@@ -145,3 +145,6 @@ export interface SelectedCard {
     id: string;
     foil: boolean;
 }
+
+// The three answers to "Is this card in my collection?" — 'foil' implies owned.
+export type CardOwnership = 'none' | 'owned' | 'foil';

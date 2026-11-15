@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcar foil no celular — mock</title>
+<style>
+    :root {
+        --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72); --faint: rgba(226, 232, 240, 0.5);
+        --accent: #9cc8ed; --accent-ink: #092f58; --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --foil: #7c5cb8; --foil-hi: #b79cf0; --electric: #eab308;
+        --foil-grad: linear-gradient(90deg, #5b3ea0, #9b6ff0, #5b3ea0);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+        min-height: 100vh;
+    }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .page { max-width: 1240px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 18px; color: var(--muted); max-width: 880px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button { padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600; border: 1px solid rgba(147, 197, 253, 0.62); }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .picker .sep { width: 1px; background: var(--line); margin: 0 4px; }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info .how { margin-top: 6px; padding: 8px 12px; border-radius: 10px; background: rgba(124, 92, 184, .18); border: 1px solid rgba(183, 156, 240, .35); }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .frames { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+    .phone { width: 375px; height: 740px; padding: 12px; border-radius: 40px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .screen { position: relative; height: 100%; overflow: hidden; border-radius: 30px; background: linear-gradient(180deg, #0b3360, #082744); user-select: none; -webkit-user-select: none; }
+    @media (max-width: 420px) { .phone { width: 100%; padding: 6px; border-radius: 26px; } .screen { border-radius: 20px; } }
+    .notes { margin-top: 36px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- shell (design E) ---------- */
+    .bar { position: absolute; top: 0; left: 0; right: 0; z-index: 6; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: linear-gradient(160deg, rgba(234,179,8,.32), rgba(234,179,8,.06) 60%), #0d3a6b; border-bottom: 1px solid rgba(234,179,8,.35); }
+    .bar img { width: 40px; height: 40px; object-fit: contain; }
+    .bar .who { flex: 1; line-height: 1.15; }
+    .bar .who small { color: var(--muted); font-size: .75rem; }
+    .bar .who b { display: block; }
+    .round { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(147,197,253,.14); border: 1px solid rgba(147,197,253,.32); flex: 0 0 auto; }
+    .round svg { width: 16px; height: 16px; }
+    .sel { width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-ink); }
+    .sel svg { width: 20px; height: 20px; }
+    .scroll { position: absolute; top: 57px; left: 0; right: 0; bottom: 70px; overflow-y: auto; scrollbar-width: none; padding: 12px 12px 24px; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; padding: 6px 8px 14px; background: rgba(8, 39, 68, .98); border-top: 1px solid var(--line-soft); }
+    .tabbar span { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; color: #7fa9d4; font-size: .7rem; font-weight: 700; }
+    .tabbar span svg { width: 22px; height: 22px; }
+    .tabbar span.on { color: #fde68a; }
+    .tabbar span.on::before { content: ''; position: absolute; top: -7px; width: 28px; height: 3px; border-radius: 3px; background: var(--electric); }
+    .search { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; margin-bottom: 8px; border-radius: 999px; background: rgba(3, 24, 51, .28); border: 1px solid rgba(96,165,250,.55); color: rgba(229,242,255,.65); font-style: italic; font-size: .9rem; }
+    .search svg { width: 16px; height: 16px; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; height: 30px; padding: 0 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #0A2F59; color: #9fc9f8; border: 1px solid rgba(147,197,253,.5); display: inline-flex; align-items: center; gap: 5px; }
+    .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .chip svg { width: 13px; height: 13px; }
+    .count { margin: 0 0 10px; color: var(--muted); font-size: .78rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+    /* ---------- cards ---------- */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .grid--two { grid-template-columns: repeat(2, 1fr); gap: 22px; }
+    .card { position: relative; aspect-ratio: 5 / 7; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); background: rgba(147,197,253,.08); padding: 0; }
+    .grid--two .card { border-radius: 16px; }
+    .card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+    .card.on { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(156,200,237,.4); }
+    .is-foil { border-color: var(--foil-hi) !important; box-shadow: 0 0 0 1px rgba(183,156,240,.55), 0 0 14px rgba(124,92,184,.55) !important; }
+    .holo { position: relative; }
+    .holo.is-foil::after {
+        content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: color-dodge; opacity: .35;
+        background: linear-gradient(115deg, transparent 20%, rgba(255,120,220,.55) 35%, rgba(120,200,255,.55) 50%, rgba(170,255,170,.5) 62%, transparent 78%);
+        background-size: 250% 250%; animation: sheen 3.2s linear infinite;
+    }
+    @keyframes sheen { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+    .ck { position: absolute; top: 5px; left: 5px; z-index: 2; width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: rgba(11,51,96,.6); border: 1px solid rgba(139,191,235,.6); color: var(--accent-ink); backdrop-filter: blur(3px); pointer-events: none; }
+    .ck.on { background: var(--accent); border-color: var(--accent); }
+    .ck svg { width: 13px; height: 13px; }
+    .ck--foil { top: auto; bottom: 5px; background: linear-gradient(135deg, #e4d4ff, var(--foil) 55%, #4b2d86); border-color: var(--foil-hi); color: #fff; }
+    .hit { position: absolute; top: 0; left: 0; width: 44px; height: 44px; z-index: 3; } /* invisible 44px tap target for the corner check */
+    .foil-tiny { position: absolute; left: 8px; bottom: 8px; z-index: 2; width: 20px; height: 20px; padding: 0; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: rgba(226,232,240,.75); background: rgba(11,51,96,.34); border: 1px solid rgba(139,191,235,.32); }
+    .foil-tiny svg { width: 12px; height: 12px; }
+    .foil-tiny.on { color: #eaeaee; background: var(--foil); border-color: var(--foil); box-shadow: 0 0 5px rgba(234,234,238,.5); }
+
+    /* 3-state control: Not owned / Owned / Foil */
+    .tri { display: flex; padding: 4px; gap: 4px; border-radius: 16px; background: rgba(3,24,51,.55); border: 1px solid var(--line-soft); }
+    .tri button { flex: 1; height: 48px; border: 0; border-radius: 12px; background: transparent; color: #9fc9f8; font-weight: 800; font-size: .86rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .tri button svg { width: 17px; height: 17px; }
+    .tri button.on.none { background: rgba(147,197,253,.18); color: var(--text); }
+    .tri button.on.owned { background: var(--accent); color: var(--accent-ink); }
+    .tri button.on.foil { background: var(--foil-grad); color: #fff; }
+    .tri--sm button { height: 40px; font-size: .78rem; }
+
+    /* overlays */
+    .overlay { position: absolute; inset: 0; z-index: 20; animation: fade .15s ease; }
+    @keyframes fade { from { opacity: 0; } }
+    @keyframes up { from { transform: translateY(35%); } }
+    .focus { display: flex; flex-direction: column; background: rgba(4, 18, 38, .97); }
+    .focus__top { display: flex; align-items: center; gap: 8px; padding: 12px; }
+    .focus__top .t { flex: 1; text-align: center; font-size: .8rem; color: var(--muted); }
+    .focus__top .t b { display: block; color: var(--text); font-size: .95rem; }
+    .focus__img { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 6px; min-height: 0; }
+    .focus__img .holo { max-width: 76%; max-height: 100%; display: flex; border-radius: 14px; }
+    .focus__img img { max-width: 100%; max-height: 100%; border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+    .focus__actions { display: flex; gap: 10px; padding: 16px 16px 24px; }
+    .big { flex: 1; height: 54px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; background: #0A2F59; border: 1px solid rgba(147,197,253,.62); }
+    .big svg { width: 20px; height: 20px; }
+    .big.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .big.foil.on { background: var(--foil-grad); color: #fff; border-color: var(--foil-hi); }
+    .big:disabled { opacity: .4; }
+
+    /* Button-style variants for option D */
+    .acts { display: flex; gap: 10px; padding: 14px 16px 24px; }
+    .box { width: 20px; height: 20px; border-radius: 6px; border: 2px solid currentColor; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .box svg { width: 14px; height: 14px; }
+    .big.on .box { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--accent); }
+    .big.foil.on .box { background: #fff; border-color: #fff; color: #5b3ea0; }
+    .big .two { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+    .big .two small { font-size: .66rem; font-weight: 600; opacity: .75; }
+    .big.ghost { background: transparent; border-style: dashed; }
+    .rows { padding: 12px 16px 24px; }
+    .row-toggle { width: 100%; display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px; margin-bottom: 8px; border-radius: 14px; background: rgba(147,197,253,.08); border: 1px solid var(--line-soft); text-align: left; font-weight: 700; }
+    .row-toggle > svg { width: 20px; height: 20px; flex: 0 0 auto; }
+    .row-toggle small { display: block; font-weight: 500; color: var(--faint); font-size: .72rem; }
+    .sw { margin-left: auto; width: 50px; height: 30px; border-radius: 99px; background: rgba(147,197,253,.22); position: relative; transition: background .15s; flex: 0 0 auto; }
+    .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .sw.on { background: var(--accent); }
+    .sw.on::after { transform: translateX(20px); }
+    .sw.foil.on { background: #9b6ff0; }
+    .circles { display: flex; justify-content: center; gap: 46px; padding: 14px 0 26px; }
+    .circle { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: 0; font-size: .78rem; font-weight: 800; color: #9fc9f8; }
+    .circle span { width: 66px; height: 66px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid rgba(147,197,253,.6); background: rgba(147,197,253,.06); transition: transform .12s; }
+    .circle span svg { width: 28px; height: 28px; }
+    .circle:active span { transform: scale(.92); }
+    .circle.on { color: var(--text); }
+    .circle.on span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 18px rgba(156,200,237,.45); }
+    .circle.foil.on span { background: var(--foil-grad); border-color: var(--foil-hi); color: #fff; box-shadow: 0 0 18px rgba(155,111,240,.6); }
+    .seg-wrap { padding: 10px 16px 24px; }
+    .seg-wrap > small { display: block; margin: 0 0 6px 4px; color: var(--muted); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+
+    .toast { position: absolute; left: 50%; bottom: 84px; z-index: 30; transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: #e8f4ff; color: #092f58; font-size: .78rem; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.4); animation: fade .15s ease; }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Marcar foil no celular: botões da opção D</h1>
+    <p class="lede">
+        A opção D foi a escolhida: tocar na carta abre a carta grande. Aqui só mudam os botões
+        embaixo dela, porque "Not owned" e "Not foil" não ficaram intuitivos. Toque numa carta da
+        grade do telefone da direita para abrir e teste os botões; as setas e o deslizar passam para a
+        próxima carta. Os textos do app estão em inglês.
+    </p>
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="frames">
+        <div><p class="frame-label">Hoje</p><div class="phone"><div class="screen" id="phone-current"></div></div></div>
+        <div><p class="frame-label" id="opt-label">Opção</p><div class="phone"><div class="screen" id="phone-option"></div></div></div>
+    </div>
+    <div class="notes">
+        <h2>Em todos os estilos</h2>
+        <ul>
+            <li>O quadradinho do canto continua marcando direto na grade, com uma área de toque de 44px (hoje são 20px).</li>
+            <li>Uma carta só pode ser foil se você a tem. Nos estilos novos, ligar "Foil" já marca a carta
+                como coletada, e desmarcar "Collected" tira o foil junto. Por isso o botão de foil nunca
+                fica desabilitado (na D original ele ficava).</li>
+            <li>As cartas foil ganham brilho holográfico e borda roxa, e a busca tem o filtro "Foil".</li>
+            <li>No computador nada muda: o botão pequeno funciona bem com o mouse.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const CARDS = [["cel25-5","Pikachu","Celebrations","5"],["sv03.5-025","Pikachu","151","025"],["det1-10","Detective Pikachu","Detective Pikachu","10"],["g1-26","Pikachu","Generations","26"],["basep-1","Pikachu","Wizards Black Star Promos","1"],["2024sv-2","Pikachu","McDonald's Collection 2024","2"],["cel25-6","Flying Pikachu V","Celebrations","6"],["ru1-7","Pikachu","Pokémon Rumble","7"],["30th-c-008","Pikachu & Zekrom GX","30th Classic Collection","008"],["P-A-009","Pikachu","Promos-A","009"],["np-12","Pikachu","Nintendo Black Star Promos","12"],["pop5-13","Pikachu δ","POP Series 5","13"],["tk-xy-p-14","Pikachu Libre","XY trainer Kit (Pikachu Libre)","14"],["sv04.5-018","Pikachu","Paldean Fates","018"],["sm115-19","Pikachu","Hidden Fates","19"],["xy6-20","Pikachu","Roaring Skies","20"],["A2b-022","Pikachu ex","Shining Revelry","022"],["swsh10.5-027","Pikachu","Pokémon GO","027"]]
+    .map(([id, name, set, num]) => ({ id, name, set, num, img: `../public/images/tcg/${id}/low.webp` }));
+
+const I = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+    sparkleO: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+    minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    flip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>',
+    zoom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 5.4-1.6"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>',
+    tcg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg>',
+};
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+function newState() {
+    return { open: 'cel25-6', owned: new Set(['cel25-5', 'sv03.5-025', 'det1-10', 'g1-26', 'P-A-009']), foil: new Set(['sv03.5-025']),
+             toast: '' };
+}
+
+// 'none' | 'owned' | 'foil'
+const stateOf = (s, id) => !s.owned.has(id) ? 'none' : s.foil.has(id) ? 'foil' : 'owned';
+function setState(s, id, v) {
+    if (v === 'none') { s.owned.delete(id); s.foil.delete(id); }
+    else { s.owned.add(id); v === 'foil' ? s.foil.add(id) : s.foil.delete(id); }
+}
+
+// ---------- building blocks ----------
+function shell(s, body, opts = {}) {
+    return `<div class="bar">
+            <span class="round">${I.x}</span><img src="../public/images/pokemon/0025.webp" alt="">
+            <div class="who"><small>#0025</small><b>Pikachu</b></div>
+            <span class="round">${I.sparkleO}</span><span class="round">${I.eye}</span><span class="sel">${I.check}</span>
+        </div>
+        <div class="scroll" data-scroll>
+            <div class="search">${I.search}Search card, set or number</div>
+            <div class="chips"><span class="chip on">All</span><span class="chip">Owned</span><span class="chip">Missing</span><span class="chip">${I.sparkle}Foil <em style="font-style:normal;opacity:.7">${s.foil.size}</em></span></div>
+            ${opts.top ?? `<p class="count"><span>${CARDS.length} of 246 cards</span></p>`}
+            ${body}
+        </div>
+        <nav class="tabbar"><span>${I.info}Info</span><span>${I.games}Games</span><span class="on">${I.tcg}TCG</span></nav>
+        ${opts.overlay ?? ''}
+        ${s.toast ? `<div class="toast">${s.toast}</div>` : ''}`;
+}
+
+function gridCard(s, c, act, style = '') {
+    const st = stateOf(s, c.id);
+    return `<div class="card holo ${st !== 'none' ? 'on' : ''} ${st === 'foil' ? 'is-foil' : ''} ${s.open === c.id ? 'open' : ''}" data-act="${act}" data-id="${c.id}" role="button" style="${style}">
+        <span class="hit" data-act="toggle" data-id="${c.id}"></span>
+        <span class="ck ${st !== 'none' ? 'on' : ''}">${st !== 'none' ? I.check : ''}</span>
+        <img src="${c.img}" alt="" loading="lazy">
+        ${st === 'foil' ? `<span class="ck ck--foil">${I.sparkle}</span>` : ''}
+    </div>`;
+}
+
+function tri(s, id, cls = '') {
+    const st = stateOf(s, id);
+    const b = (v, label, icon) => `<button type="button" class="${v} ${st === v ? 'on' : ''}" data-act="set" data-id="${id}" data-v="${v}">${icon}${label}</button>`;
+    return `<div class="tri ${cls}">${b('none', 'Not owned', I.minus)}${b('owned', 'Owned', I.check)}${b('foil', 'Foil', I.sparkle)}</div>`;
+}
+
+const cardIndex = id => CARDS.findIndex(c => c.id === id);
+const holoImg = (s, c, extra = '') => `<div class="holo ${stateOf(s, c.id) === 'foil' ? 'is-foil' : ''}" ${extra}><img src="${c.img}" alt=""></div>`;
+
+// ---------- layouts ----------
+const LAYOUTS = {
+    current(s) {
+        const body = `<div class="grid grid--two">${CARDS.map(c => {
+            const on = s.owned.has(c.id), f = s.foil.has(c.id);
+            return `<div class="card ${on ? 'on' : ''}" data-act="toggle" data-id="${c.id}" role="button">
+                <span class="ck ${on ? 'on' : ''}">${on ? I.check : ''}</span><img src="${c.img}" alt="" loading="lazy">
+                ${on ? `<button type="button" class="foil-tiny ${f ? 'on' : ''}" data-act="foilTiny" data-id="${c.id}">${I.sparkle}</button>` : ''}
+            </div>`;
+        }).join('')}</div>`;
+        return `<div class="scroll" style="top:0;bottom:0" data-scroll>
+            <p class="count">Today: tap marks/unmarks, the tiny ✦ (only after marking) is foil.</p>${body}</div>
+            ${s.toast ? `<div class="toast">${s.toast}</div>` : ''}`;
+    },
+
+    D(s) {
+        return shell(s, `<div class="grid">${CARDS.map(c => gridCard(s, c, 'open')).join('')}</div>`, { overlay: focusView(s) });
+    },
+};
+
+// The two (or three) controls under the enlarged card, in each button style being compared.
+const ACTIONS = {
+    original(s, c, st) {
+        return `<div class="acts">
+            <button type="button" class="big ${st !== 'none' ? 'on' : ''}" data-act="toggle" data-id="${c.id}">${I.check}${st !== 'none' ? 'Owned' : 'Not owned'}</button>
+            <button type="button" class="big foil ${st === 'foil' ? 'on' : ''}" data-act="foil" data-id="${c.id}" ${st !== 'none' ? '' : 'disabled'}>${st === 'foil' ? I.sparkle : I.sparkleO}${st === 'foil' ? 'Foil' : 'Not foil'}</button>
+        </div>`;
+    },
+    checkbox(s, c, st) {
+        const box = on => `<span class="box">${on ? I.check : ''}</span>`;
+        return `<div class="acts">
+            <button type="button" class="big ${st !== 'none' ? 'on' : ''}" data-act="toggle" data-id="${c.id}">${box(st !== 'none')}Collected</button>
+            <button type="button" class="big foil ${st === 'foil' ? 'on' : ''}" data-act="foil" data-id="${c.id}">${box(st === 'foil')}Foil</button>
+        </div>`;
+    },
+    switches(s, c, st) {
+        return `<div class="rows">
+            <button type="button" class="row-toggle" data-act="toggle" data-id="${c.id}">${I.check}<span>In my collection</span><span class="sw ${st !== 'none' ? 'on' : ''}"></span></button>
+            <button type="button" class="row-toggle" data-act="foil" data-id="${c.id}">${I.sparkle}<span>Foil<small>Holo or reverse holo</small></span><span class="sw foil ${st === 'foil' ? 'on' : ''}"></span></button>
+        </div>`;
+    },
+    action(s, c, st) {
+        const owned = st !== 'none', foil = st === 'foil';
+        return `<div class="acts">
+            <button type="button" class="big ${owned ? 'on' : 'ghost'}" data-act="toggle" data-id="${c.id}">${owned ? I.check : I.plus}<span class="two">${owned ? 'In collection<small>Tap to remove</small>' : 'Add to collection'}</span></button>
+            <button type="button" class="big foil ${foil ? 'on' : 'ghost'}" data-act="foil" data-id="${c.id}">${foil ? I.sparkle : I.sparkleO}<span class="two">${foil ? 'Foil<small>Tap to remove</small>' : 'Mark as foil'}</span></button>
+        </div>`;
+    },
+    icons(s, c, st) {
+        return `<div class="circles">
+            <button type="button" class="circle ${st !== 'none' ? 'on' : ''}" data-act="toggle" data-id="${c.id}"><span>${I.check}</span>Collected</button>
+            <button type="button" class="circle foil ${st === 'foil' ? 'on' : ''}" data-act="foil" data-id="${c.id}"><span>${I.sparkle}</span>Foil</button>
+        </div>`;
+    },
+    segmented(s, c, st) {
+        const b = (v, label, icon) => `<button type="button" class="${v} ${st === v ? 'on' : ''}" data-act="set" data-id="${c.id}" data-v="${v}">${icon}${label}</button>`;
+        return `<div class="seg-wrap"><small>In my collection</small>
+            <div class="tri">${b('none', 'No', I.minus)}${b('owned', 'Yes', I.check)}${b('foil', 'Yes, foil', I.sparkle)}</div></div>`;
+    },
+};
+
+function focusView(s) {
+    if (!s.open) return '';
+    const i = cardIndex(s.open), c = CARDS[i], st = stateOf(s, c.id);
+    return `<div class="overlay focus" data-swipe>
+        <div class="focus__top"><span class="round" data-act="close">${I.x}</span>
+            <span class="t"><b>${esc(c.name)}</b>${esc(c.set)} · #${c.num}</span><small style="color:var(--muted);width:34px">${i + 1}/${CARDS.length}</small></div>
+        <div class="focus__img"><button type="button" class="round" data-act="step" data-v="-1">${I.left}</button>
+            ${holoImg(s, c)}<button type="button" class="round" data-act="step" data-v="1">${I.right}</button></div>
+        ${ACTIONS[current.key](s, c, st)}
+    </div>`;
+}
+
+const OPTIONS = [
+    { key: 'original', title: 'D original',
+      how: '"Owned / Not owned" e "Foil / Not foil": o texto do botão mostra o estado, e por isso aparece a negação.',
+      pros: ['É o que está na rodada anterior'],
+      cons: ['"Not owned" e "Not foil" confundem: não fica claro se é o estado ou o que o botão faz'] },
+    { key: 'checkbox', title: '1 · Caixinhas',
+      how: 'O texto nunca muda: "Collected" e "Foil". Uma caixinha dentro do botão mostra se está marcado (vazia ou com ✓), e o botão inteiro fica colorido quando ligado.',
+      pros: ['Texto fixo, sem negação', 'Todo mundo entende caixinha de marcar', 'Combina com o quadradinho do canto da carta na grade'],
+      cons: ['Visual mais "formulário"'] },
+    { key: 'switches', title: '2 · Interruptores',
+      how: 'Duas linhas com interruptor (liga/desliga), como nas configurações do celular: "In my collection" e "Foil", com uma explicação pequena embaixo de "Foil".',
+      pros: ['Liga/desliga é o padrão mais claro do celular', 'Espaço para uma explicação curta em cada linha'],
+      cons: ['Ocupa um pouco mais de altura'] },
+    { key: 'action', title: '3 · Ação ↔ estado',
+      how: 'Desligado, o botão diz o que vai fazer ("Add to collection", "Mark as foil"), com borda tracejada. Ligado, diz o estado ("In collection", "Foil") com "Tap to remove" embaixo.',
+      pros: ['Cada botão explica o que acontece ao tocar', 'Sem negação'],
+      cons: ['O texto muda ao tocar, o que pode surpreender', 'Textos mais longos'] },
+    { key: 'icons', title: '4 · Botões redondos',
+      how: 'Dois botões redondos grandes, com o ícone dentro e o nome embaixo ("Collected", "Foil"). Contorno quando desligado, preenchido e com brilho quando ligado.',
+      pros: ['Mais visual e compacto, deixa a carta maior', 'Texto fixo, sem negação'],
+      cons: ['Depende de perceber a diferença entre contorno e preenchido'] },
+    { key: 'segmented', title: '5 · Uma pergunta, 3 respostas',
+      how: 'Um título "In my collection" e três opções lado a lado: "No", "Yes" e "Yes, foil".',
+      pros: ['Lê como uma pergunta com resposta', 'Impossível ficar num estado inválido'],
+      cons: ['É parecido com a opção F, de que você não gostou tanto'] },
+];
+
+let current = OPTIONS[1];
+const states = { current: newState(), option: newState() };
+let toastTimer;
+
+function render(which) {
+    const el = document.getElementById(`phone-${which}`);
+    const prev = el.querySelector('[data-scroll]')?.scrollTop ?? 0;
+    el.innerHTML = which === 'current' ? LAYOUTS.current(states.current) : LAYOUTS.D(states.option);
+    const sc = el.querySelector('[data-scroll]');
+    if (sc) sc.scrollTop = prev;
+    }
+
+function toast(which, msg) {
+    states[which].toast = msg;
+    render(which);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { states[which].toast = ''; render(which); }, 1400);
+}
+
+function renderPicker() {
+    document.getElementById('picker').innerHTML = OPTIONS.map((o, k) =>
+        `${k === 1 ? '<span class="sep"></span>' : ''}<button type="button" data-key="${o.key}" aria-pressed="${o === current}">${o.title}</button>`).join('');
+    document.getElementById('info').innerHTML = `<strong>${current.title}</strong><div class="how">${current.how}</div>
+        <ul>${current.pros.map(p => `<li>👍 ${p}</li>`).join('')}${current.cons.map(c => `<li>👎 ${c}</li>`).join('')}</ul>`;
+    document.getElementById('opt-label').textContent = `D · ${current.title}`;
+}
+
+document.getElementById('picker').addEventListener('click', e => {
+    const b = e.target.closest('[data-key]');
+    if (!b) return;
+    current = OPTIONS.find(o => o.key === b.dataset.key);
+    states.option = newState();
+    renderPicker();
+    render('option');
+});
+
+function step(s, n) {
+    const i = cardIndex(s.open);
+    s.open = CARDS[(i + n + CARDS.length) % CARDS.length].id;
+}
+
+document.addEventListener('click', e => {
+    const screen = e.target.closest('.screen');
+    if (!screen) return;
+    if (suppressClick) { suppressClick = false; return; }
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const which = screen.id.replace('phone-', '');
+    const s = states[which];
+    const { act, id, v } = el.dataset;
+    if (act === 'close' && e.target.closest('[data-stop]')) return;
+
+    if (act === 'toggle') setState(s, id, s.owned.has(id) ? 'none' : 'owned');
+    else if (act === 'foil') setState(s, id, stateOf(s, id) === 'foil' ? 'owned' : 'foil');
+    else if (act === 'foilTiny') { s.foil.has(id) ? s.foil.delete(id) : s.foil.add(id); }
+    else if (act === 'set') setState(s, id, v);
+    else if (act === 'open') s.open = id;
+    else if (act === 'step') step(s, Number(v));
+    else if (act === 'close') s.open = null;
+    e.stopPropagation();
+    render(which);
+});
+
+// Swipe left/right inside the enlarged views (touch, or mouse drag on the computer).
+let swipeStart = null, suppressClick = false;
+function swipeBegin(x, y, target) {
+    const zone = target.closest('#phone-option [data-swipe]');
+    swipeStart = zone ? { x, y } : null;
+}
+function swipeEnd(x, y) {
+    if (!swipeStart) return;
+    const dx = x - swipeStart.x, dy = y - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 0);
+    const s = states.option;
+    if (s.open) step(s, dx < 0 ? 1 : -1);
+    render('option');
+}
+document.addEventListener('touchstart', e => swipeBegin(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+document.addEventListener('touchend', e => swipeEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+document.addEventListener('mousedown', e => swipeBegin(e.clientX, e.clientY, e.target));
+document.addEventListener('mouseup', e => swipeEnd(e.clientX, e.clientY));
+document.addEventListener('dragstart', e => { if (e.target.closest('.screen')) e.preventDefault(); });
+
+renderPicker();
+render('current');
+render('option');
+</script>
+</body>
+</html>

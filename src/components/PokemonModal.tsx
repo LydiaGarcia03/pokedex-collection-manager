@@ -1,11 +1,13 @@
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles } from 'lucide-react';
-import { useState } from 'react';
-import { getShinyImageUrl } from '../api/pokemonApi';
+import { useEffect, useState } from 'react';
+import { getLoadedTcgCards, getShinyImageUrl } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
 import { useImageRetry } from '../hooks/useImageRetry';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { Pokemon, PokemonSummary } from '../types/Pokemon';
 import { PokemonGamesTab } from './PokemonGamesTab';
 import { PokemonInfoTab } from './PokemonInfoTab';
+import { PokemonModalMobile } from './PokemonModalMobile';
 import { PokemonTcgTab } from './PokemonTcgTab';
 import { TypeBadge } from './TypeBadge';
 
@@ -20,7 +22,10 @@ function getSmogonSlug(name: string): string {
         .replace(/^-|-$/g, '');
 }
 
-type PokemonDetailTab = 'info' | 'games' | 'tcg';
+export type PokemonDetailTab = 'info' | 'games' | 'tcg';
+
+// First rows of the TCG grid (3 per row on mobile, ~4 on desktop).
+const NEIGHBOR_CARD_PREFETCH = 12;
 
 interface PokemonModalProps {
     pokemonList: PokemonSummary[];
@@ -45,6 +50,7 @@ export function PokemonModal({
                                  collectionVisible,
                                  onToggleCollectionVisible,
                              }: PokemonModalProps) {
+    const isMobile = useIsMobile();
     const [activeTab, setActiveTab] = useState<PokemonDetailTab>('info');
     const [showShiny, setShowShiny] = useState(false);
 
@@ -52,6 +58,20 @@ export function PokemonModal({
     const shinyUrl = summary ? getShinyImageUrl(summary.imageCode) : null;
     const rawImageSrc = summary ? (showShiny ? shinyUrl : (summary.imageUrlXl ?? summary.imageUrl)) : null;
     const { src: imageSrc, failed: imageFailed, onError: onImageError } = useImageRetry(rawImageSrc);
+
+    // While the TCG tab is open, start downloading the first cards of the previous and next
+    // Pokémon, so a swipe or arrow lands on cards that are already loaded.
+    const previousName = activePokemonIndex !== null ? pokemonList[activePokemonIndex - 1]?.name : undefined;
+    const nextName = activePokemonIndex !== null ? pokemonList[activePokemonIndex + 1]?.name : undefined;
+    useEffect(() => {
+        if (activeTab !== 'tcg') return;
+        for (const name of [previousName, nextName]) {
+            if (!name) continue;
+            for (const card of (getLoadedTcgCards(name) ?? []).filter(c => c.imageUrl).slice(0, NEIGHBOR_CARD_PREFETCH)) {
+                new Image().src = card.imageUrl!;
+            }
+        }
+    }, [activeTab, previousName, nextName]);
 
     if (!summary || activePokemonIndex === null) {
         return null;
@@ -83,6 +103,92 @@ export function PokemonModal({
         collection.commitPendingCleanup(summary!.id);
         setShowShiny(false);
         onChangePokemon(currentIndex + 1);
+    }
+
+    const tabContent = detailLoading ? (
+        <div className="pokemon-detail-loading">
+            <span className="pokemon-detail-loading__spinner" />
+        </div>
+    ) : activePokemonDetail ? (
+        <>
+            {activeTab === 'info' && (
+                <PokemonInfoTab pokemon={activePokemonDetail} />
+            )}
+
+            {activeTab === 'games' && (
+                <PokemonGamesTab
+                    pokemon={activePokemonDetail}
+                    selected={selected}
+                    collectionVisible={collectionVisible}
+                    selectedGameIds={collection.getSelectedGameIds(summary.id)}
+                    onToggleGame={gameId => collection.toggleGame(summary.id, gameId)}
+                />
+            )}
+
+            {activeTab === 'tcg' && (
+                <PokemonTcgTab
+                    key={activePokemonDetail.id}
+                    pokemon={activePokemonDetail}
+                    selected={selected}
+                    collectionVisible={collectionVisible}
+                    selectedCardIds={collection.getSelectedCardIds(summary.id)}
+                    onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
+                    foilCardIds={collection.getFoilCardIds(summary.id)}
+                    onToggleFoil={cardId => collection.toggleFoil(summary.id, cardId)}
+                    onSetCardOwnership={(cardId, ownership) => collection.setCardOwnership(summary.id, cardId, ownership)}
+                />
+            )}
+        </>
+    ) : null;
+
+    const externalLinks = (
+        <>
+            <span className="pokemon-detail-modal__footer-label">More information at:</span>
+            <a
+                href={`https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(summary.name.replace(/ /g, '_'))}_(Pokémon)`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pokemon-detail-modal__external-link"
+            >
+                Bulbapedia ↗
+            </a>
+            <a
+                href={`https://www.smogon.com/dex/sv/pokemon/${getSmogonSlug(summary.name)}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pokemon-detail-modal__external-link"
+            >
+                Smogon ↗
+            </a>
+        </>
+    );
+
+    if (isMobile) {
+        return (
+            <PokemonModalMobile
+                summary={summary}
+                imageSrc={imageSrc && !imageFailed ? imageSrc : null}
+                imageAlt={showShiny ? `${imageAlt} (Shiny)` : imageAlt}
+                onImageError={onImageError}
+                previousSummary={previousSummary}
+                nextSummary={nextSummary}
+                isPokemonSelected={collection.isPokemonSelected}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                onClose={handleClose}
+                selected={selected}
+                onToggleSelected={() => collection.togglePokemon(summary.id)}
+                collectionVisible={collectionVisible}
+                onToggleCollectionVisible={onToggleCollectionVisible}
+                showShiny={showShiny}
+                onToggleShiny={() => setShowShiny(value => !value)}
+                activeTab={activeTab}
+                onChangeTab={setActiveTab}
+                externalLinks={externalLinks}
+            >
+                {tabContent}
+            </PokemonModalMobile>
+        );
     }
 
     return (
@@ -220,61 +326,13 @@ export function PokemonModal({
                         </nav>
 
                         <div className="pokemon-detail-panel">
-                            {detailLoading ? (
-                                <div className="pokemon-detail-loading">
-                                    <span className="pokemon-detail-loading__spinner" />
-                                </div>
-                            ) : activePokemonDetail ? (
-                                <>
-                                    {activeTab === 'info' && (
-                                        <PokemonInfoTab pokemon={activePokemonDetail} />
-                                    )}
-
-                                    {activeTab === 'games' && (
-                                        <PokemonGamesTab
-                                            pokemon={activePokemonDetail}
-                                            selected={selected}
-                                            collectionVisible={collectionVisible}
-                                            selectedGameIds={collection.getSelectedGameIds(summary.id)}
-                                            onToggleGame={gameId => collection.toggleGame(summary.id, gameId)}
-                                        />
-                                    )}
-
-                                    {activeTab === 'tcg' && (
-                                        <PokemonTcgTab
-                                            pokemon={activePokemonDetail}
-                                            selected={selected}
-                                            collectionVisible={collectionVisible}
-                                            selectedCardIds={collection.getSelectedCardIds(summary.id)}
-                                            onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
-                                            foilCardIds={collection.getFoilCardIds(summary.id)}
-                                            onToggleFoil={cardId => collection.toggleFoil(summary.id, cardId)}
-                                        />
-                                    )}
-                                </>
-                            ) : null}
+                            {tabContent}
                         </div>
                     </section>
                 </div>
 
                 <footer className="pokemon-detail-modal__footer">
-                    <span className="pokemon-detail-modal__footer-label">More information at:</span>
-                    <a
-                        href={`https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(summary.name.replace(/ /g, '_'))}_(Pokémon)`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pokemon-detail-modal__external-link"
-                    >
-                        Bulbapedia ↗
-                    </a>
-                    <a
-                        href={`https://www.smogon.com/dex/sv/pokemon/${getSmogonSlug(summary.name)}/`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pokemon-detail-modal__external-link"
-                    >
-                        Smogon ↗
-                    </a>
+                    {externalLinks}
                 </footer>
             </section>
         </div>

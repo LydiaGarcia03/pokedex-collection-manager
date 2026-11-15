@@ -1,16 +1,15 @@
 import { ChevronDown, ChevronUp, Filter, User as UserIcon, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchTcgCards, filterPokemon, loadAllPokemon } from '../api/pokemonApi';
 import { AuthModal } from '../components/AuthModal';
 import { ExportContentModal } from '../components/ExportContentModal';
 import { ExportTypeModal } from '../components/ExportTypeModal';
-import { FilterCombobox, type FilterComboboxGroup } from '../components/FilterCombobox';
+import { type CollectionFilter, FilterPanel, type FilterGameGroup } from '../components/FilterPanel';
 import { ImportCollectionModal } from '../components/ImportCollectionModal';
 import { MyCollectionsModal } from '../components/MyCollectionsModal';
 import { PokemonCard } from '../components/PokemonCard';
 import { PokemonModal } from '../components/PokemonModal';
 import { SaveCollectionModal } from '../components/SaveCollectionModal';
-import { TypeBadge } from '../components/TypeBadge';
 import { UserMenu } from '../components/UserMenu';
 import { logout } from '../firebase/auth';
 import {
@@ -22,7 +21,7 @@ import {
 } from '../firebase/collections';
 import { useAuth } from '../hooks/useAuth';
 import { useCollection } from '../hooks/useCollection';
-import type { Pokemon, PokemonSummary, PokemonType, PokemonTypeFilterId, TcgCard } from '../types/Pokemon';
+import type { Pokemon, PokemonSummary, PokemonTypeFilterId, TcgCard } from '../types/Pokemon';
 import { buildExportText, type ExportType } from '../utils/collectionFormat';
 
 type ExportStep = 'closed' | 'type' | 'loading' | 'content';
@@ -32,29 +31,11 @@ interface Toast {
     type: 'success' | 'error';
 }
 
-// Sentinel ids for the DLC combobox's two non-specific options.
-// "-" (DLC_NONE_ID) is the default: base-game Pokémon only, no DLC content.
+// Sentinel ids for the DLC filter's two non-specific options.
+// "Base game" (DLC_NONE_ID) is the default: base-game Pokémon only, no DLC content.
 // "All DLCs" (DLC_ALL_ID) removes the DLC restriction entirely: base game + every DLC.
 const DLC_NONE_ID = 'none';
 const DLC_ALL_ID = 'all';
-
-const GEN_REGION_LABELS: Record<number, string> = {
-    1: 'Gen I · Kanto', 2: 'Gen II · Johto', 3: 'Gen III · Hoenn',
-    4: 'Gen IV · Sinnoh', 5: 'Gen V · Unova', 6: 'Gen VI · Kalos',
-    7: 'Gen VII · Alola', 8: 'Gen VIII · Galar', 9: 'Gen IX · Paldea',
-};
-
-const ALL_TYPES: PokemonType[] = [
-    'NORMAL', 'FIRE', 'WATER', 'GRASS', 'ELECTRIC', 'ICE', 'FIGHTING', 'POISON', 'GROUND',
-    'FLYING', 'PSYCHIC', 'BUG', 'ROCK', 'GHOST', 'DRAGON', 'DARK', 'STEEL', 'FAIRY',
-];
-
-// Species-level pseudo-categories shown in the "Category" group of the same Type filter.
-const CATEGORY_TYPES: PokemonTypeFilterId[] = ['LEGENDARY', 'MYTHICAL', 'STARTER'];
-
-function typeLabel(type: PokemonTypeFilterId): string {
-    return type.charAt(0) + type.slice(1).toLowerCase();
-}
 
 export function PokedexPage() {
     // All Pokémon loaded once at startup from pokemon-compiled.json
@@ -74,8 +55,13 @@ export function PokedexPage() {
     const [filterDlcId, setFilterDlcId] = useState<string>(DLC_NONE_ID);
     const [filterExcludeForms, setFilterExcludeForms] = useState(false);
     const [filterShiny, setFilterShiny] = useState(false);
+    const [filterCollection, setFilterCollection] = useState<CollectionFilter>('all');
+    // Pokémon whose collection status just changed stay visible under the Owned/Missing filter
+    // until the user moves on (mouse/finger leaves the card, the detail closes, or the filter
+    // changes) — otherwise a card would vanish right under the finger, and the open detail would
+    // jump to another Pokémon (it navigates by list position).
+    const [stickyCollectionIds, setStickyCollectionIds] = useState<string[]>([]);
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-    const [openCombobox, setOpenCombobox] = useState<'generation' | 'type' | 'game' | 'dlc' | null>(null);
     const filterDropdownRef = useRef<HTMLDivElement>(null);
     const [collectionVisible, setCollectionVisible] = useState(false);
     const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
@@ -224,7 +210,6 @@ export function PokedexPage() {
         function handleOutsideClick(e: MouseEvent) {
             if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) {
                 setFilterDropdownOpen(false);
-                setOpenCombobox(null);
             }
         }
         document.addEventListener('mousedown', handleOutsideClick);
@@ -232,59 +217,26 @@ export function PokedexPage() {
     }, []);
 
     // Unique games available across all Pokémon, grouped by generation for the filter panel
-    const gamesByGeneration = useMemo(() => {
-        const seen = new Map<string, { id: string; name: string; generation: number }>();
+    const gameGroups: FilterGameGroup[] = useMemo(() => {
+        const seen = new Map<string, { id: string; name: string; iconUrl: string | null; generation: number }>();
         for (const p of allPokemon) {
             for (const g of p.games ?? []) {
                 if (!seen.has(g.id) && g.generation != null) {
-                    seen.set(g.id, { id: g.id, name: g.name, generation: g.generation });
+                    seen.set(g.id, { id: g.id, name: g.name, iconUrl: g.iconUrl ?? null, generation: g.generation });
                 }
             }
         }
-        const groups = new Map<number, { id: string; name: string }[]>();
-        for (const g of seen.values()) {
-            const list = groups.get(g.generation) ?? [];
-            list.push({ id: g.id, name: g.name });
-            groups.set(g.generation, list);
+        const groups = new Map<number, FilterGameGroup['games']>();
+        for (const { generation, ...game } of seen.values()) {
+            const list = groups.get(generation) ?? [];
+            list.push(game);
+            groups.set(generation, list);
         }
-        return [...groups.entries()].sort(([a], [b]) => a - b);
+        return [...groups.entries()].sort(([a], [b]) => a - b).map(([generation, games]) => ({ generation, games }));
     }, [allPokemon]);
 
-    const generationOptions = useMemo(
-        () => Object.entries(GEN_REGION_LABELS).map(([gen, label]) => ({ id: gen, label })),
-        []
-    );
-
-    const typeOptions = useMemo(
-        () => ALL_TYPES.map(type => ({ id: type, label: typeLabel(type), icon: <TypeBadge type={type} /> })),
-        []
-    );
-
-    const categoryOptions = useMemo(
-        () => CATEGORY_TYPES.map(type => ({ id: type, label: typeLabel(type), icon: <TypeBadge type={type} /> })),
-        []
-    );
-
-    const typeFilterGroups: FilterComboboxGroup[] = useMemo(
-        () => [
-            { heading: 'Type', options: typeOptions },
-            { heading: 'Category', options: categoryOptions },
-        ],
-        [typeOptions, categoryOptions]
-    );
-
-    const gameGroups = useMemo(
-        () => gamesByGeneration.map(([gen, games]) => ({
-            heading: GEN_REGION_LABELS[gen] ?? `Gen ${gen}`,
-            options: games.map(g => ({ id: g.id, label: g.name })),
-        })),
-        [gamesByGeneration]
-    );
-
     // DLC options for the currently selected game — only meaningful when exactly one game is
-    // selected and that game has known DLCs (Sword/Shield, Scarlet/Violet). The combobox itself
-    // always renders (see JSX) so the filter panel never resizes; it's just visually hidden
-    // (space still reserved) when this list is empty.
+    // selected and that game has known DLCs (Sword/Shield, Scarlet/Violet).
     const dlcOptionsForSelectedGame = useMemo(() => {
         if (filterGameIds.length !== 1) return [];
         const seen = new Map<string, { id: string; name: string }>();
@@ -301,34 +253,30 @@ export function PokedexPage() {
 
     const dlcOptions = useMemo(
         () => [
-            { id: DLC_NONE_ID, label: '─' },
+            { id: DLC_NONE_ID, label: 'Base game' },
             { id: DLC_ALL_ID, label: 'All DLCs' },
             ...dlcOptionsForSelectedGame.map(d => ({ id: d.id, label: d.name })),
         ],
         [dlcOptionsForSelectedGame]
     );
 
-    // Reset back to "-" (base game only, the default) and close the combobox whenever the
-    // current game selection no longer has any DLC to filter by.
+    // Reset back to "Base game" (the default) whenever the current game selection no longer has
+    // any DLC to filter by.
     useEffect(() => {
-        if (!dlcApplicable) {
-            if (filterDlcId !== DLC_NONE_ID) setFilterDlcId(DLC_NONE_ID);
-            setOpenCombobox(prev => prev === 'dlc' ? null : prev);
-        }
+        if (!dlcApplicable && filterDlcId !== DLC_NONE_ID) setFilterDlcId(DLC_NONE_ID);
     }, [dlcApplicable, filterDlcId]);
 
     const activeFilterCount =
         (filterGenerations.length > 0 ? 1 : 0) + (filterTypes.length > 0 ? 1 : 0) + (filterGameIds.length > 0 ? 1 : 0)
-        + (dlcApplicable && filterDlcId !== DLC_NONE_ID ? 1 : 0) + (filterExcludeForms ? 1 : 0);
+        + (dlcApplicable && filterDlcId !== DLC_NONE_ID ? 1 : 0) + (filterExcludeForms ? 1 : 0)
+        + (filterCollection !== 'all' ? 1 : 0);
     const hasActiveFilterPanel = activeFilterCount > 0 || filterShiny;
 
-    function toggleFilterGeneration(id: string) {
-        const gen = Number(id);
+    function toggleFilterGeneration(gen: number) {
         setFilterGenerations(prev => prev.includes(gen) ? prev.filter(g => g !== gen) : [...prev, gen]);
     }
 
-    function toggleFilterType(id: string) {
-        const type = id as PokemonTypeFilterId;
+    function toggleFilterType(type: PokemonTypeFilterId) {
         setFilterTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
     }
 
@@ -340,6 +288,8 @@ export function PokedexPage() {
         setFilterDlcId(dlcId);
     }
 
+    const closeFilterPanel = useCallback(() => setFilterDropdownOpen(false), []);
+
     function clearFilters() {
         setFilterGenerations([]);
         setFilterTypes([]);
@@ -347,10 +297,16 @@ export function PokedexPage() {
         setFilterDlcId(DLC_NONE_ID);
         setFilterExcludeForms(false);
         setFilterShiny(false);
+        changeFilterCollection('all');
+    }
+
+    function changeFilterCollection(value: CollectionFilter) {
+        setFilterCollection(value);
+        setStickyCollectionIds([]);
     }
 
     // Client-side filtering — same logic as PokemonSearchFilter.java
-    const summaries: PokemonSummary[] = useMemo(
+    const attributeFiltered: PokemonSummary[] = useMemo(
         () => filterPokemon(allPokemon, debouncedSearch, {
             types: filterTypes,
             generations: filterGenerations,
@@ -361,6 +317,21 @@ export function PokedexPage() {
         }),
         [allPokemon, debouncedSearch, filterTypes, filterGenerations, filterGameIds, filterDlcId, dlcApplicable, filterExcludeForms]
     );
+
+    const selectedPokemonIds = collection.selectedPokemonIds;
+    const collectionCounts = useMemo(() => {
+        const selectedSet = new Set(selectedPokemonIds);
+        const owned = attributeFiltered.filter(p => selectedSet.has(p.id)).length;
+        return { all: attributeFiltered.length, owned, missing: attributeFiltered.length - owned };
+    }, [attributeFiltered, selectedPokemonIds]);
+
+    const summaries: PokemonSummary[] = useMemo(() => {
+        if (filterCollection === 'all') return attributeFiltered;
+        const selectedSet = new Set(selectedPokemonIds);
+        const stickySet = new Set(stickyCollectionIds);
+        const wantOwned = filterCollection === 'owned';
+        return attributeFiltered.filter(p => stickySet.has(p.id) || selectedSet.has(p.id) === wantOwned);
+    }, [attributeFiltered, filterCollection, selectedPokemonIds, stickyCollectionIds]);
 
     const activeSummary = activePokemonIndex !== null ? summaries[activePokemonIndex] ?? null : null;
     const activePokemonDetail = activeSummary ? detailCache[activeSummary.id] ?? null : null;
@@ -378,6 +349,9 @@ export function PokedexPage() {
         if (!summary) return;
 
         setActivePokemonIndex(index);
+        if (filterCollection !== 'all') {
+            setStickyCollectionIds(prev => (prev.includes(summary.id) ? prev : [...prev, summary.id]));
+        }
 
         // Populate detail cache synchronously from pre-loaded data
         if (!detailCache[summary.id]) {
@@ -390,7 +364,27 @@ export function PokedexPage() {
 
     function handleCloseModal() {
         setActivePokemonIndex(null);
+        setStickyCollectionIds([]);
     }
+
+    // Stable callbacks for the memoized PokemonCard grid. useCollection recreates its functions on
+    // every render, so the cards call the latest ones through this ref instead.
+    const gridHandlersRef = useRef({ collection, handleOpenModal, summaries });
+    useEffect(() => {
+        gridHandlersRef.current = { collection, handleOpenModal, summaries };
+    });
+    const handleGridToggleSelected = useCallback((id: string) => {
+        gridHandlersRef.current.collection.togglePokemon(id);
+        setStickyCollectionIds(prev => (prev.includes(id) ? prev : [...prev, id]));
+    }, []);
+    const handleGridCommitDeselection = useCallback((id: string) => {
+        gridHandlersRef.current.collection.commitPendingCleanup(id);
+        setStickyCollectionIds(prev => (prev.includes(id) ? prev.filter(item => item !== id) : prev));
+    }, []);
+    const handleGridOpenDetails = useCallback((id: string) => {
+        const { summaries: list, handleOpenModal: open } = gridHandlersRef.current;
+        open(list.findIndex(item => item.id === id));
+    }, []);
 
     function handleClearAll() {
         collection.clear();
@@ -466,86 +460,29 @@ export function PokedexPage() {
                     </button>
 
                     {filterDropdownOpen && (
-                        <div className="pokedex-filter__dropdown" role="dialog" aria-label="Filters">
-                            <div className="pokedex-filter__grid">
-                                <FilterCombobox
-                                    label="Generation / Region"
-                                    options={generationOptions}
-                                    selectedIds={filterGenerations.map(String)}
-                                    onToggle={toggleFilterGeneration}
-                                    open={openCombobox === 'generation'}
-                                    onOpenChange={o => setOpenCombobox(o ? 'generation' : null)}
-                                />
-                                <FilterCombobox
-                                    label="Type / Category"
-                                    groups={typeFilterGroups}
-                                    selectedIds={filterTypes}
-                                    onToggle={toggleFilterType}
-                                    open={openCombobox === 'type'}
-                                    onOpenChange={o => setOpenCombobox(o ? 'type' : null)}
-                                />
-                                <div className="pokedex-filter__game-row">
-                                    <div className="pokedex-filter__game-slot">
-                                        <FilterCombobox
-                                            label="Game"
-                                            groups={gameGroups}
-                                            selectedIds={filterGameIds}
-                                            onToggle={toggleFilterGame}
-                                            open={openCombobox === 'game'}
-                                            onOpenChange={o => setOpenCombobox(o ? 'game' : null)}
-                                        />
-                                    </div>
-                                    {/* Always rendered (space always reserved) so the panel never resizes —
-                                        just visually hidden until a single DLC-capable game is selected. */}
-                                    <div className={`pokedex-filter__dlc-slot${dlcApplicable ? '' : ' pokedex-filter__dlc-slot--hidden'}`}>
-                                        <FilterCombobox
-                                            label="DLC"
-                                            options={dlcOptions}
-                                            selectedIds={[filterDlcId]}
-                                            onToggle={toggleFilterDlc}
-                                            open={openCombobox === 'dlc'}
-                                            onOpenChange={o => setOpenCombobox(o ? 'dlc' : null)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pokedex-filter__options">
-                                <div className="filter-combobox__label">Options</div>
-                                <div className="pokedex-filter__options-grid">
-                                    <div className="filter-switch-row">
-                                        <span className="filter-switch-row__label">Shiny</span>
-                                        <button
-                                            type="button"
-                                            role="switch"
-                                            aria-checked={filterShiny}
-                                            className={`filter-switch${filterShiny ? ' filter-switch--on' : ''}`}
-                                            onClick={() => setFilterShiny(s => !s)}
-                                        >
-                                            <span className="filter-switch__knob" />
-                                        </button>
-                                    </div>
-                                    <div className="filter-switch-row">
-                                        <span className="filter-switch-row__label">Exclude forms</span>
-                                        <button
-                                            type="button"
-                                            role="switch"
-                                            aria-checked={filterExcludeForms}
-                                            className={`filter-switch${filterExcludeForms ? ' filter-switch--on' : ''}`}
-                                            onClick={() => setFilterExcludeForms(f => !f)}
-                                        >
-                                            <span className="filter-switch__knob" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {hasActiveFilterPanel && (
-                                <button type="button" className="pokedex-filter__reset" onClick={clearFilters}>
-                                    Reset
-                                </button>
-                            )}
-                        </div>
+                        <FilterPanel
+                            generations={filterGenerations}
+                            onToggleGeneration={toggleFilterGeneration}
+                            types={filterTypes}
+                            onToggleType={toggleFilterType}
+                            gameIds={filterGameIds}
+                            onToggleGame={toggleFilterGame}
+                            gameGroups={gameGroups}
+                            dlcOptions={dlcApplicable ? dlcOptions : null}
+                            dlcId={filterDlcId}
+                            onChangeDlc={toggleFilterDlc}
+                            collection={filterCollection}
+                            collectionCounts={collectionCounts}
+                            onChangeCollection={changeFilterCollection}
+                            shiny={filterShiny}
+                            onToggleShiny={() => setFilterShiny(value => !value)}
+                            excludeForms={filterExcludeForms}
+                            onToggleExcludeForms={() => setFilterExcludeForms(value => !value)}
+                            resultCount={summaries.length}
+                            canReset={hasActiveFilterPanel}
+                            onReset={clearFilters}
+                            onClose={closeFilterPanel}
+                        />
                     )}
                 </div>
             </section>
@@ -669,16 +606,16 @@ export function PokedexPage() {
             </div>
 
             <section className="pokedex-grid">
-                {summaries.map((item, index) => (
+                {summaries.map(item => (
                     <PokemonCard
                         key={item.id}
                         pokemon={item}
                         selected={collection.isPokemonSelected(item.id)}
                         collectionVisible={collectionVisible}
                         shiny={filterShiny}
-                        onToggleSelected={collection.togglePokemon}
-                        onOpenDetails={() => handleOpenModal(index)}
-                        onCommitDeselection={collection.commitPendingCleanup}
+                        onToggleSelected={handleGridToggleSelected}
+                        onOpenDetails={handleGridOpenDetails}
+                        onCommitDeselection={handleGridCommitDeselection}
                     />
                 ))}
             </section>
