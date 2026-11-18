@@ -295,6 +295,14 @@ export function PokemonModalMobile({
         return () => observer.disconnect();
     }, []);
 
+    // Newer Chrome on Android paints the area behind the system navigation bar with the page
+    // background, so while the detail is open the page background takes the tab bar color.
+    useEffect(() => {
+        const rootElement = document.documentElement;
+        rootElement.classList.add('pokemon-detail-mobile-open');
+        return () => rootElement.classList.remove('pokemon-detail-mobile-open');
+    }, []);
+
     // A new Pokémon (or tab) starts at the top.
     useEffect(() => {
         scrollRef.current?.scrollTo({ top: 0 });

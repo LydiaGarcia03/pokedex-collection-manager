@@ -1,9 +1,7 @@
 :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     color: #eef6ff;
-    /* Newer Chrome on Android paints the system navigation bar with this background, so it is the
-       mobile detail tab bar color (.pokemon-detail-mobile__tabbar). The body draws its own gradient. */
-    background: #082744;
+    background: #0b3360;
 
     /* One color per elemental type — used by the type badges and by the mobile detail header
        (which takes the Pokémon's first type, see PokemonModalMobile). */
@@ -3987,6 +3985,12 @@ input {
 }
 
 /* Bottom tab bar */
+/* Set by PokemonModalMobile: newer Chrome on Android paints the system navigation bar with the
+   page background, so it matches the tab bar while the detail is open. */
+:root.pokemon-detail-mobile-open {
+    background: #082744;
+}
+
 .pokemon-detail-mobile__tabbar {
     flex: 0 0 auto;
     display: flex;
