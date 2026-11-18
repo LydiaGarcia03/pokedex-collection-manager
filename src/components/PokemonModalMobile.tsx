@@ -16,9 +16,6 @@ const SLIDE_MAX_MS = 280; // a full-width slide; shorter when the finger already
 const SLIDE_MIN_MS = 110;
 const SNAP_BACK_MS = 200;
 
-// Same as .pokemon-detail-mobile__tabbar's background in styles.css.
-const TAB_BAR_COLOR = '#082744';
-
 type SwipeDirection = 1 | -1; // 1 = next, -1 = previous
 
 interface SwipeNavigation {
@@ -287,15 +284,6 @@ export function PokemonModalMobile({
             if (direction === 1) onNext(); else onPrevious();
         },
     });
-
-    // Android paints its system bars with theme-color; match the tab bar so the bottom edge reads as one surface.
-    useEffect(() => {
-        const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-        if (!meta) return;
-        const previous = meta.content;
-        meta.content = TAB_BAR_COLOR;
-        return () => { meta.content = previous; };
-    }, []);
 
     // Show the compact bar only once the big header has scrolled out of view.
     useEffect(() => {
