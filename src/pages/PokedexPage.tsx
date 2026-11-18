@@ -730,7 +730,7 @@ export function PokedexPage() {
                 </div>
             )}
 
-            {showScrollTop && (
+            {showScrollTop && activePokemonIndex === null && (
                 <button
                     type="button"
                     className="scroll-to-top"
