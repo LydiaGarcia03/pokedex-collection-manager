@@ -3985,6 +3985,12 @@ input {
 }
 
 /* Bottom tab bar */
+/* Set by PokemonModalMobile: newer Chrome on Android paints the system navigation bar with the
+   page background, so it matches the tab bar while the detail is open. */
+:root.pokemon-detail-mobile-open {
+    background: #082744;
+}
+
 .pokemon-detail-mobile__tabbar {
     flex: 0 0 auto;
     display: flex;
