@@ -3989,9 +3989,9 @@ input {
     flex: 0 0 auto;
     display: flex;
     padding: 6px 8px calc(10px + env(safe-area-inset-bottom));
-    /* The installed app's Android navigation bar uses the manifest theme_color (vite.config.ts);
-       sharing it makes the tab bar and the system bar read as one surface. */
-    background: #0b3360;
+    /* Same as the manifest theme_color/background_color (vite.config.ts), which Android uses for
+       the installed app's navigation bar, so the tab bar and the system bar read as one strip. */
+    background: #082744;
     border-top: 1px solid rgba(147, 197, 253, 0.16);
 }
 

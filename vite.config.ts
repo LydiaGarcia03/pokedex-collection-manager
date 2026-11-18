@@ -11,10 +11,13 @@ export default defineConfig(({ command }) => ({
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Pokédex Collection Manager',
-        short_name: 'Pokédex',
+        short_name: 'PCM',
         description: 'Track your Pokémon, TCG card, and game collection.',
-        theme_color: '#0b3360',
-        background_color: '#0b3360',
+        // Android paints the installed app's navigation bar with these, never with the runtime
+        // <meta name="theme-color"> (that one only reaches the status bar, see index.html).
+        // Same as .pokemon-detail-mobile__tabbar in styles.css so the two read as one strip.
+        theme_color: '#082744',
+        background_color: '#082744',
         display: 'standalone',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
