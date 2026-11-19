@@ -1,89 +1,101 @@
 import { Check } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { useImageRetry } from '../hooks/useImageRetry';
 import type { Pokemon, PokemonGame } from '../types/Pokemon';
+import { getGameColor, getGameYear } from '../utils/gameDetails';
 
 interface PokemonGamesTabProps {
     pokemon: Pokemon;
     selected: boolean;
-    collectionVisible: boolean;
     selectedGameIds: string[];
     onToggleGame: (gameId: string) => void;
 }
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
 
 function GameIcon({ game }: { game: PokemonGame }) {
     const { src, failed, onError } = useImageRetry(game.iconUrl);
 
     if (!src || failed) {
         return (
-            <span className="pokemon-game-item__placeholder">
+            <span className="pokemon-game-swatch__placeholder">
                 {game.name.charAt(0).toUpperCase()}
             </span>
         );
     }
 
-    return (
-        <img
-            src={src}
-            alt={game.name}
-            onError={onError}
-        />
-    );
+    return <img className="pokemon-game-swatch__icon" src={src} alt="" onError={onError} />;
 }
 
+function describeGame(game: PokemonGame): string {
+    const generation = game.generation ? `Gen ${ROMAN[game.generation - 1] ?? game.generation}` : 'Mobile';
+    const year = getGameYear(game.id);
+    return [generation, year, game.dlc?.length ? 'DLC' : null].filter(Boolean).join(' · ');
+}
+
+/**
+ * One block per game (option H4 of docs/games-tab-mock.html): a game you have shows its signature
+ * color, one you don't is grayed out. Games can be marked once the Pokémon itself is in the
+ * collection, with the same corner checkbox as the TCG cards.
+ */
 export function PokemonGamesTab({
                                     pokemon,
                                     selected,
-                                    collectionVisible,
                                     selectedGameIds,
-                                    onToggleGame
+                                    onToggleGame,
                                 }: PokemonGamesTabProps) {
-    const games = pokemon.games;
-    const hasGames = games != null && games.length > 0;
+    const games = pokemon.games ?? [];
+
+    if (games.length === 0) {
+        return (
+            <div className="pokemon-games-tab">
+                <p className="pokemon-info-placeholder">No game found for this Pokémon.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="pokemon-games-tab">
-            <p className="pokemon-tab-description">
-                List of games this pokemons shows up.
-                <br/>
-                When you select this pokemon, you can mark the games
-                individually for your collection as well.
-            </p>
-
-            {hasGames ? (
-                <div className="pokemon-game-grid">
-                    {games!.map(game => {
-                        const checked = selectedGameIds.includes(game.id);
-
-                        return (
-                            <button
-                                key={game.id}
-                                type="button"
-                                className={`pokemon-game-item ${selected ? 'pokemon-game-item--selectable' : ''} ${checked ? 'pokemon-game-item--checked' : ''} ${collectionVisible && !checked ? 'pokemon-game-item--dimmed' : ''}`}
-                                onClick={() => selected && onToggleGame(game.id)}
-                                title={game.name}
-                            >
-                                {selected && (
-                                    <span
-                                        className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
-                                            checked ? 'selectable-item-checkbox--selected' : ''
-                                        }`}
-                                    >
-                                        {checked && <Check size={10} strokeWidth={3.6} />}
-                                    </span>
-                                )}
-
-                                <GameIcon game={game} />
-
-                                <small>{game.name}</small>
-                            </button>
-                        );
-                    })}
-                </div>
-            ) : (
-                <p className="pokemon-info-placeholder">
-                    No game found for this Pokemon.
-                </p>
+            {!selected && (
+                <p className="pokemon-games-tab__hint">Add {pokemon.name} to your collection to mark the games you have.</p>
             )}
+
+            <div className="pokemon-game-swatches">
+                {games.map(game => {
+                    const owned = selectedGameIds.includes(game.id);
+                    const dlcNames = game.dlc?.map(dlc => dlc.name).join(', ');
+
+                    return (
+                        <button
+                            key={game.id}
+                            type="button"
+                            className={[
+                                'pokemon-game-swatch',
+                                selected ? 'pokemon-game-swatch--selectable' : '',
+                                owned ? 'pokemon-game-swatch--owned' : 'pokemon-game-swatch--muted',
+                            ].join(' ')}
+                            style={{ '--game-color': getGameColor(game.id) } as CSSProperties}
+                            onClick={() => selected && onToggleGame(game.id)}
+                            aria-pressed={selected ? owned : undefined}
+                            title={dlcNames ? `${game.name} (DLC: ${dlcNames})` : game.name}
+                        >
+                            <GameIcon game={game} />
+                            {selected && (
+                                <span
+                                    className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
+                                        owned ? 'selectable-item-checkbox--selected' : ''
+                                    }`}
+                                    aria-hidden="true"
+                                >
+                                    {owned && <Check size={18} strokeWidth={3.2} />}
+                                </span>
+                            )}
+                            <strong>{game.name}</strong>
+                            <small>{describeGame(game)}</small>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }

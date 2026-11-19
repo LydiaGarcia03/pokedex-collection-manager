@@ -69,6 +69,15 @@ grandes.
   catálogo — `collect-tcg` faz merge com o `tcg-cards.json` atual em vez de reescrever do zero
 - Jogos em que cada Pokémon aparece — cada versão de um par (ex. Scarlet vs Violet) mostra sua
   lista correta e distinta de exclusivos (ver `.ai/changes-log.md` 2026-08-19)
+- Aba Games (`PokemonGamesTab.tsx`), opção H4 de `docs/games-tab-mock.html`, no computador e no
+  celular. Cada jogo é um bloco na cor marcante dele, com ícone, nome e
+  "Gen · ano de lançamento no Japão · DLC". Cor e ano vêm de uma tabela fixa em
+  `src/utils/gameDetails.ts`, porque esses dados não existem no `pokedex`. Um jogo que você tem
+  fica colorido, com borda clara; um que não tem fica sempre cinza, independente do modo de
+  visibilidade. O check é o mesmo quadradinho das cartas TCG (`.selectable-item-checkbox`). Para
+  marcar jogos é preciso que o Pokémon esteja na coleção; se não estiver, a aba mostra uma linha
+  avisando. São 6 blocos por linha no computador (4 abaixo de 1100px) e 3 no
+  celular.
 - Filtro de DLC (Isle of Armor, Crown Tundra, The Teal Mask, The Indigo Disk) — habilitado só
   quando exatamente um jogo está selecionado no filtro de Game e esse jogo tem DLC conhecido
   (hoje: Sword/Shield e Scarlet/Violet); dado de origem via scraping do Serebii, não existe em
@@ -98,7 +107,7 @@ grandes.
   rodapé; deslizar para o lado em qualquer ponto da tela troca de Pokémon (elementos com
   `data-no-pokemon-swipe`, campos de texto e a carta ampliada ficam de fora)
 - Conteúdo adaptado: informações em blocos de 2 colunas, stats coloridos por faixa, moves em lista
-  com "Level up / TM" (`MoveList` em `PokemonInfoTab.tsx`), games em 4 colunas, cartas em 3
+  com "Level up / TM" (`MoveList` em `PokemonInfoTab.tsx`), games em 3 colunas, cartas em 3
 - Mocks de referência: `docs/mobile-detail-mock.html` (opção E), `docs/tcg-search-mock.html`
   (opção C), `docs/tcg-foil-mock.html` (D, estilo 5)
 - Exportar/importar coleção como arquivo de texto (formato `POKEDEX_COLLECTION_V2` — ver Critical Rules)
@@ -291,6 +300,8 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 | `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; mobile card viewer with No / Yes / Yes, foil |
 | `src/components/PokemonModal.tsx` | **Modified** | Renders `PokemonModalMobile` at ≤640px; desktop = type-colored hero column with stacked tabs + ← → keys; tab content and links shared by both layouts |
 | `src/components/PokemonModalMobile.tsx` | **New** | Phone layout of the Pokémon detail |
+| `src/components/PokemonGamesTab.tsx` | **Modified** | Game swatches in each game's color (H4); hint when the Pokémon isn't collected |
+| `src/utils/gameDetails.ts` | **New** | Signature color + original release year per game id |
 | `src/components/PokemonInfoTab.tsx` | **Modified** | `MoveList` on mobile; `PokemonInfoDesktop` (I1 layout, section shortcuts) on desktop; stat band classes; loads moves on open (`loadPokemonMoves`) |
 | `src/components/FilterPanel.tsx` | **New** | Listing filter panel (desktop tabs / mobile bottom sheet); replaced `FilterCombobox.tsx` |
 | `src/hooks/useIsMobile.ts` | **New** | `(max-width: 640px)` media query as a hook |

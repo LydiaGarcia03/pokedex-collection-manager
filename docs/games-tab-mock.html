@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aba Games — mock</title>
+<style>
+    :root {
+        --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72); --faint: rgba(226, 232, 240, 0.5);
+        --accent: #9cc8ed; --accent-ink: #092f58; --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --card: rgba(8, 24, 52, 0.52); --tile: rgba(147, 197, 253, 0.07);
+        --type-electric: #eab308; --type-poison: #a855f7; --type-ghost: #7c3aed; --type-fire: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; min-height: 100vh;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%), linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .page { max-width: 1480px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 16px; color: var(--muted); max-width: 980px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button { padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600; border: 1px solid rgba(147, 197, 253, 0.62); }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .frames { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+    /* ---------- desktop frame: D modal, Games tab ---------- */
+    .pc { width: 1000px; height: 660px; display: grid; grid-template-columns: 250px 1fr; border-radius: 22px; overflow: hidden; background: #0b3360;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.45); }
+    .hero { position: relative; display: flex; flex-direction: column; padding: 16px; color: #fff; overflow: hidden;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%); }
+    .hero img { width: 74%; margin: 18px auto 6px; display: block; filter: drop-shadow(0 12px 20px rgba(0,0,0,.45)); }
+    .hero .dex { color: rgba(255,255,255,.78); font-size: .8rem; font-weight: 600; }
+    .hero .name { font-size: 1.6rem; font-weight: 800; }
+    .vtabs { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .vtabs span { display: flex; justify-content: space-between; padding: 11px 13px; border-radius: 11px; font-weight: 600; font-size: .9rem; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); }
+    .vtabs span.on { background: rgba(255,255,255,.92); color: #0b2a4a; border-color: transparent; }
+    .vtabs small { opacity: .75; font-weight: 500; }
+    .pc .panel { overflow-y: auto; padding: 20px 24px 26px; }
+
+    /* ---------- phone frame ---------- */
+    .phone { width: 375px; height: 720px; padding: 10px; border-radius: 38px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .screen { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 30px; background: linear-gradient(180deg, #0b3360, #082744); }
+    .compact { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #fff;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 70%, #0b3360), color-mix(in srgb, var(--type-color) 30%, #082744)); }
+    .compact img { width: 42px; height: 42px; object-fit: contain; }
+    .compact b { font-size: 1.05rem; }
+    .compact small { display: block; color: rgba(255,255,255,.75); font-size: .72rem; }
+    .phone .panel { flex: 1; overflow-y: auto; padding: 14px 12px 20px; scrollbar-width: none; }
+    .tabbar { display: flex; background: #082744; border-top: 1px solid var(--line-soft); }
+    .tabbar span { flex: 1; text-align: center; padding: 10px 0 12px; font-size: .74rem; font-weight: 600; color: #9fc9f8; }
+    .tabbar span.on { color: #a7f3d0; box-shadow: inset 0 3px 0 #34d399; }
+
+    /* ---------- shared content bits ---------- */
+    .summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .progress { flex: 1; min-width: 160px; }
+    .progress-top { display: flex; justify-content: space-between; font-size: .84rem; color: var(--muted); margin-bottom: 6px; }
+    .progress-top b { color: var(--text); }
+    .bar { height: 7px; border-radius: 99px; background: rgba(147,197,253,.12); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #34d399, #a7f3d0); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { height: 32px; padding: 0 13px; border-radius: 999px; background: rgba(147,197,253,.08); border: 1px solid var(--line-soft); color: #9fc9f8; font-size: .8rem; font-weight: 600; }
+    .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .phone .chip { height: 30px; padding: 0 11px; font-size: .76rem; }
+    .gicon { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; display: block; }
+    .check { width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+        background: rgba(11,51,96,.6); border: 1px solid rgba(139,191,235,.7); color: transparent; }
+    .check svg { width: 14px; height: 14px; }
+    .on > .check, .on .check { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .dlc { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: .66rem; font-weight: 700; color: #fde68a; background: rgba(234,179,8,.14); }
+    .excl { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: .66rem; font-weight: 700; color: #f9a8d4; background: rgba(236,72,153,.16); }
+    .empty { color: var(--faint); font-size: .85rem; padding: 10px 0; }
+
+    /* G0: today */
+    .g0-desc { margin: 0 0 16px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+    .g0-grid { display: grid; gap: 14px; }
+    .g0-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 6px 8px; border-radius: 14px;
+        background: rgba(147,197,253,.08); border: 1px solid rgba(147,197,253,.32); }
+    .g0-item .gicon { width: 46px; }
+    .g0-item small { font-size: .7rem; text-align: center; color: var(--text); }
+    .g0-item .check { position: absolute; top: 5px; left: 5px; width: 16px; height: 16px; border-radius: 5px; }
+    .g0-item .check svg { width: 10px; height: 10px; }
+
+    /* G1: grouped by generation */
+    .gen { margin-bottom: 14px; padding: 12px; border-radius: 14px; background: var(--card); border: 1px solid rgba(147,197,253,.11); }
+    .gen-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+    .gen-head b { font-size: .9rem; color: #cfe6fb; }
+    .gen-head span { font-size: .78rem; color: var(--faint); }
+    .gen-head span em { font-style: normal; color: #a7f3d0; font-weight: 700; }
+    .tiles { display: grid; gap: 8px; }
+    .tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px 8px; border-radius: 12px;
+        background: var(--tile); border: 1px solid transparent; }
+    .tile .gicon { width: 44px; }
+    .tile small { font-size: .68rem; text-align: center; color: var(--muted); line-height: 1.15; }
+    .tile .check { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 6px; }
+    .tile .check svg { width: 11px; height: 11px; }
+    .tile.on { background: rgba(156,200,237,.14); border-color: rgba(156,200,237,.55); }
+    .tile.on small { color: var(--text); }
+    .tile .badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+
+    /* G2: list rows */
+    .rows { display: grid; gap: 6px; }
+    .row { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 7px 10px 7px 7px; border-radius: 12px;
+        background: var(--tile); border: 1px solid transparent; text-align: left; }
+    .row .gicon { width: 40px; }
+    .row b { display: block; font-size: .88rem; }
+    .row small { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; color: var(--faint); font-size: .72rem; margin-top: 2px; }
+    .row.on { background: rgba(156,200,237,.14); border-color: rgba(156,200,237,.5); }
+    .row-gen { grid-column: 1 / -1; margin: 8px 2px 0; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+
+    /* G3: release pairs */
+    .pairs { display: grid; gap: 10px; }
+    .pair { padding: 10px; border-radius: 14px; background: var(--card); border: 1px solid rgba(147,197,253,.11); }
+    .pair-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 8px; font-size: .74rem; color: var(--faint); }
+    .pair-head b { color: #cfe6fb; font-size: .8rem; }
+    .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .versions.single { grid-template-columns: 1fr; }
+    .ver { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 10px; background: var(--tile); border: 1px solid transparent; text-align: left; min-width: 0; }
+    .ver .gicon { width: 34px; flex: 0 0 34px; }
+    .ver > span:not(.check) { flex: 1; min-width: 0; font-size: .76rem; font-weight: 600; line-height: 1.15; }
+    .ver > span:not(.check) small { display: block; font-weight: 500; color: var(--faint); font-size: .66rem; }
+    .ver.on { background: rgba(156,200,237,.14); border-color: rgba(156,200,237,.5); }
+    .ver.absent { opacity: .38; filter: grayscale(1); cursor: default; }
+    .ver .check { width: 20px; height: 20px; }
+
+    /* G4: big icons, gen filter */
+    .covers { display: grid; gap: 10px; }
+    .cover { position: relative; padding: 0; border: 0; background: none; text-align: center; }
+    .cover .gicon { border-radius: 14px; background: var(--tile); padding: 8px; transition: filter .15s, opacity .15s; }
+    .cover small { display: block; margin-top: 4px; font-size: .66rem; color: var(--muted); line-height: 1.15; }
+    .cover .check { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .cover:not(.on) .gicon { filter: grayscale(.85); opacity: .45; }
+    .cover:not(.on) .check { opacity: 0; }
+    .cover.on .gicon { box-shadow: 0 0 0 2px var(--accent); }
+    .gen-chips { margin-bottom: 12px; }
+    .gen-chips .chip { height: 28px; padding: 0 10px; font-size: .74rem; }
+    /* ---------- round 2 ---------- */
+    .mini { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 12px;
+        background: var(--tile); border: 1px solid transparent; min-width: 0; }
+    .mini .gicon { width: 44px; }
+    .mini small { font-size: .66rem; text-align: center; color: var(--muted); line-height: 1.15; }
+    .mini .check { position: absolute; top: 4px; right: 4px; width: 17px; height: 17px; border-radius: 50%; }
+    .mini .check svg { width: 10px; height: 10px; }
+    .mini:not(.on) .check { opacity: 0; }
+    .mini.on { background: rgba(156,200,237,.14); border-color: rgba(156,200,237,.55); }
+    .mini.on small { color: var(--text); }
+    .mini.absent { opacity: .35; filter: grayscale(1); }
+    .dot-dlc { position: absolute; top: 6px; left: 6px; width: 8px; height: 8px; border-radius: 50%; background: #facc15; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
+    /* H1 shelves */
+    .shelf { margin-bottom: 12px; }
+    .shelf-head { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; }
+    .shelf-head b { font-size: .9rem; color: #cfe6fb; }
+    .shelf-head span { font-size: .76rem; color: var(--faint); }
+    .shelf-head em { margin-left: auto; font-style: normal; font-size: .76rem; color: #a7f3d0; font-weight: 700; }
+    .shelf-row { display: flex; gap: 8px; overflow-x: auto; padding: 8px; border-radius: 14px; scrollbar-width: thin;
+        background: linear-gradient(180deg, rgba(8,24,52,.35), rgba(8,24,52,.65)); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
+    .shelf-row .mini { flex: 0 0 82px; }
+    /* H2 timeline */
+    .timeline { position: relative; padding: 4px 0; }
+    .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 11px; width: 2px; background: rgba(147,197,253,.25); }
+    .timeline.tl-wide::before { left: 50%; }
+    .tl-item { position: relative; padding-left: 30px; margin-bottom: 12px; }
+    .timeline.tl-wide .tl-item { width: 50%; padding: 0 22px 0 0; }
+    .timeline.tl-wide .tl-item.right { margin-left: 50%; padding: 0 0 0 22px; }
+    .tl-dot { position: absolute; top: 14px; left: 5px; width: 14px; height: 14px; border-radius: 50%; background: #0b3360; border: 2px solid rgba(147,197,253,.6); }
+    .timeline.tl-wide .tl-item.left .tl-dot { left: auto; right: -7px; }
+    .timeline.tl-wide .tl-item.right .tl-dot { left: -7px; }
+    .tl-dot.on { background: #34d399; border-color: #a7f3d0; }
+    .tl-card { padding: 10px; border-radius: 14px; background: var(--card); border: 1px solid rgba(147,197,253,.11); }
+    .tl-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .8rem; color: #cfe6fb; margin-bottom: 8px; }
+    .tl-head b { color: #9fd0ff; }
+    .tl-versions { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+    /* H3 consoles */
+    .console { margin-bottom: 14px; }
+    .console-head { display: flex; align-items: center; margin-bottom: 8px; }
+    .console-chip { padding: 4px 12px; border-radius: 8px; font-size: .78rem; font-weight: 700; letter-spacing: .03em; color: #0b2a4a; background: #cfe6fb; }
+    .console-head em { margin-left: auto; font-style: normal; font-size: .76rem; color: #a7f3d0; font-weight: 700; }
+    .mini-grid { display: grid; gap: 8px; }
+    /* H4 game colors */
+    .swatches { display: grid; gap: 8px; }
+    .swatch { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px; border-radius: 14px; text-align: left; border: 0;
+        background: linear-gradient(150deg, color-mix(in srgb, var(--game) 85%, #fff 0%), color-mix(in srgb, var(--game) 55%, #0b1f3a)); color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+    .swatch .gicon { width: 40px; margin-bottom: 6px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.35)); }
+    .swatch b { font-size: .8rem; line-height: 1.15; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+    .swatch small { font-size: .66rem; opacity: .85; }
+    .swatch .check { position: absolute; top: 8px; right: 8px; border-radius: 50%; }
+    .swatch:not(.on) { background: rgba(147,197,253,.06); box-shadow: inset 0 0 0 1px rgba(147,197,253,.14); color: var(--muted); }
+    .swatch:not(.on) .gicon { filter: grayscale(1); opacity: .5; }
+    .swatch:not(.on) .check { opacity: 0; }
+    .swatch:not(.on) b { text-shadow: none; }
+    /* H5 tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .tag-gen { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 6px; border-radius: 6px; font-size: .7rem; font-weight: 800;
+        color: #0b2a4a; background: #9fc9f8; margin-left: 6px; }
+    .tag-gen:first-child { margin-left: 0; }
+    .tag { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 4px; border-radius: 999px; font-size: .78rem; font-weight: 600;
+        background: var(--tile); border: 1px solid var(--line-soft); color: var(--muted); }
+    .tag .gicon { width: 26px; border-radius: 50%; }
+    .tag.on { background: rgba(52,211,153,.16); border-color: rgba(167,243,208,.6); color: #e8fff6; }
+    .tag .dot-dlc { position: static; width: 7px; height: 7px; }
+    .notes { margin-top: 30px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Aba Games — estilos (2ª rodada)</h1>
+    <p class="lede">Cada opção aparece no computador (layout D já implementado) e no celular. Tudo é clicável: marcar jogos, filtros e
+        a troca de Pokémon. Pikachu tem muitos jogos e DLC; Ekans é exclusivo de algumas versões (Red, FireRed, Let's Go Eevee, Brilliant Diamond);
+        Gengar aparece em quase tudo.</p>
+    <div class="picker" id="picker"></div>
+    <div class="picker" id="pokemonPicker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="frames">
+        <div><p class="frame-label">Computador</p><div id="pc"></div></div>
+        <div><p class="frame-label">Celular</p><div id="phone"></div></div>
+    </div>
+    <div class="notes">
+        <h2>Sobre a 2ª rodada (H1 a H5)</h2>
+        <ul>
+            <li>Sem barra de progresso e sem All / Owned / Missing, como você pediu na G4.</li>
+            <li>Bolinha amarela no canto do jogo = o Pokémon aparece numa DLC daquele jogo.</li>
+            <li>Anos (lançamento original no Japão) e consoles vêm de uma tabela fixa — os dados do projeto não têm essa informação hoje.</li>
+            <li>Sai o texto "List of games this pokemons shows up…" em todas.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const CATALOG = [{"id":"rb-r","name":"Red","gen":1},{"id":"rb-b","name":"Blue","gen":1},{"id":"y","name":"Yellow","gen":1},{"id":"gs-s","name":"Silver","gen":2},{"id":"gs-g","name":"Gold","gen":2},{"id":"c","name":"Crystal","gen":2},{"id":"rs-s","name":"Sapphire","gen":3},{"id":"rs-r","name":"Ruby","gen":3},{"id":"frlg-lg","name":"LeafGreen","gen":3},{"id":"frlg-fr","name":"FireRed","gen":3},{"id":"e","name":"Emerald","gen":3},{"id":"dp-p","name":"Pearl","gen":4},{"id":"dp-d","name":"Diamond","gen":4},{"id":"pt","name":"Platinum","gen":4},{"id":"hgss-ss","name":"SoulSilver","gen":4},{"id":"hgss-hg","name":"HeartGold","gen":4},{"id":"bw-w","name":"White","gen":5},{"id":"bw-b","name":"Black","gen":5},{"id":"b2w2-w2","name":"White 2","gen":5},{"id":"b2w2-b2","name":"Black 2","gen":5},{"id":"xy-y","name":"Y","gen":6},{"id":"xy-x","name":"X","gen":6},{"id":"oras-as","name":"Alpha Sapphire","gen":6},{"id":"oras-or","name":"Omega Ruby","gen":6},{"id":"go","name":"Pokémon GO","gen":null},{"id":"sm-m","name":"Moon","gen":7},{"id":"sm-s","name":"Sun","gen":7},{"id":"usum-um","name":"Ultra Moon","gen":7},{"id":"usum-us","name":"Ultra Sun","gen":7},{"id":"lgpe-lge","name":"Let's Go, Eevee!","gen":7},{"id":"lgpe-lgp","name":"Let's Go, Pikachu!","gen":7},{"id":"swsh-sh","name":"Shield","gen":8},{"id":"swsh-sw","name":"Sword","gen":8},{"id":"bdsp-sp","name":"Shining Pearl","gen":8},{"id":"bdsp-bd","name":"Brilliant Diamond","gen":8},{"id":"la","name":"Legends: Arceus","gen":8},{"id":"sv-v","name":"Violet","gen":9},{"id":"sv-s","name":"Scarlet","gen":9},{"id":"lza","name":"Legends: Z-A","gen":9}];
+const DEX = [{"id":"0025","name":"Pikachu","dex":"#0025","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0025.webp","sprite":"../public/images/pokemon/0025.webp","games":[{"id":"rb-r","name":"Red","gen":1,"dlc":[]},{"id":"rb-b","name":"Blue","gen":1,"dlc":[]},{"id":"y","name":"Yellow","gen":1,"dlc":[]},{"id":"gs-s","name":"Silver","gen":2,"dlc":[]},{"id":"gs-g","name":"Gold","gen":2,"dlc":[]},{"id":"c","name":"Crystal","gen":2,"dlc":[]},{"id":"rs-s","name":"Sapphire","gen":3,"dlc":[]},{"id":"rs-r","name":"Ruby","gen":3,"dlc":[]},{"id":"frlg-lg","name":"LeafGreen","gen":3,"dlc":[]},{"id":"frlg-fr","name":"FireRed","gen":3,"dlc":[]},{"id":"e","name":"Emerald","gen":3,"dlc":[]},{"id":"dp-p","name":"Pearl","gen":4,"dlc":[]},{"id":"dp-d","name":"Diamond","gen":4,"dlc":[]},{"id":"pt","name":"Platinum","gen":4,"dlc":[]},{"id":"hgss-ss","name":"SoulSilver","gen":4,"dlc":[]},{"id":"hgss-hg","name":"HeartGold","gen":4,"dlc":[]},{"id":"xy-y","name":"Y","gen":6,"dlc":[]},{"id":"xy-x","name":"X","gen":6,"dlc":[]},{"id":"oras-as","name":"Alpha Sapphire","gen":6,"dlc":[]},{"id":"oras-or","name":"Omega Ruby","gen":6,"dlc":[]},{"id":"go","name":"Pokémon GO","gen":null,"dlc":[]},{"id":"sm-m","name":"Moon","gen":7,"dlc":[]},{"id":"sm-s","name":"Sun","gen":7,"dlc":[]},{"id":"usum-um","name":"Ultra Moon","gen":7,"dlc":[]},{"id":"usum-us","name":"Ultra Sun","gen":7,"dlc":[]},{"id":"lgpe-lge","name":"Let's Go, Eevee!","gen":7,"dlc":[]},{"id":"lgpe-lgp","name":"Let's Go, Pikachu!","gen":7,"dlc":[]},{"id":"swsh-sh","name":"Shield","gen":8,"dlc":["Isle of Armor"]},{"id":"swsh-sw","name":"Sword","gen":8,"dlc":["Isle of Armor"]},{"id":"bdsp-sp","name":"Shining Pearl","gen":8,"dlc":[]},{"id":"bdsp-bd","name":"Brilliant Diamond","gen":8,"dlc":[]},{"id":"la","name":"Legends: Arceus","gen":8,"dlc":[]},{"id":"sv-v","name":"Violet","gen":9,"dlc":["The Teal Mask"]},{"id":"sv-s","name":"Scarlet","gen":9,"dlc":["The Teal Mask"]},{"id":"lza","name":"Legends: Z-A","gen":9,"dlc":[]}]},{"id":"0023","name":"Ekans","dex":"#0023","types":["POISON"],"xl":"../public/images/pokemon-xl/0023.webp","sprite":"../public/images/pokemon/0023.webp","games":[{"id":"rb-r","name":"Red","gen":1,"dlc":[]},{"id":"gs-s","name":"Silver","gen":2,"dlc":[]},{"id":"gs-g","name":"Gold","gen":2,"dlc":[]},{"id":"c","name":"Crystal","gen":2,"dlc":[]},{"id":"frlg-fr","name":"FireRed","gen":3,"dlc":[]},{"id":"dp-p","name":"Pearl","gen":4,"dlc":[]},{"id":"dp-d","name":"Diamond","gen":4,"dlc":[]},{"id":"pt","name":"Platinum","gen":4,"dlc":[]},{"id":"hgss-ss","name":"SoulSilver","gen":4,"dlc":[]},{"id":"hgss-hg","name":"HeartGold","gen":4,"dlc":[]},{"id":"xy-y","name":"Y","gen":6,"dlc":[]},{"id":"xy-x","name":"X","gen":6,"dlc":[]},{"id":"go","name":"Pokémon GO","gen":null,"dlc":[]},{"id":"usum-um","name":"Ultra Moon","gen":7,"dlc":[]},{"id":"usum-us","name":"Ultra Sun","gen":7,"dlc":[]},{"id":"lgpe-lge","name":"Let's Go, Eevee!","gen":7,"dlc":[]},{"id":"bdsp-bd","name":"Brilliant Diamond","gen":8,"dlc":[]},{"id":"sv-v","name":"Violet","gen":9,"dlc":["The Teal Mask"]},{"id":"sv-s","name":"Scarlet","gen":9,"dlc":["The Teal Mask"]},{"id":"lza","name":"Legends: Z-A","gen":9,"dlc":[]}]},{"id":"0094","name":"Gengar","dex":"#0094","types":["GHOST","POISON"],"xl":"../public/images/pokemon-xl/0094.webp","sprite":"../public/images/pokemon/0094.webp","games":[{"id":"rb-r","name":"Red","gen":1,"dlc":[]},{"id":"rb-b","name":"Blue","gen":1,"dlc":[]},{"id":"y","name":"Yellow","gen":1,"dlc":[]},{"id":"gs-s","name":"Silver","gen":2,"dlc":[]},{"id":"gs-g","name":"Gold","gen":2,"dlc":[]},{"id":"c","name":"Crystal","gen":2,"dlc":[]},{"id":"frlg-lg","name":"LeafGreen","gen":3,"dlc":[]},{"id":"frlg-fr","name":"FireRed","gen":3,"dlc":[]},{"id":"dp-p","name":"Pearl","gen":4,"dlc":[]},{"id":"dp-d","name":"Diamond","gen":4,"dlc":[]},{"id":"pt","name":"Platinum","gen":4,"dlc":[]},{"id":"hgss-ss","name":"SoulSilver","gen":4,"dlc":[]},{"id":"hgss-hg","name":"HeartGold","gen":4,"dlc":[]},{"id":"bw-w","name":"White","gen":5,"dlc":[]},{"id":"bw-b","name":"Black","gen":5,"dlc":[]},{"id":"xy-y","name":"Y","gen":6,"dlc":[]},{"id":"xy-x","name":"X","gen":6,"dlc":[]},{"id":"go","name":"Pokémon GO","gen":null,"dlc":[]},{"id":"sm-m","name":"Moon","gen":7,"dlc":[]},{"id":"sm-s","name":"Sun","gen":7,"dlc":[]},{"id":"usum-um","name":"Ultra Moon","gen":7,"dlc":[]},{"id":"usum-us","name":"Ultra Sun","gen":7,"dlc":[]},{"id":"lgpe-lge","name":"Let's Go, Eevee!","gen":7,"dlc":[]},{"id":"lgpe-lgp","name":"Let's Go, Pikachu!","gen":7,"dlc":[]},{"id":"swsh-sh","name":"Shield","gen":8,"dlc":[]},{"id":"swsh-sw","name":"Sword","gen":8,"dlc":[]},{"id":"bdsp-sp","name":"Shining Pearl","gen":8,"dlc":[]},{"id":"bdsp-bd","name":"Brilliant Diamond","gen":8,"dlc":[]},{"id":"la","name":"Legends: Arceus","gen":8,"dlc":[]},{"id":"sv-v","name":"Violet","gen":9,"dlc":["The Teal Mask"]},{"id":"sv-s","name":"Scarlet","gen":9,"dlc":["The Teal Mask"]},{"id":"lza","name":"Legends: Z-A","gen":9,"dlc":[]}]}];
+const REGION = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unova', 6: 'Kalos', 7: 'Alola', 8: 'Galar', 9: 'Paldea' };
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+const TYPE_COLOR = { ELECTRIC: 'var(--type-electric)', POISON: 'var(--type-poison)', GHOST: 'var(--type-ghost)', FIRE: 'var(--type-fire)' };
+
+const OPTIONS = {
+    G0: { label: 'Atual', title: 'Como está hoje', points: ['Para comparar.'] },
+    G4: { label: 'G4 (rodada anterior)', title: 'Ícones grandes com filtro de geração', points: ['A escolhida da rodada anterior, para comparar.'] },
+    H1: { label: 'H1 · Prateleiras', title: 'Prateleiras por geração', points: [
+        'Uma fileira por geração, com o ano e a região; os jogos ficam lado a lado e a fileira rola para o lado quando não cabe (arraste ou use a roda do mouse com Shift).',
+        'Lembra uma estante de jogos; ocupa pouca altura mesmo com 35 jogos.'] },
+    H2: { label: 'H2 · Linha do tempo', title: 'Linha do tempo dos lançamentos', points: [
+        'Os lançamentos em ordem, com o ano numa linha vertical: "1996 · Red / Blue", "2022 · Scarlet / Violet"…',
+        'As versões de um mesmo lançamento ficam juntas; a que não tem o Pokémon fica apagada ("Only in Red").',
+        'No computador, os lançamentos alternam dos dois lados da linha.'] },
+    H3: { label: 'H3 · Por console', title: 'Agrupado por console', points: [
+        'Seções por console: Game Boy, Game Boy Color, Game Boy Advance, Nintendo DS, Nintendo 3DS, Nintendo Switch e Celular (GO).',
+        'Ajuda quem coleciona pensando no console que tem em casa.'] },
+    H4: { label: 'H4 · Cores dos jogos', title: 'Blocos com a cor de cada jogo', points: [
+        'Cada jogo num bloco com a cor marcante dele (Red vermelho, Sapphire azul, Emerald verde…), ícone e nome.',
+        'O que você tem fica com a cor viva e check; o que falta fica escuro e sem cor.'] },
+    H5: { label: 'H5 · Etiquetas compactas', title: 'Etiquetas compactas', points: [
+        'Cada jogo vira uma etiqueta pequena (ícone + nome), em linhas que quebram sozinhas; a geração aparece como um marcador no começo de cada grupo.',
+        'É o formato mais enxuto: a lista inteira cabe sem rolar na maioria dos Pokémon.'] },
+};
+
+const state = { option: 'H1', idx: 0, filter: 'All', gen: 'All', selected: true,
+    collected: { '0025': new Set(['rb-r', 'y', 'frlg-fr', 'xy-y', 'sv-s']), '0023': new Set(['rb-r', 'lgpe-lge']), '0094': new Set(['sv-v', 'swsh-sw', 'la']) } };
+
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = id => `<img class="gicon" src="../public/images/games/${id}.webp" alt="" loading="lazy">`;
+const cur = () => DEX[state.idx];
+const owned = id => state.collected[cur().id].has(id);
+const genLabel = g => g ? `Gen ${ROMAN[g]} · ${REGION[g]}` : 'Other';
+const genShort = g => g ? `Gen ${ROMAN[g]}` : 'Mobile';
+const prefix = id => id.includes('-') ? id.split('-')[0] : id;
+const pairSize = pre => CATALOG.filter(c => prefix(c.id) === pre).length;
+const dlcBadges = g => g.dlc.map(d => `<span class="dlc">+ ${esc(d.replace(/^The /, ''))}</span>`).join('');
+function exclusiveOf(p, g) {
+    const pre = prefix(g.id);
+    if (!g.id.includes('-') || pairSize(pre) < 2) return false;
+    return p.games.filter(x => prefix(x.id) === pre).length === 1;
+}
+const exclBadge = (p, g) => exclusiveOf(p, g) ? '<span class="excl">Exclusive</span>' : '';
+function visible(p) {
+    return p.games.filter(g => state.option === 'G4' || state.filter === 'All' || (state.filter === 'Owned') === owned(g.id))
+        .filter(g => state.option !== 'G4' || state.gen === 'All' || String(g.gen ?? 0) === state.gen);
+}
+function byGen(list) {
+    const groups = new Map();
+    for (const g of list) { const k = g.gen ?? 99; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(g); }
+    return [...groups.entries()].sort((a, b) => a[0] - b[0]);
+}
+function summary(p) {
+    const total = p.games.length, have = p.games.filter(g => owned(g.id)).length;
+    return `<div class="summary"><div class="progress"><div class="progress-top"><span><b>${have}</b> of ${total} collected</span><span>${Math.round(have / total * 100)}%</span></div>
+        <div class="bar"><i style="width:${have / total * 100}%"></i></div></div>
+        <div class="chips">${['All', 'Owned', 'Missing'].map(f => `<button class="chip ${state.filter === f ? 'on' : ''}" data-filter="${f}">${f}</button>`).join('')}</div></div>`;
+}
+
+/* ---------- options ---------- */
+function g0(p, mode) {
+    return `<p class="g0-desc">List of games this pokemons shows up.<br>When you select this pokemon, you can mark the games individually for your collection as well.</p>
+        <div class="g0-grid" style="grid-template-columns:repeat(${mode === 'pc' ? 'auto-fill, minmax(76px, 1fr)' : '4, 1fr'})">${p.games.map(g =>
+        `<button class="g0-item ${owned(g.id) ? 'on' : ''}" data-game="${g.id}"><span class="check">${CHECK}</span>${icon(g.id)}<small>${esc(g.name)}</small></button>`).join('')}</div>`;
+}
+function g1(p, mode) {
+    const list = visible(p);
+    if (!list.length) return summary(p) + '<p class="empty">No games here.</p>';
+    return summary(p) + byGen(list).map(([gen, games]) => {
+        const all = p.games.filter(g => (g.gen ?? 99) === gen);
+        return `<section class="gen"><div class="gen-head"><b>${genLabel(gen === 99 ? null : gen)}</b><span><em>${all.filter(g => owned(g.id)).length}</em> / ${all.length}</span></div>
+            <div class="tiles" style="grid-template-columns:repeat(${mode === 'pc' ? 7 : 4}, minmax(0, 1fr))">${games.map(g =>
+            `<button class="tile ${owned(g.id) ? 'on' : ''}" data-game="${g.id}"><span class="check">${CHECK}</span>${icon(g.id)}<small>${esc(g.name)}</small>
+                <span class="badges">${dlcBadges(g)}${exclBadge(p, g)}</span></button>`).join('')}</div></section>`;
+    }).join('');
+}
+function g2(p, mode) {
+    const list = visible(p);
+    if (!list.length) return summary(p) + '<p class="empty">No games here.</p>';
+    return summary(p) + byGen(list).map(([gen, games]) =>
+        `<div class="rows" style="grid-template-columns:repeat(${mode === 'pc' ? 2 : 1}, minmax(0, 1fr))"><div class="row-gen">${genLabel(gen === 99 ? null : gen)}</div>${games.map(g =>
+        `<button class="row ${owned(g.id) ? 'on' : ''}" data-game="${g.id}">${icon(g.id)}<span><b>${esc(g.name)}</b><small>${genShort(g.gen)}${dlcBadges(g)}${exclBadge(p, g)}</small></span><span class="check">${CHECK}</span></button>`).join('')}</div>`).join('');
+}
+function g3(p, mode) {
+    const have = new Set(p.games.map(g => g.id));
+    const releases = [];
+    for (const c of CATALOG) {
+        const pre = prefix(c.id);
+        let r = releases.find(x => x.pre === pre && c.id.includes('-'));
+        if (!r) { r = { pre, gen: c.gen, versions: [] }; releases.push(r); }
+        r.versions.push(c);
+    }
+    const shown = releases.filter(r => r.versions.some(v => have.has(v.id)))
+        .filter(r => state.filter === 'All' || r.versions.some(v => have.has(v.id) && (state.filter === 'Owned') === owned(v.id)));
+    if (!shown.length) return summary(p) + '<p class="empty">No games here.</p>';
+    return summary(p) + `<div class="pairs" style="grid-template-columns:repeat(${mode === 'pc' ? 2 : 1}, minmax(0, 1fr))">${shown.map(r => {
+        const present = r.versions.filter(v => have.has(v.id));
+        const only = r.versions.length > 1 && present.length === 1 ? `<span class="excl">Only in ${esc(present[0].name)}</span>` : '';
+        const dlc = p.games.find(g => present.some(v => v.id === g.id) && g.dlc.length);
+        return `<section class="pair"><div class="pair-head"><span><b>${r.versions.map(v => esc(v.name)).join(' / ')}</b> · ${genShort(r.gen)}</span><span>${only}${dlc ? dlcBadges(dlc) : ''}</span></div>
+            <div class="versions ${r.versions.length === 1 ? 'single' : ''}">${r.versions.map(v => have.has(v.id)
+                ? `<button class="ver ${owned(v.id) ? 'on' : ''}" data-game="${v.id}">${icon(v.id)}<span>${esc(v.name)}</span><span class="check">${CHECK}</span></button>`
+                : `<div class="ver absent">${icon(v.id)}<span>${esc(v.name)}<small>Not in this version</small></span></div>`).join('')}</div></section>`;
+    }).join('')}</div>`;
+}
+function g4(p, mode) {
+    const gens = [...new Set(p.games.map(g => g.gen ?? 0))].sort((a, b) => a - b);
+    const chips = `<div class="chips gen-chips">${['All', ...gens.map(String)].map(g => `<button class="chip ${state.gen === g ? 'on' : ''}" data-gen="${g}">${g === 'All' ? 'All gens' : g === '0' ? 'GO' : ROMAN[g]}</button>`).join('')}</div>`;
+    const list = visible(p);
+    return chips + (list.length ? `<div class="covers" style="grid-template-columns:repeat(${mode === 'pc' ? 8 : 4}, minmax(0, 1fr))">${list.map(g =>
+        `<button class="cover ${owned(g.id) ? 'on' : ''}" data-game="${g.id}">${icon(g.id)}<span class="check">${CHECK}</span><small>${esc(g.name)}</small></button>`).join('')}</div>` : '<p class="empty">No games here.</p>');
+}
+/* ---------- round 2 ---------- */
+// Original (Japanese) release year and console of each game, by id prefix.
+const YEAR = { rb: 1996, y: 1998, gs: 1999, c: 2000, rs: 2002, frlg: 2004, e: 2004, dp: 2006, pt: 2008, hgss: 2009, bw: 2010, b2w2: 2012,
+    xy: 2013, oras: 2014, go: 2016, sm: 2016, usum: 2017, lgpe: 2018, swsh: 2019, bdsp: 2021, la: 2022, sv: 2022, lza: 2025 };
+const CONSOLE = { rb: 'Game Boy', y: 'Game Boy', gs: 'Game Boy Color', c: 'Game Boy Color', rs: 'Game Boy Advance', frlg: 'Game Boy Advance', e: 'Game Boy Advance',
+    dp: 'Nintendo DS', pt: 'Nintendo DS', hgss: 'Nintendo DS', bw: 'Nintendo DS', b2w2: 'Nintendo DS', xy: 'Nintendo 3DS', oras: 'Nintendo 3DS', sm: 'Nintendo 3DS', usum: 'Nintendo 3DS',
+    lgpe: 'Nintendo Switch', swsh: 'Nintendo Switch', bdsp: 'Nintendo Switch', la: 'Nintendo Switch', sv: 'Nintendo Switch', lza: 'Nintendo Switch', go: 'Mobile' };
+const CONSOLE_ORDER = ['Game Boy', 'Game Boy Color', 'Game Boy Advance', 'Nintendo DS', 'Nintendo 3DS', 'Nintendo Switch', 'Mobile'];
+const GAME_COLOR = { 'rb-r': '#e3350d', 'rb-b': '#3b5ba7', y: '#f4c430', 'gs-g': '#c8a23c', 'gs-s': '#9aa2ad', c: '#5fc3dc', 'rs-r': '#b3132b', 'rs-s': '#1f4fa8',
+    e: '#2e9b5f', 'frlg-fr': '#f05a28', 'frlg-lg': '#6abf4b', 'dp-d': '#5b8fd6', 'dp-p': '#d784b0', pt: '#7d8798', 'hgss-hg': '#d4a52a', 'hgss-ss': '#97a6b8',
+    'bw-b': '#3a3a40', 'bw-w': '#c9ccd2', 'b2w2-b2': '#40464e', 'b2w2-w2': '#b9bec6', 'xy-x': '#2f6db5', 'xy-y': '#c8343c', 'oras-or': '#a2192b', 'oras-as': '#1c4b9a',
+    'sm-s': '#f2a33a', 'sm-m': '#5b5fc7', 'usum-us': '#f07b2a', 'usum-um': '#6a3fb5', 'lgpe-lgp': '#f4c430', 'lgpe-lge': '#b07a3c', 'swsh-sw': '#3c8fd6',
+    'swsh-sh': '#d6334c', 'bdsp-bd': '#4d7fd1', 'bdsp-sp': '#d48ab0', la: '#6e8b74', 'sv-s': '#d73a33', 'sv-v': '#7a4bc4', lza: '#3aa58f', go: '#2e6fd8' };
+const yearOf = g => YEAR[prefix(g.id)] ?? '';
+const consoleOf = g => CONSOLE[prefix(g.id)] ?? 'Other';
+const tick = g => `<button class="mini ${owned(g.id) ? 'on' : ''}" data-game="${g.id}" title="${esc(g.name)}">${icon(g.id)}<span class="check">${CHECK}</span><small>${esc(g.name)}</small>${g.dlc.length ? `<em class="dot-dlc" title="DLC: ${esc(g.dlc.join(', '))}"></em>` : ''}</button>`;
+
+function h1(p, mode) {
+    return byGen(p.games).map(([gen, games]) => {
+        const years = [...new Set(games.map(yearOf).filter(Boolean))];
+        return `<section class="shelf"><div class="shelf-head"><b>${gen === 99 ? 'Mobile' : `Gen ${ROMAN[gen]}`}</b><span>${gen === 99 ? 'Pokémon GO' : REGION[gen]} · ${years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0] ?? ''}</span>
+            <em>${games.filter(g => owned(g.id)).length}/${games.length}</em></div><div class="shelf-row">${games.map(tick).join('')}</div></section>`;
+    }).join('');
+}
+function releasesOf(p) {
+    const have = new Set(p.games.map(g => g.id));
+    const releases = [];
+    for (const c of CATALOG) {
+        const pre = prefix(c.id);
+        let r = releases.find(x => x.pre === pre && c.id.includes('-'));
+        if (!r) { r = { pre, gen: c.gen, year: YEAR[pre], versions: [] }; releases.push(r); }
+        r.versions.push(c);
+    }
+    return releases.filter(r => r.versions.some(v => have.has(v.id))).sort((a, b) => a.year - b.year);
+}
+function h2(p, mode) {
+    const have = new Set(p.games.map(g => g.id));
+    return `<div class="timeline ${mode === 'pc' ? 'tl-wide' : 'tl-narrow'}">${releasesOf(p).map((r, i) => {
+        const present = r.versions.filter(v => have.has(v.id));
+        const only = r.versions.length > 1 && present.length === 1 ? `<span class="excl">Only in ${esc(present[0].name)}</span>` : '';
+        return `<div class="tl-item ${mode === 'pc' && i % 2 ? 'right' : 'left'}"><span class="tl-dot ${present.some(v => owned(v.id)) ? 'on' : ''}"></span>
+            <div class="tl-card"><div class="tl-head"><b>${r.year}</b> ${r.versions.map(v => esc(v.name)).join(' / ')} ${only}</div>
+            <div class="tl-versions">${r.versions.map(v => have.has(v.id) ? tick(p.games.find(g => g.id === v.id))
+                : `<div class="mini absent">${icon(v.id)}<small>${esc(v.name)}</small></div>`).join('')}</div></div></div>`;
+    }).join('')}</div>`;
+}
+function h3(p, mode) {
+    return CONSOLE_ORDER.map(name => {
+        const games = p.games.filter(g => consoleOf(g) === name);
+        if (!games.length) return '';
+        return `<section class="console"><div class="console-head"><span class="console-chip">${esc(name)}</span><em>${games.filter(g => owned(g.id)).length}/${games.length}</em></div>
+            <div class="mini-grid" style="grid-template-columns:repeat(${mode === 'pc' ? 8 : 4}, minmax(0, 1fr))">${games.map(tick).join('')}</div></section>`;
+    }).join('');
+}
+function h4(p, mode) {
+    return `<div class="swatches" style="grid-template-columns:repeat(${mode === 'pc' ? 6 : 3}, minmax(0, 1fr))">${p.games.map(g =>
+        `<button class="swatch ${owned(g.id) ? 'on' : ''}" data-game="${g.id}" style="--game:${GAME_COLOR[g.id] ?? '#5b6b85'}">${icon(g.id)}<span class="check">${CHECK}</span>
+            <b>${esc(g.name)}</b><small>${genShort(g.gen)} · ${yearOf(g)}${g.dlc.length ? ' · DLC' : ''}</small></button>`).join('')}</div>`;
+}
+function h5(p, mode) {
+    return `<div class="tags">${byGen(p.games).map(([gen, games]) =>
+        `<span class="tag-gen">${gen === 99 ? 'GO' : ROMAN[gen]}</span>${games.map(g =>
+        `<button class="tag ${owned(g.id) ? 'on' : ''}" data-game="${g.id}">${icon(g.id)}${esc(g.name)}${g.dlc.length ? '<em class="dot-dlc"></em>' : ''}</button>`).join('')}`).join('')}</div>`;
+}
+
+const RENDER = { G0: g0, G1: g1, G2: g2, G3: g3, G4: g4, H1: h1, H2: h2, H3: h3, H4: h4, H5: h5 };
+
+function render() {
+    const p = cur(), color = TYPE_COLOR[p.types[0]] ?? 'var(--type-electric)';
+    document.getElementById('pc').innerHTML = `<div class="pc" style="--type-color:${color}"><aside class="hero"><img src="${p.xl}" alt=""><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div>
+        <div class="vtabs"><span>Info</span><span class="on">Games <small>${p.games.length}</small></span><span>TCG</span></div></aside>
+        <div class="panel">${RENDER[state.option](p, 'pc')}</div></div>`;
+    document.getElementById('phone').innerHTML = `<div class="phone"><div class="screen" style="--type-color:${color}"><div class="compact"><img src="${p.sprite}" alt=""><div><small>${p.dex}</small><b>${esc(p.name)}</b></div></div>
+        <div class="panel">${RENDER[state.option](p, 'phone')}</div><div class="tabbar"><span>Info</span><span class="on">Games</span><span>TCG</span></div></div></div>`;
+    const o = OPTIONS[state.option];
+    document.getElementById('info').innerHTML = `<strong>${o.title}</strong><ul>${o.points.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    document.getElementById('picker').innerHTML = Object.entries(OPTIONS).map(([k, v]) => `<button aria-pressed="${state.option === k}" data-option="${k}">${v.label}</button>`).join('');
+    document.getElementById('pokemonPicker').innerHTML = DEX.map((d, i) => `<button aria-pressed="${state.idx === i}" data-pokemon="${i}">${esc(d.name)}</button>`).join('');
+}
+
+document.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset;
+    if (d.option) { state.option = d.option; state.gen = 'All'; }
+    else if (d.pokemon) { state.idx = Number(d.pokemon); state.gen = 'All'; }
+    else if (d.filter) state.filter = d.filter;
+    else if (d.gen) state.gen = d.gen;
+    else if (d.game) { const s = state.collected[cur().id]; s.has(d.game) ? s.delete(d.game) : s.add(d.game); }
+    else return;
+    render();
+});
+render();
+</script>
+</body>
+</html>

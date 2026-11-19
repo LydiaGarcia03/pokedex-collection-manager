@@ -141,7 +141,6 @@ export function PokemonModal({
                 <PokemonGamesTab
                     pokemon={activePokemonDetail}
                     selected={selected}
-                    collectionVisible={collectionVisible}
                     selectedGameIds={collection.getSelectedGameIds(summary.id)}
                     onToggleGame={gameId => collection.toggleGame(summary.id, gameId)}
                 />

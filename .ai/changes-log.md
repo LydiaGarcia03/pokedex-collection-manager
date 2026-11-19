@@ -1,5 +1,95 @@
 # Changes Log
 
+## 2026-11-19 (4)
+
+### Aba Games: jogo não marcado sempre cinza; check igual ao das cartas
+
+**Files modified:**
+- `src/components/PokemonGamesTab.tsx`:
+  - O jogo que você não tem fica sempre cinza (`--muted`), não só no modo de visibilidade. A prop
+    `collectionVisible` saiu do componente.
+  - O check redondo foi trocado pelo mesmo quadradinho das cartas TCG
+    (`selectable-item-checkbox --compact --blurred`, com `--selected` quando marcado). Ele aparece
+    sempre que o Pokémon está na coleção: vazio quando o jogo falta, cheio quando você tem.
+- `src/components/PokemonModal.tsx`: deixou de passar `collectionVisible` para a aba Games.
+- `src/styles.css`:
+  - Sai `.pokemon-game-swatch__check`.
+  - Entra o tamanho do quadradinho nos blocos: 28px no computador e 22px no celular, como nas
+    cartas do celular.
+- `CLAUDE.md`: a descrição da aba Games foi atualizada.
+
+**Why:** o User disse que os jogos não marcados deveriam aparecer desmarcados, como no mock, e
+que o check deveria ter o mesmo estilo do check das cartas.
+
+## 2026-11-19 (3)
+
+### Aba Games: blocos com a cor de cada jogo (H4), no computador e no celular
+
+**Files modified:**
+- `src/utils/gameDetails.ts` (novo): tabela fixa com a cor marcante e o ano de lançamento
+  original (Japão) de cada jogo do `games-catalog.json`. Um jogo que falte na tabela usa cor
+  neutra e fica sem ano.
+- `src/components/PokemonGamesTab.tsx`, reescrito:
+  - sai o texto "List of games this pokemons shows up…";
+  - cada jogo vira um bloco (`.pokemon-game-swatch`) em degradê com a cor dele, com ícone, nome
+    e "Gen · ano · DLC" (os nomes das DLCs aparecem no título);
+  - jogos coletados têm check redondo e borda clara;
+  - quando o Pokémon não está na coleção, uma linha avisa que é preciso adicioná-lo para marcar
+    jogos;
+  - continua igual: só dá para marcar com o Pokémon na coleção, e no modo "collection visible" o
+    que falta perde a cor (`--muted`), como as cartas TCG.
+- `src/styles.css`:
+  - Saem as regras da grade antiga (`.pokemon-game-grid`, `.pokemon-game-item*`,
+    `.pokemon-tab-description`) e a parte delas nas regras que dividiam com as cartas TCG.
+  - Entram as regras `.pokemon-game-swatch*`: 6 por linha no computador, 4 abaixo de 1100px e 3
+    no celular.
+- `CLAUDE.md`: a aba Games foi descrita e o mapa de arquivos atualizado.
+
+**Why:** o User escolheu a H4 na 2ª rodada do mock da aba Games. As cores aparecem sempre e o
+cinza só no modo de visibilidade, para manter a regra que já vale para as cartas e os cards da
+listagem.
+
+## 2026-11-19 (2)
+
+### Mock da aba Games: 2ª rodada de ideias
+
+**Files modified:**
+- `docs/games-tab-mock.html`: o mock passa a mostrar a 2ª rodada, com a Atual e a G4 para
+  comparar. As ideias novas são:
+  - H1: prateleiras por geração, que rolam para o lado;
+  - H2: linha do tempo dos lançamentos, com ano e versões juntas e "Only in …";
+  - H3: agrupado por console;
+  - H4: blocos com a cor de cada jogo;
+  - H5: etiquetas compactas.
+
+  Nenhuma tem barra de progresso nem All / Owned / Missing. Uma bolinha amarela marca o jogo em
+  que o Pokémon aparece numa DLC. Anos (lançamento original no Japão) e consoles vêm de uma
+  tabela fixa no mock.
+
+**Why:** o User achou a G4 ainda ruim e pediu outras ideias.
+
+## 2026-11-19
+
+### Mock: estilos da aba Games (computador e celular)
+
+**Files modified:**
+- `docs/games-tab-mock.html` (novo): cada opção aparece no computador (layout D) e no celular,
+  com dados reais de Pikachu, Ekans e Gengar e o catálogo de jogos do projeto `pokedex`. As opções
+  são:
+  - G0: como está hoje;
+  - G1: por geração, com progresso em cada uma;
+  - G2: lista com detalhes (geração, DLC, exclusivo);
+  - G3: pares de versão, com "Only in …" e a versão ausente apagada;
+  - G4: ícones grandes, com filtro de geração.
+
+  De G1 a G4, todas têm progresso ("x of y collected") e os filtros All / Owned / Missing.
+
+**Why:** o User está insatisfeito com a aba Games no computador e no celular, e pediu vários
+estilos antes de decidir.
+
+Depois, o User escolheu a G4, sem a barra de progresso e sem All / Owned / Missing. O mock agora
+abre nela, só com o filtro de geração.
+
 ## 2026-11-18 (20)
 
 ### Categoria (genus) na seção Species do computador
