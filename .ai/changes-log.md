@@ -1,5 +1,230 @@
 # Changes Log
 
+## 2026-11-19 (13)
+
+### README atualizado, banner menos saturado, cinza de volta só no modo de visibilidade
+
+**Files modified:**
+- `README.md`: reescrito com o estado atual do app e o setup atual. O texto cobre:
+  - o painel de filtros e o detalhe no computador e no celular;
+  - a aba Info, a aba Games (cores dos jogos) e a aba TCG (busca, foil com etiqueta e borda
+    "verso de CD", Shift+clique);
+  - o PWA, o reset de senha e o carregamento dos golpes por Pokémon;
+  - as fontes de dados extras, o `npm run setup`, os passos de imagens de cartas faltando e o
+    script de símbolos de tipo.
+- `docs/screenshots/` (novo): `listing.jpg`, `detail-info.jpg`, `detail-games.jpg`,
+  `detail-tcg.jpg` (com cartas foil) e `mobile-detail.png`.
+  - Foram capturadas do build local (`vite preview --base /pokedex-collection-manager/`), sem
+    login, para nenhum nome de usuário aparecer.
+  - O celular foi capturado por uma página temporária com o app num iframe de 390px. Ela foi
+    criada em `dist/` e apagada em seguida; os dados e o service worker dessa origem de teste
+    também foram limpos.
+  - O README passou a usar essas imagens. A captura antiga (`docs/pokedexCM-Screenshot.png`, que
+    mostrava o nome do User) deixou de ser referenciada.
+- `src/styles.css`, `.pokemon-detail-hero`: o banner do computador mistura a cor do tipo com um
+  cinza-azulado (`#2a3a55`) e reduz o croma em cerca de 25% (`oklch(from …)`, com fallback em
+  `color-mix` para navegadores sem suporte). Antes: 78% da cor do tipo com o navy. A escolha foi a
+  opção C, entre 4 comparadas lado a lado nos 18 tipos.
+- `src/components/PokemonGamesTab.tsx`, `src/components/PokemonModal.tsx`,
+  `src/components/PokemonTcgTab.tsx`: o cinza do que falta volta a depender só do modo
+  "Toggle Collection Visibility", tanto nos jogos quanto nas cartas TCG do computador, como já
+  era nos Pokémon da listagem. Fora desse modo, tudo fica colorido, e o check, a caixinha e a
+  etiqueta FOIL continuam indicando o que se tem. A prop `collectionVisible` voltou ao
+  `PokemonGamesTab`.
+- `CLAUDE.md`: a regra de visibilidade foi atualizada nas descrições das abas Games e TCG.
+
+**Why:**
+- O README estava desatualizado e o User pediu para atualizá-lo antes do commit.
+- O banner do Dragão (e depois o do Venenoso) estava saturado demais e "doía o olho".
+- O User apontou que o botão de visibilidade deve valer para Pokémon, cartas e jogos. As entradas
+  2026-11-19 (4) e (6) tinham deixado jogos e cartas sempre cinza.
+
+## 2026-11-19 (12)
+
+### Foil: caixinha com o ícone de brilhos e borda "verso de CD"
+
+**Files modified:**
+- `src/components/PokemonTcgTab.tsx`: na carta foil, a caixinha do canto mostra o ícone de três
+  brilhos (`FoilSparklesIcon`) no lugar do check, com a classe `selectable-item-checkbox--foil`.
+  Vale para o computador e o celular. A etiqueta FOIL continua.
+- `src/styles.css`:
+  - `selectable-item-checkbox--selected.--foil` deixa a caixinha prateada com o ícone escuro.
+  - Carta foil:
+    - borda de 3px com um `conic-gradient` arco-íris que gira (`@property --foil-angle` +
+      `tcg-foil-spin`, 6s);
+    - brilho leve de luz;
+    - por cima da imagem, uma camada iridescente (conic + radial, `mix-blend-mode: overlay`) que
+      gira junto.
+  - A carta grande usa borda de 4px. No hover, a borda de arco-íris não é coberta pelo azul.
+  - Com "reduzir movimento" ativado no sistema, a animação para.
+  - Testado numa página de prévia com o CSS real: a borda gira e as cores mudam de posição.
+- `CLAUDE.md`: a descrição de foil foi atualizada.
+
+**Why:** o User achou estranho, no computador, clicar de novo na caixinha e ela continuar com o
+check, só aparecendo a etiqueta embaixo. Pediu o ícone de brilhos na caixinha e uma borda de foil
+com mais efeito, parecida com o verso de um CD.
+
+## 2026-11-19 (11)
+
+### Foil com a etiqueta "FOIL" (V5) e ícone de três brilhos (F1) para marcar
+
+**Files modified:**
+- `src/components/FoilSparklesIcon.tsx` (novo): o ícone de três brilhos (F1 de
+  `docs/foil-icon-mock.html`).
+- `src/components/PokemonTcgTab.tsx` (computador e celular):
+  - A carta foil (na grade e na carta grande) mostra a etiqueta prateada "FOIL"
+    (`.pokemon-tcg-foil-tag`). No celular, ela substitui o selo redondo roxo de antes.
+  - No computador, a caixinha do canto mostra o check azul tanto para "tenho" quanto para foil; o
+    foil é indicado pela etiqueta. O ciclo do clique continua o mesmo: vazio → tenho → foil →
+    vazio.
+  - O botão "Yes, foil", a ação "Foil" da barra de várias cartas e o filtro Foil usam o
+    `FoilSparklesIcon` no lugar do `Sparkle`.
+- `src/styles.css`:
+  - Carta foil: borda clara prateada e um reflexo branco passando (antes, borda roxa e brilho
+    colorido).
+  - "Yes, foil" ativo e a ação "Foil" ficam prateados.
+  - Saem `.pokemon-tcg-card__foil-badge` e `selectable-item-checkbox--foil`.
+- `CLAUDE.md`: a descrição de foil e o mapa de arquivos foram atualizados.
+
+**Why:** o User achou que o roxo era o que incomodava. Escolheu a V5 de
+`docs/foil-style-mock.html` (a palavra FOIL), mas com o ícone de três brilhos (F1) onde se marca
+foil.
+
+## 2026-11-19 (10)
+
+### Mock: estilos completos de foil (cor, borda, brilho e ícone)
+
+**Files modified:**
+- `docs/foil-style-mock.html` (novo): cada linha é uma linguagem visual inteira de foil, aplicada à
+  caixinha do canto, à borda e ao brilho da carta, ao filtro, ao botão da carta grande e à
+  etiqueta do celular. As opções são:
+  - Hoje: roxo, para comparar;
+  - V1: prata metálica;
+  - V2: iridescente perolado, com a borda em tons pastel que se movem;
+  - V3: dourado;
+  - V4: o mesmo azul do "tenho", sem cor nova, com ícone de brilhos e moldura dupla;
+  - V5: a palavra "FOIL" numa etiqueta prateada, como um adesivo.
+
+**Why:** o User disse que talvez a cor do foil o incomodasse e pediu opções mais diferentes de
+como representar foil, não só o ícone.
+
+## 2026-11-19 (9)
+
+### Mock de ícones de foil: 2ª rodada
+
+**Files modified:**
+- `docs/foil-icon-mock.html`: saem F3 (losango holográfico), F4 (carta com reflexo) e F5
+  (arco-íris). Ficam F0 a F2 para comparar. Entram:
+  - N1: estrela de raridade de 5 pontas, o símbolo de carta rara nas próprias cartas Pokémon;
+  - N2: estrela reluzente;
+  - N3: reflexo (lens flare);
+  - N4: carta com brilho no meio;
+  - N5: purpurina;
+  - N6: Pokébola brilhante.
+
+**Why:** o User achou o arco-íris e o reflexo "nada a ver" e pediu opções melhores.
+
+## 2026-11-19 (8)
+
+### Dica de Shift+clique menor; mock de ícones de foil
+
+**Files modified:**
+- `src/styles.css`: `.pokemon-tcg-tip` agora tem fonte de 0.72rem (era 0.78rem) e 6px de
+  espaço acima (antes era -4px).
+- `docs/foil-icon-mock.html` (novo): seis opções de ícone de foil, cada uma mostrada na caixinha
+  do canto da carta no computador (ao lado de uma carta só "tenho"), no filtro "Foil", no botão
+  "Yes, foil" da carta grande e na etiqueta do celular. As opções são:
+  - F0: estrela de 4 pontas (a de hoje);
+  - F1: três brilhos;
+  - F2: gema;
+  - F3: losango holográfico colorido;
+  - F4: carta brilhando;
+  - F5: arco-íris.
+
+**Why:** o User pediu a dica levemente menor e mais afastada do topo, e opções de um ícone novo
+para foil.
+
+## 2026-11-19 (7)
+
+### Aba TCG no computador: caixinha volta a receber o clique; "Select" vira Shift+clique
+
+**Files modified:**
+- `src/styles.css`:
+  - Corrigido o clique na caixinha do canto. A regra
+    `.selectable-item-checkbox--compact { pointer-events: none }` vinha depois no arquivo e vencia
+    `.pokemon-tcg-card__state`. Por isso o clique atravessava a caixinha, caía na carta e abria a
+    carta grande, em vez de alternar o estado. O seletor passou a ser
+    `.pokemon-tcg-card .pokemon-tcg-card__state`.
+  - Sai `.pokemon-tcg-select-toggle` e entra `.pokemon-tcg-tip`.
+- `src/components/PokemonTcgTab.tsx`:
+  - Saiu o botão "Select". Agora Shift+clique numa carta (ou Shift+Enter) liga o modo de várias
+    cartas e já escolhe essa carta; enquanto o modo está ligado, um clique simples também
+    escolhe.
+  - O Shift+clique não seleciona o texto da página (`preventDefault` no `mousedown`).
+  - Uma dica ("Tip: Shift+click cards to mark several at once") aparece embaixo dos filtros
+    quando o Pokémon está na coleção.
+- `CLAUDE.md`: a descrição da aba TCG foi atualizada.
+
+**Why:** o User testou e viu que a caixinha não alternava os estados: o clique abria a janela. O
+User também não gostou do botão "Select" ao lado dos filtros e escolheu o Shift+clique.
+
+## 2026-11-19 (6)
+
+### Aba TCG no computador: caixinha que alterna, carta grande ao clicar e modo de várias cartas (T4)
+
+**Files modified:**
+- `src/components/PokemonTcgTab.tsx` (só o computador muda; o celular continua igual):
+  - A caixinha do canto vira um botão que alterna vazio → ✓ → ✦ foil → vazio
+    (`NEXT_OWNERSHIP` + `onSetCardOwnership`). Quando a carta é foil, a caixinha fica roxa com o
+    brilho.
+  - Clicar na carta abre a carta grande. É a mesma tela do celular ("No / Yes / Yes, foil"), aqui
+    como janela, e Esc e ← → funcionam. A tecla é consumida com `preventDefault`, para o
+    `PokemonModal` não trocar de Pokémon. Saem o duplo clique, o toque longo e a visualização
+    ampliada antiga (`pokemon-tcg-card-focus`).
+  - Com o Pokémon na coleção, a carta que falta fica cinza. Só a imagem fica cinza
+    (`--missing`), para a caixinha continuar legível. No celular continua a regra de hoje, só no
+    modo de visibilidade (`--dimmed`).
+  - Novo botão "Select" nos filtros. No modo seleção, clicar escolhe a carta (contorno amarelo e
+    bolinha) e uma barra fixa embaixo (`pokemon-tcg-batch`) aplica Have / Foil / Remove a todas;
+    "Cancel" e "Done" saem do modo.
+  - Saiu o botão de brilho que marcava foil (`pokemon-tcg-card__foil-toggle`) e a prop
+    `onToggleFoil`.
+- `src/components/PokemonModal.tsx`: deixou de passar `onToggleFoil`.
+- `src/hooks/useCollection.ts`: `toggleFoil` foi removido, porque ninguém mais usava. O
+  `setCardOwnership` cobre os três estados e é seguro chamá-lo várias vezes seguidas, porque usa
+  atualização funcional. O formato salvo não muda.
+- `src/styles.css`:
+  - Saem as regras do botão de brilho, da visualização ampliada antiga e de `--zoomable`.
+  - Entram `--missing`, `__state`, `selectable-item-checkbox--foil`, `--picked`, `__pick`,
+    `pokemon-tcg-batch*` e a janela da carta grande no computador
+    (`pokemon-tcg-viewer--desktop` + backdrop).
+  - Dois seletores ganharam mais especificidade, porque as regras base que eles sobrescrevem vêm
+    depois no arquivo.
+- `CLAUDE.md`: a descrição de foil e o mapa de arquivos foram atualizados.
+
+**Why:** o User escolheu a T4 do `docs/tcg-tab-mock.html` para o computador, e pediu que o
+celular continuasse igual. Também decidiu que clicar na carta abre a carta grande e que a carta
+que falta fica sempre cinza com o Pokémon na coleção.
+
+## 2026-11-19 (5)
+
+### Mock: jeitos de marcar "tenho" e "foil" na aba TCG
+
+**Files modified:**
+- `docs/tcg-tab-mock.html` (novo): cada opção aparece no computador (layout D) e no celular, com
+  cartas reais de Pikachu e Gengar. As opções são:
+  - T0: como está hoje;
+  - T1: a caixinha do canto alterna vazio → ✓ → ✦ foil;
+  - T2: botões fixos "Have" e "Foil" embaixo de cada carta;
+  - T3: no computador, barra de 3 estados ao passar o mouse; no celular, a folha com a carta
+    grande redesenhada;
+  - T4: modo de seleção para marcar várias cartas de uma vez.
+
+  De T1 a T4, toda carta foil tem moldura roxa e brilho holográfico animado, e a carta que falta
+  fica cinza.
+
+**Why:** o User pediu para melhorar a aba TCG, principalmente o jeito de marcar foil.
+
 ## 2026-11-19 (4)
 
 ### Aba Games: jogo não marcado sempre cinza; check igual ao das cartas

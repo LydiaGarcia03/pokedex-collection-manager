@@ -73,8 +73,8 @@ grandes.
   celular. Cada jogo é um bloco na cor marcante dele, com ícone, nome e
   "Gen · ano de lançamento no Japão · DLC". Cor e ano vêm de uma tabela fixa em
   `src/utils/gameDetails.ts`, porque esses dados não existem no `pokedex`. Um jogo que você tem
-  fica colorido, com borda clara; um que não tem fica sempre cinza, independente do modo de
-  visibilidade. O check é o mesmo quadradinho das cartas TCG (`.selectable-item-checkbox`). Para
+  ganha borda clara e check. No modo "Toggle Collection Visibility", os que faltam ficam cinza;
+  fora dele, todos ficam coloridos. É a mesma regra dos Pokémon da listagem e das cartas TCG. O check é o mesmo quadradinho das cartas TCG (`.selectable-item-checkbox`). Para
   marcar jogos é preciso que o Pokémon esteja na coleção; se não estiver, a aba mostra uma linha
   avisando. São 6 blocos por linha no computador (4 abaixo de 1100px) e 3 no
   celular.
@@ -89,11 +89,25 @@ grandes.
   do projeto `pokedex`); `legendary`/`mythical` já existiam nos dados (ver `.ai/changes-log.md`
   2026-08-24)
 - Marcar Pokémon/cartas/jogos como coletados, modo "Toggle Collection Visibility"
-- Marcar uma carta TCG já selecionada como **foil**. No computador, pelo badge de "sparkle" com
-  gradiente roxo-neon metálico no canto inferior-esquerdo do card, que só aparece depois que a carta
-  está marcada. No celular, tocando na carta, que abre a carta grande com "In my collection:
-  No / Yes / Yes, foil" (`useCollection.setCardOwnership`). Cartas foil têm borda roxa e brilho
-  holográfico (ver `src/components/PokemonTcgTab.tsx`)
+- Marcar cartas TCG como **tenho** ou **foil** (`useCollection.setCardOwnership`; foil sempre conta
+  como "tenho"). A carta foil ganha a etiqueta prateada "FOIL" (opção V5 de
+  `docs/foil-style-mock.html`) e uma borda de arco-íris que gira, como o verso de um CD, com um
+  brilho iridescente suave por cima (`@property --foil-angle`). A caixinha do canto de uma carta
+  foil é prateada, com o ícone de três brilhos no lugar do check. Onde se marca ou filtra foil (botão
+  "Yes, foil", ação "Foil" da barra de várias cartas, filtro Foil), o ícone é o de três brilhos
+  (`FoilSparklesIcon.tsx`, F1 de `docs/foil-icon-mock.html`). Tudo fica em
+  `src/components/PokemonTcgTab.tsx`.
+  - **Celular:** a caixinha do canto marca "tenho". Tocar na carta abre a carta grande com
+    "In my collection: No / Yes / Yes, foil".
+  - **Computador** (opção T4 de `docs/tcg-tab-mock.html`):
+    - a caixinha do canto alterna vazio → ✓ tenho (azul) → três brilhos, foil (prateada) → vazio;
+    - clicar na carta abre a mesma carta grande do celular, como janela, com Esc e ← → para
+      fechar e trocar de carta;
+    - no modo "Toggle Collection Visibility", as cartas que faltam ficam cinza (no computador só a
+      imagem, para a caixinha continuar clicável);
+    - Shift+clique numa carta liga o modo de várias cartas: a partir daí, um clique escolhe a carta
+      (contorno amarelo) e uma barra embaixo aplica "Have", "Foil" ou "Remove" a todas. Uma dica
+      curta embaixo dos filtros explica o atalho; não há botão.
 - Busca na aba TCG (computador e celular): campo por nome da carta, nome do set e número, mais os
   filtros All / Owned / Missing / Foil (estes só com o Pokémon selecionado). Os nomes dos sets vêm
   de `public/data/tcg-sets.json`
@@ -297,15 +311,16 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|--------|--------|
 | `src/api/pokemonApi.ts` | **Modified** | Loads local JSON; no backend calls |
 | `src/pages/PokedexPage.tsx` | **Modified** | Client-side filtering; no detail fetch |
-| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; mobile card viewer with No / Yes / Yes, foil |
+| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; card viewer with No / Yes / Yes, foil (phone full screen, desktop window); desktop corner box cycles have/foil and Shift+click multi-mark |
 | `src/components/PokemonModal.tsx` | **Modified** | Renders `PokemonModalMobile` at ≤640px; desktop = type-colored hero column with stacked tabs + ← → keys; tab content and links shared by both layouts |
 | `src/components/PokemonModalMobile.tsx` | **New** | Phone layout of the Pokémon detail |
 | `src/components/PokemonGamesTab.tsx` | **Modified** | Game swatches in each game's color (H4); hint when the Pokémon isn't collected |
+| `src/components/FoilSparklesIcon.tsx` | **New** | Three-sparkles icon for marking/filtering foil |
 | `src/utils/gameDetails.ts` | **New** | Signature color + original release year per game id |
 | `src/components/PokemonInfoTab.tsx` | **Modified** | `MoveList` on mobile; `PokemonInfoDesktop` (I1 layout, section shortcuts) on desktop; stat band classes; loads moves on open (`loadPokemonMoves`) |
 | `src/components/FilterPanel.tsx` | **New** | Listing filter panel (desktop tabs / mobile bottom sheet); replaced `FilterCombobox.tsx` |
 | `src/hooks/useIsMobile.ts` | **New** | `(max-width: 640px)` media query as a hook |
-| `src/hooks/useCollection.ts` | **Modified** | `getCardOwnership` / `setCardOwnership` (same saved format) |
+| `src/hooks/useCollection.ts` | **Modified** | `getCardOwnership` / `setCardOwnership` (same saved format); `toggleFoil` removed (unused) |
 | `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager/'` (nome do repo no GitHub); `VitePWA` plugin (manifest + service worker) |
 | `package.json` | **Modified** | Removed `axios`; added setup scripts; `vite-plugin-pwa` (devDependency) |
 | `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON; moves split into `data/moves/{id}.json` |

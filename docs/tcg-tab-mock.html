@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aba TCG — mock</title>
+<style>
+    :root {
+        --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72); --faint: rgba(226, 232, 240, 0.5);
+        --accent: #9cc8ed; --accent-ink: #092f58; --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --card: rgba(8, 24, 52, 0.52); --tile: rgba(147, 197, 253, 0.07); --foil: #a78bfa; --foil-deep: #7c3aed;
+        --type-electric: #eab308; --type-ghost: #7c3aed;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; min-height: 100vh;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%), linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .page { max-width: 1480px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 16px; color: var(--muted); max-width: 980px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button { padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600; border: 1px solid rgba(147, 197, 253, 0.62); }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .frames { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .notes { margin-top: 30px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- frames ---------- */
+    .pc { position: relative; width: 1000px; height: 680px; display: grid; grid-template-columns: 250px 1fr; border-radius: 22px; overflow: hidden; background: #0b3360;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.45); }
+    .hero { display: flex; flex-direction: column; padding: 16px; color: #fff;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%); }
+    .hero img { width: 74%; margin: 18px auto 6px; display: block; filter: drop-shadow(0 12px 20px rgba(0,0,0,.45)); }
+    .hero .dex { color: rgba(255,255,255,.78); font-size: .8rem; font-weight: 600; }
+    .hero .name { font-size: 1.6rem; font-weight: 800; }
+    .vtabs { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .vtabs span { display: flex; justify-content: space-between; padding: 11px 13px; border-radius: 11px; font-weight: 600; font-size: .9rem; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); }
+    .vtabs span.on { background: rgba(255,255,255,.92); color: #0b2a4a; border-color: transparent; }
+    .vtabs small { opacity: .75; font-weight: 500; }
+    .panel { position: relative; overflow-y: auto; padding: 18px 22px 90px; }
+    .phone { width: 375px; height: 740px; padding: 10px; border-radius: 38px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .screen { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 30px; background: linear-gradient(180deg, #0b3360, #082744); }
+    .compact { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #fff;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 70%, #0b3360), color-mix(in srgb, var(--type-color) 30%, #082744)); }
+    .compact img { width: 42px; height: 42px; object-fit: contain; }
+    .compact b { font-size: 1.05rem; }
+    .compact small { display: block; color: rgba(255,255,255,.75); font-size: .72rem; }
+    .phone .panel { flex: 1; padding: 12px 10px 90px; scrollbar-width: none; }
+    .tabbar { display: flex; background: #082744; border-top: 1px solid var(--line-soft); position: relative; z-index: 6; }
+    .tabbar span { flex: 1; text-align: center; padding: 10px 0 12px; font-size: .74rem; font-weight: 600; color: #9fc9f8; }
+    .tabbar span.on { color: #a7f3d0; box-shadow: inset 0 3px 0 #34d399; }
+
+    /* ---------- toolbar ---------- */
+    .search { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(3,20,42,.5); border: 1px solid var(--line); color: var(--faint); font-size: .86rem; margin-bottom: 10px; }
+    .toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(147,197,253,.08); border: 1px solid var(--line-soft); color: #9fc9f8; font-size: .8rem; font-weight: 600; }
+    .chip em { font-style: normal; opacity: .7; font-weight: 500; }
+    .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .phone .chip { height: 30px; padding: 0 10px; font-size: .74rem; }
+    .count { margin-left: auto; color: var(--faint); font-size: .78rem; }
+    .select-toggle { margin-left: auto; }
+
+    /* ---------- cards ---------- */
+    .grid { display: grid; gap: 12px; }
+    .tcg { min-width: 0; position: relative; padding: 0; border: 2px solid transparent; border-radius: 10px; background: var(--tile); overflow: visible; text-align: left; }
+    .tcg .art { position: relative; border-radius: 8px; overflow: hidden; }
+    .tcg img { display: block; width: 100%; aspect-ratio: 63/88; object-fit: cover; }
+    .tcg .meta { padding: 5px 6px 6px; font-size: .66rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tcg.owned { border-color: var(--accent); }
+    .tcg.missing .art img { filter: grayscale(.9); opacity: .45; }
+    /* Foil: purple frame + moving holographic sheen */
+    .tcg.foil { border-color: var(--foil); box-shadow: 0 0 0 1px rgba(167,139,250,.5), 0 0 18px rgba(167,139,250,.45); }
+    .tcg.foil .art::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .55;
+        background: linear-gradient(115deg, transparent 25%, rgba(255,80,220,.55) 38%, rgba(80,220,255,.55) 50%, rgba(255,240,120,.5) 62%, transparent 75%);
+        background-size: 260% 260%; animation: holo 3.2s linear infinite; }
+    @keyframes holo { from { background-position: 100% 0; } to { background-position: -160% 0; } }
+    /* corner box (same look as today) */
+    .box { position: absolute; top: 6px; right: 6px; z-index: 3; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+        background: rgba(11,51,96,.45); border: 1px solid rgba(139,191,235,.5); backdrop-filter: blur(4px); color: transparent; }
+    .phone .box { width: 24px; height: 24px; border-radius: 7px; }
+    .box svg { width: 18px; height: 18px; }
+    .phone .box svg { width: 15px; height: 15px; }
+    .box.owned { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .box.foil { background: linear-gradient(135deg, #c4b5fd, #7c3aed 55%, #e9d5ff); border-color: #ddd6fe; color: #fff; box-shadow: 0 0 10px rgba(167,139,250,.7); }
+    .foil-tag { position: absolute; left: 6px; bottom: 30px; z-index: 3; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: .62rem; font-weight: 800;
+        color: #fff; background: linear-gradient(135deg, #8b5cf6, #c084fc); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .foil-tag svg { width: 10px; height: 10px; }
+    /* T0: today's sparkle button */
+    .spark { position: absolute; left: 6px; bottom: 30px; z-index: 3; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: rgba(11,51,96,.7); border: 1px solid rgba(196,181,253,.6); color: #ddd6fe; }
+    .spark.on { background: linear-gradient(135deg, #c4b5fd, #7c3aed); color: #fff; }
+    .spark svg { width: 15px; height: 15px; }
+    /* T2: status bar under the card */
+    .statusbar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; }
+    .statusbar button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 26px; border-radius: 7px; border: 1px solid var(--line-soft);
+        background: rgba(3,20,42,.4); color: var(--muted); font-size: .68rem; font-weight: 700; }
+    .statusbar button svg { width: 12px; height: 12px; }
+    .statusbar .have.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .statusbar .shine.on { background: linear-gradient(135deg, #8b5cf6, #c084fc); border-color: #c4b5fd; color: #fff; }
+    .phone .statusbar button span { display: none; }
+    /* T3: hover bar (PC) */
+    .hoverbar { position: absolute; left: 6px; right: 6px; bottom: 32px; z-index: 4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; border-radius: 9px;
+        background: rgba(3,14,30,.82); backdrop-filter: blur(6px); opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
+    .tcg:hover .hoverbar { opacity: 1; transform: none; }
+    .hoverbar button { height: 28px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: .66rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+    .hoverbar button svg { width: 12px; height: 12px; }
+    .hoverbar button.on.none { background: rgba(147,197,253,.18); color: var(--text); }
+    .hoverbar button.on.owned { background: var(--accent); color: var(--accent-ink); }
+    .hoverbar button.on.foil { background: linear-gradient(135deg, #8b5cf6, #c084fc); color: #fff; }
+    /* viewer / sheet */
+    .sheet-wrap { position: absolute; inset: 0; z-index: 5; background: rgba(2,10,24,.6); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
+    .pc .sheet-wrap { align-items: center; }
+    .sheet { position: relative; width: 100%; max-height: 92%; overflow-y: auto; padding: 16px; border-radius: 22px 22px 0 0; background: #0b2c52; border-top: 1px solid var(--line); box-shadow: 0 -20px 50px rgba(0,0,0,.45); }
+    .pc .sheet { width: 640px; border-radius: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: center; }
+    .sheet .big { position: relative; width: 62%; margin: 0 auto 12px; border: 2px solid transparent; border-radius: 12px; }
+    .pc .sheet .big { width: 100%; margin: 0; }
+    .sheet .big img { display: block; width: 100%; border-radius: 10px; }
+    .sheet .big.foil { border-color: var(--foil); box-shadow: 0 0 22px rgba(167,139,250,.55); }
+    .sheet .big.foil::after { content: ''; position: absolute; inset: 0; border-radius: 10px; pointer-events: none; mix-blend-mode: color-dodge; opacity: .5;
+        background: linear-gradient(115deg, transparent 25%, rgba(255,80,220,.55) 38%, rgba(80,220,255,.55) 50%, rgba(255,240,120,.5) 62%, transparent 75%); background-size: 260% 260%; animation: holo 3.2s linear infinite; }
+    .sheet-close { position: absolute; top: 10px; right: 10px; }
+    .sheet h3 { margin: 0; font-size: 1.1rem; }
+    .sheet .sub { margin: 2px 0 14px; color: var(--faint); font-size: .82rem; }
+    .sheet .label { font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+    .seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .seg3 button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line-soft); background: rgba(3,20,42,.4); color: var(--muted); font-weight: 700; font-size: .78rem; }
+    .seg3 button svg { width: 20px; height: 20px; }
+    .seg3 button.on.none { background: rgba(147,197,253,.16); color: var(--text); border-color: var(--line); }
+    .seg3 button.on.owned { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .seg3 button.on.foil { background: linear-gradient(135deg, #8b5cf6, #c084fc); color: #fff; border-color: #c4b5fd; box-shadow: 0 0 14px rgba(167,139,250,.5); }
+    .sheet .row { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+    .round { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: rgba(147,197,253,.1); display: inline-flex; align-items: center; justify-content: center; }
+    .round svg { width: 18px; height: 18px; }
+    .sheet .row small { color: var(--faint); font-size: .76rem; }
+    /* T4: batch bar */
+    .batchbar { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 6px; padding: 8px; border-radius: 16px;
+        background: #0a2343; border: 1px solid var(--line); box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+    .phone .batchbar { bottom: 58px; }
+    .batchbar b { font-size: .84rem; margin: 0 6px; }
+    .batchbar .act { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-soft); background: rgba(147,197,253,.1); font-size: .78rem; font-weight: 700; }
+    .batchbar .act svg { width: 14px; height: 14px; }
+    .batchbar .act.owned { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .batchbar .act.foil { background: linear-gradient(135deg, #8b5cf6, #c084fc); color: #fff; border-color: #c4b5fd; }
+    .batchbar .act.ghost { margin-left: auto; background: none; }
+    .phone .batchbar { flex-wrap: wrap; }
+    .phone .batchbar .act { height: 32px; padding: 0 9px; font-size: .72rem; }
+    .tcg.picked { outline: 3px solid #fde68a; outline-offset: 2px; }
+    .pickdot { position: absolute; top: 6px; left: 6px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; background: rgba(3,14,30,.5); }
+    .tcg.picked .pickdot { background: #fde68a; border-color: #fde68a; }
+    .legend { margin: -4px 0 10px; color: var(--faint); font-size: .76rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .legend i { display: inline-flex; width: 16px; height: 16px; border-radius: 5px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Aba TCG — jeitos de marcar "tenho" e "foil"</h1>
+    <p class="lede">Cada opção aparece no computador (layout D) e no celular. Tudo é clicável: marque cartas, troque o filtro, abra uma carta.
+        Para ver o estado inicial de novo, recarregue a página. Cartas foil têm moldura roxa e um brilho holográfico que passa pela carta.</p>
+    <div class="picker" id="picker"></div>
+    <div class="picker" id="pokemonPicker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="frames">
+        <div><p class="frame-label">Computador</p><div id="pc"></div></div>
+        <div><p class="frame-label">Celular</p><div id="phone"></div></div>
+    </div>
+    <div class="notes">
+        <h2>Igual em todas as opções novas (T1 a T4)</h2>
+        <ul>
+            <li>Busca e filtros All / Owned / Missing / Foil continuam como hoje.</li>
+            <li>Três estados por carta: não tenho, tenho, tenho foil. Foil sempre conta como "tenho" (é o mesmo formato salvo de hoje).</li>
+            <li>Carta foil: moldura roxa + brilho holográfico animado + a caixinha do canto vira um brilho roxo (✦) em vez do check azul.</li>
+            <li>Carta que falta fica apagada e cinza (como os jogos na aba Games).</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const DEX = [{"id":"0025","name":"Pikachu","dex":"#0025","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0025.webp","sprite":"../public/images/pokemon/0025.webp","total":246,"cards":[{"id":"fut2020-1","name":"Pikachu on the Ball","set":"Pokémon Futsal 2020","number":"1","img":"../public/images/tcg/fut2020-1/low.webp"},{"id":"basep-1","name":"Pikachu","set":"Wizards Black Star Promos","number":"1","img":"../public/images/tcg/basep-1/low.webp"},{"id":"tk-hs-r-2","name":"Pikachu","set":"HS trainer Kit (Raichu)","number":"2","img":"../public/images/tcg/tk-hs-r-2/low.webp"},{"id":"2024sv-2","name":"Pikachu","set":"McDonald's Collection 2024","number":"2","img":"../public/images/tcg/2024sv-2/low.webp"},{"id":"2018sm-4","name":"Pikachu","set":"McDonald's Collection 2018","number":"4","img":"../public/images/tcg/2018sm-4/low.webp"},{"id":"basep-4","name":"Pikachu","set":"Wizards Black Star Promos","number":"4","img":"../public/images/tcg/basep-4/low.webp"},{"id":"ex5.5-5","name":"Pikachu","set":"Poké Card Creator Pack","number":"5","img":"../public/images/tcg/ex5.5-5/low.webp"},{"id":"2014xy-5","name":"Pikachu","set":"McDonald's Collection 2014","number":"5","img":"../public/images/tcg/2014xy-5/low.webp"},{"id":"2017sm-5","name":"Pikachu","set":"McDonald's Collection 2017","number":"5","img":"../public/images/tcg/2017sm-5/low.webp"},{"id":"cel25-5","name":"Pikachu","set":"Celebrations","number":"5","img":"../public/images/tcg/cel25-5/low.webp"},{"id":"tk-ex-latio-6","name":"Pikachu","set":"EX trainer Kit (Latios)","number":"6","img":"../public/images/tcg/tk-ex-latio-6/low.webp"},{"id":"2016xy-6","name":"Pikachu","set":"McDonald's Collection 2016","number":"6","img":"../public/images/tcg/2016xy-6/low.webp"},{"id":"2023sv-6","name":"Pikachu","set":"McDonald's Collection 2023","number":"6","img":"../public/images/tcg/2023sv-6/low.webp"},{"id":"2015xy-6","name":"Pikachu","set":"McDonald's Collection 2015","number":"6","img":"../public/images/tcg/2015xy-6/low.webp"},{"id":"2019sm-6","name":"Pikachu","set":"McDonald's Collection 2019","number":"6","img":"../public/images/tcg/2019sm-6/low.webp"},{"id":"cel25-6","name":"Flying Pikachu V","set":"Celebrations","number":"6","img":"../public/images/tcg/cel25-6/low.webp"},{"id":"2022swsh-7","name":"Pikachu","set":"McDonald's Collection 2022","number":"7","img":"../public/images/tcg/2022swsh-7/low.webp"},{"id":"cel25-7","name":"Flying Pikachu VMAX","set":"Celebrations","number":"7","img":"../public/images/tcg/cel25-7/low.webp"},{"id":"ru1-7","name":"Pikachu","set":"Pokémon Rumble","number":"7","img":"../public/images/tcg/ru1-7/low.webp"},{"id":"30th-c-008","name":"Pikachu & Zekrom GX","set":"30th Classic Collection","number":"008","img":"../public/images/tcg/30th-c-008/low.webp"},{"id":"cel25-8","name":"Surfing Pikachu V","set":"Celebrations","number":"8","img":"../public/images/tcg/cel25-8/low.webp"},{"id":"P-A-009","name":"Pikachu","set":"Promos-A","number":"009","img":"../public/images/tcg/P-A-009/low.webp"},{"id":"pop6-9","name":"Pikachu","set":"POP Series 6","number":"9","img":"../public/images/tcg/pop6-9/low.webp"},{"id":"cel25-9","name":"Surfing Pikachu VMAX","set":"Celebrations","number":"9","img":"../public/images/tcg/cel25-9/low.webp"}]},{"id":"0094","name":"Gengar","dex":"#0094","types":["GHOST","POISON"],"xl":"../public/images/pokemon-xl/0094.webp","sprite":"../public/images/pokemon/0094.webp","total":62,"cards":[{"id":"base3-5","name":"Gengar","set":"Fossil","number":"5","img":"../public/images/tcg/base3-5/low.webp"},{"id":"ex12-5","name":"Gengar","set":"Legend Maker","number":"5","img":"../public/images/tcg/ex12-5/low.webp"},{"id":"neo4-6","name":"Dark Gengar","set":"Neo Destiny","number":"6","img":"../public/images/tcg/neo4-6/low.webp"},{"id":"ecard3-10","name":"Gengar","set":"Skyridge","number":"10","img":"../public/images/tcg/ecard3-10/low.webp"},{"id":"lc-11","name":"Gengar","set":"Legendary Collection","number":"11","img":"../public/images/tcg/lc-11/low.webp"},{"id":"ecard1-13","name":"Gengar","set":"Expedition Base Set","number":"13","img":"../public/images/tcg/ecard1-13/low.webp"},{"id":"gym1-14","name":"Sabrina's Gengar","set":"Gym Heroes","number":"14","img":"../public/images/tcg/gym1-14/low.webp"},{"id":"pl4-16","name":"Gengar","set":"Arceus","number":"16","img":"../public/images/tcg/pl4-16/low.webp"},{"id":"pl4-17","name":"Gengar","set":"Arceus","number":"17","img":"../public/images/tcg/pl4-17/low.webp"},{"id":"dp7-18","name":"Gengar","set":"Stormfront","number":"18","img":"../public/images/tcg/dp7-18/low.webp"},{"id":"30th-c-018","name":"Gengar","set":"30th Classic Collection","number":"018","img":"../public/images/tcg/30th-c-018/low.webp"},{"id":"base3-20","name":"Gengar","set":"Fossil","number":"20","img":"../public/images/tcg/base3-20/low.webp"},{"id":"dp1-27","name":"Gengar","set":"Diamond & Pearl","number":"27","img":"../public/images/tcg/dp1-27/low.webp"},{"id":"gym2-29","name":"Sabrina's Gengar","set":"Gym Challenge","number":"29","img":"../public/images/tcg/gym2-29/low.webp"},{"id":"A2a-033","name":"Gengar","set":"Triumphant Light","number":"033","img":"../public/images/tcg/A2a-033/low.webp"},{"id":"xy4-34","name":"Gengar EX","set":"Phantom Forces","number":"34","img":"../public/images/tcg/xy4-34/low.webp"},{"id":"xy4-35","name":"M Gengar EX","set":"Phantom Forces","number":"35","img":"../public/images/tcg/xy4-35/low.webp"},{"id":"g1-35","name":"Gengar","set":"Generations","number":"35","img":"../public/images/tcg/g1-35/low.webp"},{"id":"sm4-38","name":"Gengar","set":"Crimson Invasion","number":"38","img":"../public/images/tcg/sm4-38/low.webp"},{"id":"pl2-40","name":"Gengar GL","set":"Rising Rivals","number":"40","img":"../public/images/tcg/pl2-40/low.webp"},{"id":"ecard1-48","name":"Gengar","set":"Expedition Base Set","number":"48","img":"../public/images/tcg/ecard1-48/low.webp"},{"id":"me03-050","name":"Gengar","set":"Perfect Order","number":"050","img":"../public/images/tcg/me03-050/low.webp"},{"id":"sm9-53","name":"Gengar & Mimikyu GX","set":"Team Up","number":"53","img":"../public/images/tcg/sm9-53/low.webp"},{"id":"me02-056","name":"Mega Gengar ex","set":"Phantasmal Flames","number":"056","img":"../public/images/tcg/me02-056/low.webp"}]}];
+const TYPE_COLOR = { ELECTRIC: 'var(--type-electric)', GHOST: 'var(--type-ghost)' };
+const ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+    sparkLine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+    minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+    search: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+};
+
+const OPTIONS = {
+    T0: { label: 'T0 · Atual', title: 'Como está hoje', points: [
+        'Computador: clicar na carta marca "tenho"; só depois aparece o botão de brilho (embaixo, à esquerda) para marcar foil.',
+        'Celular: a caixinha do canto marca "tenho"; tocar na carta abre a carta grande com "No / Yes / Yes, foil".'] },
+    T1: { label: 'T1 · Caixinha que alterna', title: 'A caixinha do canto alterna os 3 estados', points: [
+        'Cada clique na caixinha do canto passa para o próximo estado: vazio → ✓ tenho → ✦ foil → vazio.',
+        'Sem botão extra: o foil fica no mesmo lugar do check, e a caixinha muda de cor (azul = tenho, roxo brilhante = foil).',
+        'Clicar na carta em si abre a carta grande (computador e celular), com os 3 estados também.'] },
+    T2: { label: 'T2 · Botões embaixo da carta', title: 'Dois botões fixos embaixo de cada carta', points: [
+        'Embaixo de cada carta: "✓ Have" e "✦ Foil". Marcar Foil já marca Have junto; desmarcar Have tira o foil.',
+        'Tudo à vista, sem precisar descobrir onde clicar. No celular, só os ícones.'] },
+    T3: { label: 'T3 · Barra ao passar o mouse', title: 'Barra de 3 estados ao passar o mouse (computador) + carta grande no celular', points: [
+        'Computador: ao passar o mouse na carta aparece uma barra com — / ✓ Have / ✦ Foil; um clique escolhe o estado.',
+        'Celular (não tem mouse): tocar na carta abre a folha de baixo com a carta grande e os 3 botões grandes — a versão atual, redesenhada.'] },
+    T4: { label: 'T4 · Marcar várias de uma vez', title: 'Modo de seleção para marcar várias cartas', points: [
+        'Botão "Select" na barra de filtros. No modo seleção, cada clique escolhe a carta (contorno amarelo).',
+        'Uma barra flutuante embaixo aplica a todas: "✓ Have", "✦ Foil", "Remove". Bom para quem abriu um booster ou está cadastrando a coleção.',
+        'Fora do modo seleção, funciona como a T1 (caixinha que alterna).'] },
+};
+
+const state = { option: 'T1', idx: 0, filter: 'All', viewer: null, selecting: false, picked: new Set(), own: {} };
+function seed() {
+    for (const p of DEX) {
+        state.own[p.id] = {};
+        p.cards.forEach((c, i) => { state.own[p.id][c.id] = i % 5 === 0 ? 'foil' : i % 3 === 0 ? 'owned' : 'none'; });
+    }
+}
+seed();
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cur = () => DEX[state.idx];
+const own = id => state.own[cur().id][id] ?? 'none';
+const setOwn = (id, v) => { state.own[cur().id][id] = v; };
+const NEXT = { none: 'owned', owned: 'foil', foil: 'none' };
+
+function toolbar(p, mode) {
+    const counts = { All: p.cards.length, Owned: 0, Missing: 0, Foil: 0 };
+    for (const c of p.cards) { const o = own(c.id); if (o === 'none') counts.Missing++; else counts.Owned++; if (o === 'foil') counts.Foil++; }
+    const select = state.option === 'T4' ? `<button class="chip select-toggle ${state.selecting ? 'on' : ''}" data-act="select">${state.selecting ? 'Done' : 'Select'}</button>` : `<span class="count">${visible(p).length} of ${p.total} cards</span>`;
+    return `<div class="search">${ICON.search}Search card, set or number</div>
+        <div class="toolbar-row">${['All', 'Owned', 'Missing', 'Foil'].map(f => `<button class="chip ${state.filter === f ? 'on' : ''}" data-filter="${f}">${f === 'Foil' ? ICON.spark.replace('<svg', '<svg width="11" height="11"') : ''}${f} <em>${counts[f]}</em></button>`).join('')}${select}</div>`;
+}
+function visible(p) {
+    return p.cards.filter(c => { const o = own(c.id);
+        return state.filter === 'All' || (state.filter === 'Owned' && o !== 'none') || (state.filter === 'Missing' && o === 'none') || (state.filter === 'Foil' && o === 'foil'); });
+}
+const boxHtml = (o, act = 'cycle') => `<button class="box ${o === 'none' ? '' : o}" data-act="${act}">${o === 'foil' ? ICON.spark : ICON.check}</button>`;
+function cardShell(c, mode, inner, extraClass = '') {
+    const o = own(c.id);
+    return `<div class="tcg ${o === 'none' ? 'missing' : o === 'foil' ? 'foil owned' : 'owned'} ${extraClass}" data-card="${c.id}">
+        <div class="art" data-act="open"><img src="${c.img}" alt="" loading="lazy"></div>${inner}<div class="meta">${esc(c.set)} · ${esc(c.number)}</div></div>`;
+}
+
+/* ---------- options ---------- */
+function t0(p, mode) {
+    return `<div class="grid" style="grid-template-columns:repeat(${mode === 'pc' ? 5 : 3}, minmax(0, 1fr))">${visible(p).map(c => {
+        const o = own(c.id);
+        const box = `<button class="box ${o === 'none' ? '' : 'owned'}" data-act="${mode === 'pc' ? 'toggle' : 'toggle'}">${ICON.check}</button>`;
+        const spark = mode === 'pc' && o !== 'none' ? `<button class="spark ${o === 'foil' ? 'on' : ''}" data-act="foil">${ICON.sparkLine}</button>` : '';
+        const tag = mode === 'phone' && o === 'foil' ? `<span class="foil-tag">${ICON.spark}Foil</span>` : '';
+        return cardShell(c, mode, box + spark + tag).replace('data-act="open"', `data-act="${mode === 'pc' ? 'toggle' : 'open'}"`);
+    }).join('')}</div>`;
+}
+function t1(p, mode) {
+    return `<p class="legend"><span><i style="background:rgba(11,51,96,.45);border:1px solid rgba(139,191,235,.5)"></i>don't have</span><span><i style="background:var(--accent)"></i>have</span><span><i style="background:linear-gradient(135deg,#c4b5fd,#7c3aed)"></i>foil</span><span>· click the corner box to switch</span></p>
+        <div class="grid" style="grid-template-columns:repeat(${mode === 'pc' ? 5 : 3}, minmax(0, 1fr))">${visible(p).map(c => cardShell(c, mode, boxHtml(own(c.id)))).join('')}</div>`;
+}
+function t2(p, mode) {
+    return `<div class="grid" style="grid-template-columns:repeat(${mode === 'pc' ? 5 : 3}, minmax(0, 1fr))">${visible(p).map(c => {
+        const o = own(c.id);
+        const bar = `<div class="statusbar"><button class="have ${o !== 'none' ? 'on' : ''}" data-act="have">${ICON.check}<span>Have</span></button><button class="shine ${o === 'foil' ? 'on' : ''}" data-act="shine">${ICON.spark}<span>Foil</span></button></div>`;
+        return cardShell(c, mode, '', '').replace('<div class="meta">', bar + '<div class="meta">');
+    }).join('')}</div>`;
+}
+function t3(p, mode) {
+    return `<div class="grid" style="grid-template-columns:repeat(${mode === 'pc' ? 5 : 3}, minmax(0, 1fr))">${visible(p).map(c => {
+        const o = own(c.id);
+        const badge = o === 'foil' ? `<span class="box foil">${ICON.spark}</span>` : o === 'owned' ? `<span class="box owned">${ICON.check}</span>` : '';
+        const hover = mode === 'pc' ? `<div class="hoverbar">${[['none', ICON.minus, ''], ['owned', ICON.check, 'Have'], ['foil', ICON.spark, 'Foil']].map(([v, ic, l]) =>
+            `<button class="${v} ${o === v ? 'on' : ''}" data-set="${v}">${ic}${l}</button>`).join('')}</div>` : '';
+        return cardShell(c, mode, badge + hover);
+    }).join('')}</div>`;
+}
+function t4(p, mode) {
+    const grid = `<div class="grid" style="grid-template-columns:repeat(${mode === 'pc' ? 5 : 3}, minmax(0, 1fr))">${visible(p).map(c =>
+        cardShell(c, mode, (state.selecting ? '<span class="pickdot"></span>' : '') + boxHtml(own(c.id)), state.picked.has(c.id) ? 'picked' : '')).join('')}</div>`;
+    const bar = state.selecting ? `<div class="batchbar"><b>${state.picked.size} selected</b>
+        <button class="act owned" data-batch="owned">${ICON.check}Have</button><button class="act foil" data-batch="foil">${ICON.spark}Foil</button>
+        <button class="act" data-batch="none">${ICON.x}Remove</button><button class="act ghost" data-act="select">Cancel</button></div>` : '';
+    return grid + bar;
+}
+const RENDER = { T0: t0, T1: t1, T2: t2, T3: t3, T4: t4 };
+
+function viewer(p, mode) {
+    if (!state.viewer || state.viewer.mode !== mode) return '';
+    const list = visible(p); const i = list.findIndex(c => c.id === state.viewer.id); if (i < 0) return '';
+    const c = list[i], o = own(c.id);
+    return `<div class="sheet-wrap" data-act="close"><div class="sheet" data-stop>
+        <div class="big ${o === 'foil' ? 'foil' : ''}"><img src="${c.img}" alt=""></div>
+        <div><h3>${esc(c.name)}</h3><p class="sub">${esc(c.set)} · #${esc(c.number)}</p><div class="label">In my collection</div>
+        <div class="seg3">${[['none', ICON.minus, "Don't have"], ['owned', ICON.check, 'Have'], ['foil', ICON.spark, 'Have, foil']].map(([v, ic, l]) =>
+            `<button class="${v} ${o === v ? 'on' : ''}" data-set="${v}" data-id="${c.id}">${ic}${l}</button>`).join('')}</div>
+        <div class="row"><button class="round" data-step="-1">${ICON.left}</button><small>${i + 1} / ${list.length}</small><button class="round" data-step="1">${ICON.right}</button></div>
+        </div><button class="round sheet-close" data-act="close">${ICON.x}</button></div></div>`;
+}
+
+function render() {
+    const p = cur(), color = TYPE_COLOR[p.types[0]] ?? 'var(--type-electric)';
+    const pcScroll = document.querySelector('.pc .panel')?.scrollTop ?? 0, phScroll = document.querySelector('.phone .panel')?.scrollTop ?? 0;
+    document.getElementById('pc').innerHTML = `<div class="pc" style="--type-color:${color}"><aside class="hero"><img src="${p.xl}" alt=""><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div>
+        <div class="vtabs"><span>Info</span><span>Games</span><span class="on">TCG <small>${p.total} cards</small></span></div></aside>
+        <div class="panel" data-mode="pc">${toolbar(p, 'pc')}${RENDER[state.option](p, 'pc')}</div>${viewer(p, 'pc')}</div>`;
+    document.getElementById('phone').innerHTML = `<div class="phone"><div class="screen" style="--type-color:${color}"><div class="compact"><img src="${p.sprite}" alt=""><div><small>${p.dex}</small><b>${esc(p.name)}</b></div></div>
+        <div class="panel" data-mode="phone" style="overflow-y:auto">${toolbar(p, 'phone')}${RENDER[state.option](p, 'phone')}</div>${viewer(p, 'phone')}
+        <div class="tabbar"><span>Info</span><span>Games</span><span class="on">TCG</span></div></div></div>`;
+    document.querySelector('.pc .panel').scrollTop = pcScroll; document.querySelector('.phone .panel').scrollTop = phScroll;
+    const o = OPTIONS[state.option];
+    document.getElementById('info').innerHTML = `<strong>${o.title}</strong><ul>${o.points.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    document.getElementById('picker').innerHTML = Object.entries(OPTIONS).map(([k, v]) => `<button aria-pressed="${state.option === k}" data-option="${k}">${v.label}</button>`).join('');
+    document.getElementById('pokemonPicker').innerHTML = DEX.map((d, i) => `<button aria-pressed="${state.idx === i}" data-pokemon="${i}">${esc(d.name)}</button>`).join('');
+}
+
+document.addEventListener('click', e => {
+    const el = e.target.closest('[data-option],[data-pokemon],[data-filter],[data-act],[data-set],[data-step],[data-batch]');
+    if (!el) return;
+    const d = el.dataset;
+    const cardEl = el.closest('[data-card]');
+    const cardId = d.id ?? cardEl?.dataset.card;
+    const mode = el.closest('[data-mode]')?.dataset.mode ?? (el.closest('.pc') ? 'pc' : 'phone');
+    if (d.option) { state.option = d.option; state.viewer = null; state.selecting = false; state.picked.clear(); }
+    else if (d.pokemon) { state.idx = Number(d.pokemon); state.viewer = null; state.picked.clear(); }
+    else if (d.filter) state.filter = d.filter;
+    else if (d.batch) { for (const id of state.picked) setOwn(id, d.batch); state.picked.clear(); state.selecting = false; }
+    else if (d.step) { const list = visible(cur()); const i = list.findIndex(c => c.id === state.viewer.id); state.viewer.id = list[(i + Number(d.step) + list.length) % list.length].id; }
+    else if (d.set) { setOwn(cardId ?? state.viewer?.id, d.set); }
+    else if (d.act === 'close') { if (e.target.closest('[data-stop]') && el.classList.contains('sheet-wrap')) return; state.viewer = null; }
+    else if (d.act === 'select') { state.selecting = !state.selecting; state.picked.clear(); }
+    else if (d.act === 'cycle') { setOwn(cardId, NEXT[own(cardId)]); }
+    else if (d.act === 'toggle') { setOwn(cardId, own(cardId) === 'none' ? 'owned' : 'none'); }
+    else if (d.act === 'foil') { setOwn(cardId, own(cardId) === 'foil' ? 'owned' : 'foil'); }
+    else if (d.act === 'have') { setOwn(cardId, own(cardId) === 'none' ? 'owned' : 'none'); }
+    else if (d.act === 'shine') { setOwn(cardId, own(cardId) === 'foil' ? 'owned' : 'foil'); }
+    else if (d.act === 'open') {
+        if (state.option === 'T4' && state.selecting) { state.picked.has(cardId) ? state.picked.delete(cardId) : state.picked.add(cardId); }
+        else if (state.option === 'T3' && mode === 'pc') return;
+        else if (state.option === 'T2') return;
+        else state.viewer = { id: cardId, mode };
+    }
+    else return;
+    render();
+});
+render();
+</script>
+</body>
+</html>
