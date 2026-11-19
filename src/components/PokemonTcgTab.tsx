@@ -1,7 +1,7 @@
 import { Check, ChevronLeft, ChevronRight, MinusCircle, Search, WifiOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, TouchEvent } from 'react';
-import { fetchTcgCards, getLoadedTcgCards, getLoadedTcgSetNames, loadTcgSetNames } from '../api/pokemonApi';
+import { cardsForForm, fetchTcgCards, getLoadedTcgCards, getLoadedTcgSetNames, loadTcgSetNames } from '../api/pokemonApi';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { CardOwnership, Pokemon, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
 import { FoilSparklesIcon } from './FoilSparklesIcon';
@@ -206,32 +206,10 @@ export function PokemonTcgTab({
         );
     }
 
-    const isMegaForm = pokemon.id.includes('-mega');
-    const isGmaxForm = pokemon.id.includes('-gmax');
-
-    let displayCards = tcgData.cards;
-    if (isMegaForm) {
-        const megaCards = tcgData.cards.filter(c => /^(M |Mega )/i.test(c.name));
-        if (megaCards.length > 0) {
-            const isFormX = / X$/i.test(pokemon.formName ?? '');
-            const isFormY = / Y$/i.test(pokemon.formName ?? '');
-            if (isFormX) {
-                displayCards = megaCards.filter(c => !/ Y /i.test(c.name));
-            } else if (isFormY) {
-                displayCards = megaCards.filter(c => !/ X /i.test(c.name));
-            } else {
-                displayCards = megaCards;
-            }
-        }
-    } else if (isGmaxForm) {
-        const filtered = tcgData.cards.filter(c => c.name.includes('VMAX'));
-        if (filtered.length > 0) displayCards = filtered;
-    }
-
     // Cards without a resolved image (placeholder-only) sort after everything else, so the
     // grid leads with real card art. Array.prototype.sort is stable, so order is otherwise
     // preserved within each group.
-    displayCards = [...displayCards].sort((a, b) => Number(!a.imageUrl) - Number(!b.imageUrl));
+    const displayCards = [...cardsForForm(tcgData.cards, pokemon)].sort((a, b) => Number(!a.imageUrl) - Number(!b.imageUrl));
 
     const setNameOf = (card: TcgCard) => (card.setId ? setNames[card.setId] ?? card.setId : '');
     const ownershipOf = (cardId: string): CardOwnership =>

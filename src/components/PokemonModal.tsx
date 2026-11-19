@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles, X } from 'lucide-react';
 import { type CSSProperties, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
-import { getLoadedTcgCards, getShinyImageUrl, isTcgCardCatalogLoaded, loadTcgCardCatalog } from '../api/pokemonApi';
+import { cardsForForm, getLoadedTcgCards, getShinyImageUrl, isTcgCardCatalogLoaded, loadTcgCardCatalog } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
 import { useImageRetry } from '../hooks/useImageRetry';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -73,17 +73,18 @@ export function PokemonModal({
 
     // While the TCG tab is open, start downloading the first cards of the previous and next
     // Pokémon, so a swipe or arrow lands on cards that are already loaded.
-    const previousName = activePokemonIndex !== null ? pokemonList[activePokemonIndex - 1]?.name : undefined;
-    const nextName = activePokemonIndex !== null ? pokemonList[activePokemonIndex + 1]?.name : undefined;
+    const previousPokemon = activePokemonIndex !== null ? pokemonList[activePokemonIndex - 1] : undefined;
+    const nextPokemon = activePokemonIndex !== null ? pokemonList[activePokemonIndex + 1] : undefined;
     useEffect(() => {
         if (activeTab !== 'tcg') return;
-        for (const name of [previousName, nextName]) {
-            if (!name) continue;
-            for (const card of (getLoadedTcgCards(name) ?? []).filter(c => c.imageUrl).slice(0, NEIGHBOR_CARD_PREFETCH)) {
+        for (const neighbor of [previousPokemon, nextPokemon]) {
+            if (!neighbor) continue;
+            const cards = cardsForForm(getLoadedTcgCards(neighbor.name) ?? [], neighbor);
+            for (const card of cards.filter(c => c.imageUrl).slice(0, NEIGHBOR_CARD_PREFETCH)) {
                 new Image().src = card.imageUrl!;
             }
         }
-    }, [activeTab, previousName, nextName]);
+    }, [activeTab, previousPokemon, nextPokemon]);
 
     // Previous (-1) / next (+1) Pokémon: the arrows on screen, the phone swipe and the desktop keys.
     function changePokemon(direction: -1 | 1) {
@@ -137,7 +138,8 @@ export function PokemonModal({
     const firstType = summary.types[0]?.toLowerCase() ?? 'normal';
     const typeColorStyle = { '--type-color': `var(--type-${firstType})` } as CSSProperties;
     const typeSymbolStyle = { '--type-symbol': `url(${import.meta.env.BASE_URL}images/types/symbol-${firstType}.png)` } as CSSProperties;
-    const tcgCardCount = getLoadedTcgCards(summary.name)?.length ?? null;
+    const loadedTcgCards = getLoadedTcgCards(summary.name);
+    const tcgCardCount = loadedTcgCards ? cardsForForm(loadedTcgCards, summary).length : null;
 
     const tabContent = detailLoading ? (
         <div className="pokemon-detail-loading">

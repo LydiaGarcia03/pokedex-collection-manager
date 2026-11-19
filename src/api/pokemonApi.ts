@@ -1,4 +1,4 @@
-import type { Pokemon, PokemonMoves, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
+import type { Pokemon, PokemonMoves, PokemonSummary, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
 
 // import.meta.env.BASE_URL is set by Vite to the value of `base` in vite.config.ts.
 // In production this is '/pokedex-collection-manager-static/'.
@@ -77,6 +77,24 @@ export function isTcgCardCatalogLoaded(): boolean {
 
 export function getLoadedTcgCards(pokemonName: string): TcgCard[] | null {
     return tcgCardCache ? tcgCardCache[pokemonName.toLowerCase()] ?? [] : null;
+}
+
+// Cards are keyed by species name, so a Mega or Gigantamax form narrows its species' cards down
+// to the Mega ("M …"/"Mega …", X or Y) or VMAX ones. Used by the TCG tab and by the card count
+// next to the tab, so both always agree.
+export function cardsForForm(cards: TcgCard[], pokemon: Pick<PokemonSummary, 'id' | 'formName'>): TcgCard[] {
+    if (pokemon.id.includes('-mega')) {
+        const megaCards = cards.filter(c => /^(M |Mega )/i.test(c.name));
+        if (megaCards.length === 0) return cards;
+        if (/ X$/i.test(pokemon.formName ?? '')) return megaCards.filter(c => !/ Y /i.test(c.name));
+        if (/ Y$/i.test(pokemon.formName ?? '')) return megaCards.filter(c => !/ X /i.test(c.name));
+        return megaCards;
+    }
+    if (pokemon.id.includes('-gmax')) {
+        const vmaxCards = cards.filter(c => c.name.includes('VMAX'));
+        if (vmaxCards.length > 0) return vmaxCards;
+    }
+    return cards;
 }
 
 export function getLoadedTcgSetNames(): Record<string, string> | null {

@@ -1,5 +1,25 @@
 # Changes Log
 
+## 2026-11-20 — v1.0.2 (patch)
+
+### Contagem de cartas TCG respeita a forma Mega/Gigantamax
+
+**Files modified:**
+- `src/api/pokemonApi.ts`: nova `cardsForForm(cards, pokemon)`, com a regra que antes ficava
+  dentro da aba TCG. Mega mostra só as cartas "M …"/"Mega …" (X ou Y quando é o caso), e
+  Gigantamax mostra só as VMAX.
+- `src/components/PokemonTcgTab.tsx`: passa a usar `cardsForForm`; mesma regra de antes, sem
+  mudança de comportamento.
+- `src/components/PokemonModal.tsx`:
+  - a contagem "N cards" ao lado da aba usa `cardsForForm`;
+  - a pré-carga das cartas do Pokémon anterior/seguinte também usa, para baixar as imagens que
+    a aba vai mostrar.
+- `src/appInfo.ts`: versão `1.0.2`.
+
+**Why:** a forma Mega do Alakazam mostrava "35 cards" ao lado da aba, mas a aba listava só 2.
+A contagem somava todas as cartas da espécie, sem o filtro de forma que a aba aplica. O erro já
+existia; a v1.0.1 só fez o número aparecer logo que o detalhe abre.
+
 ## 2026-11-19 (18) — v1.0.1 (patch)
 
 ### Contagem de cartas da aba TCG aparece assim que o detalhe abre
