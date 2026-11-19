@@ -65,6 +65,10 @@ grandes.
   `scripts/tcg-image-overrides.json`). O que nenhuma fonte encontra fica listado em
   `scripts/tcg-missing-images.json` e aparece como placeholder nome/set/número (ver
   `.ai/changes-log.md` 2026-08-24 e 2026-11-15)
+- Cartas por forma (`cardsForForm` em `src/api/pokemonApi.ts`): formas regionais (Alolan/Galarian/
+  Hisuian/Paldean), Mega, Primal e Gigantamax mostram só as cartas delas, pelo nome da carta
+  ("Alolan …", "M …"/"Mega …", "Primal …", VMAX). A entrada da espécie deixa essas cartas de fora,
+  exceto com "Exclude forms" ligado. A aba TCG e a contagem ao lado da aba usam a mesma função
 - **O pipeline de cartas é aditivo:** nenhum script remove carta ou imagem já existente no
   catálogo — `collect-tcg` faz merge com o `tcg-cards.json` atual em vez de reescrever do zero
 - Jogos em que cada Pokémon aparece — cada versão de um par (ex. Scarlet vs Violet) mostra sua

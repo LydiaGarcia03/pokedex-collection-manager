@@ -93,6 +93,8 @@ interface PokemonTcgTabProps {
     onToggleCard: (cardId: string) => void;
     foilCardIds: string[];
     onSetCardOwnership: (cardId: string, ownership: CardOwnership) => void;
+    /** The listing's "Exclude forms" filter: the species entry then shows its forms' cards too. */
+    excludeForms: boolean;
 }
 
 // Rendered with key={pokemon.id} by PokemonModal, so search, filters and the open card all reset
@@ -105,6 +107,7 @@ export function PokemonTcgTab({
     onToggleCard,
     foilCardIds,
     onSetCardOwnership,
+    excludeForms,
 }: PokemonTcgTabProps) {
     const isMobile = useIsMobile();
     // Already-loaded data renders immediately; the effect below only fetches what is missing.
@@ -196,20 +199,21 @@ export function PokemonTcgTab({
         );
     }
 
-    if (!tcgData || tcgData.cards.length === 0) {
+    // Cards without a resolved image (placeholder-only) sort after everything else, so the
+    // grid leads with real card art. Array.prototype.sort is stable, so order is otherwise
+    // preserved within each group.
+    const displayCards = [...cardsForForm(tcgData?.cards ?? [], pokemon, excludeForms)]
+        .sort((a, b) => Number(!a.imageUrl) - Number(!b.imageUrl));
+
+    if (displayCards.length === 0) {
         return (
             <div className="pokemon-tcg-tab">
                 <p className="pokemon-tab-empty">
-                    No TCG cards found for {pokemon.name}.
+                    No TCG cards found for {pokemon.formName ? `${pokemon.name} (${pokemon.formName})` : pokemon.name}.
                 </p>
             </div>
         );
     }
-
-    // Cards without a resolved image (placeholder-only) sort after everything else, so the
-    // grid leads with real card art. Array.prototype.sort is stable, so order is otherwise
-    // preserved within each group.
-    const displayCards = [...cardsForForm(tcgData.cards, pokemon)].sort((a, b) => Number(!a.imageUrl) - Number(!b.imageUrl));
 
     const setNameOf = (card: TcgCard) => (card.setId ? setNames[card.setId] ?? card.setId : '');
     const ownershipOf = (cardId: string): CardOwnership =>

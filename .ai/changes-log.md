@@ -1,5 +1,53 @@
 # Changes Log
 
+## 2026-11-20 (2) — v1.0.3 (patch)
+
+### Cartas TCG separadas por forma (regional, Mega, Primal, Gigantamax)
+
+**Files modified:**
+- `src/api/pokemonApi.ts`: `cardsForForm(cards, pokemon, excludeForms)` reescrita com uma tabela
+  de regras (`FORM_CARD_RULES`), em que o id da forma define o nome de carta esperado:
+  - `-alola` → "Alolan …", `-galar` → "Galarian …", `-hisui` → "Hisuian …";
+  - `-paldea` e as raças do Tauros (Combat/Blaze/Aqua) → "Paldean …";
+  - `-mega` → "M …"/"Mega …" (X ou Y), `-primal` → "Primal …", `-gmax` → VMAX.
+
+  O efeito de cada caso:
+  - **Uma dessas formas** mostra só as cartas dela. Se não houver nenhuma, a aba diz "No TCG
+    cards found for Nome (Forma)". Antes, Mega/Gigantamax sem carta própria mostravam todas as
+    cartas da espécie.
+  - **Qualquer outra entrada** (a base, ou formas como Darmanitan Zen) deixa de mostrar as cartas
+    das formas que a espécie tem na lista. A exceção é com "Exclude forms" ligado: aí as formas
+    não aparecem separadas na listagem, então a entrada da espécie mostra todas as cartas.
+- `src/components/PokemonTcgTab.tsx`: nova prop `excludeForms`, e a mensagem de vazio passa a
+  valer também quando o filtro de forma não deixa nenhuma carta.
+- `src/components/PokemonModal.tsx`: nova prop `excludeForms`, repassada à aba TCG, à contagem ao
+  lado da aba e à pré-carga das cartas vizinhas.
+- `src/pages/PokedexPage.tsx`: passa `filterExcludeForms` ao `PokemonModal`.
+- `src/appInfo.ts`: versão `1.0.3`.
+
+Exemplos, com "Exclude forms" desligado:
+
+| Pokémon | Cartas mostradas |
+|---|---|
+| Golem | 23 |
+| Golem (Alolan Form) | 7 |
+| Charizard | 103 |
+| Charizard (Mega Form X/Y) | 13 |
+| Charizard (Gigantamax Form) | 4 |
+| Tauros | 34 |
+| Tauros (Paldean breeds) | 13 |
+
+Com "Exclude forms" ligado, Golem mostra 30 e Charizard 126. 21 formas ficam sem cartas próprias,
+quase todas Megas novas (ex. Mega Raichu X/Y, Mega Victreebel) e o Gigantamax do Flapple.
+
+**Why:** o User notou que a aba TCG do Golem e do Golem de Alola mostravam as mesmas 30 cartas.
+Ele pediu que, com "Exclude forms" desmarcado, as cartas fossem separadas por forma, inclusive
+Mega e Gigantamax.
+
+**Atenção:** cartas que já estavam marcadas na entrada da espécie e pertencem a uma forma (ex. um
+"Alolan Golem" marcado no Golem comum) continuam salvas, mas deixam de aparecer no Golem comum.
+Elas voltam a aparecer com "Exclude forms" ligado. O formato salvo não muda.
+
 ## 2026-11-20 — v1.0.2 (patch)
 
 ### Contagem de cartas TCG respeita a forma Mega/Gigantamax

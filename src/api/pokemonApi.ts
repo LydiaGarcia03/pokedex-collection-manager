@@ -79,22 +79,54 @@ export function getLoadedTcgCards(pokemonName: string): TcgCard[] | null {
     return tcgCardCache ? tcgCardCache[pokemonName.toLowerCase()] ?? [] : null;
 }
 
-// Cards are keyed by species name, so a Mega or Gigantamax form narrows its species' cards down
-// to the Mega ("M …"/"Mega …", X or Y) or VMAX ones. Used by the TCG tab and by the card count
-// next to the tab, so both always agree.
-export function cardsForForm(cards: TcgCard[], pokemon: Pick<PokemonSummary, 'id' | 'formName'>): TcgCard[] {
-    if (pokemon.id.includes('-mega')) {
-        const megaCards = cards.filter(c => /^(M |Mega )/i.test(c.name));
-        if (megaCards.length === 0) return cards;
-        if (/ X$/i.test(pokemon.formName ?? '')) return megaCards.filter(c => !/ Y /i.test(c.name));
-        if (/ Y$/i.test(pokemon.formName ?? '')) return megaCards.filter(c => !/ X /i.test(c.name));
-        return megaCards;
+// Forms that have cards of their own, told apart by the card name. Tauros' Combat/Blaze/Aqua
+// breeds are its Paldean forms.
+const FORM_CARD_RULES: { formId: RegExp; cardName: RegExp }[] = [
+    { formId: /-alola/, cardName: /^Alolan /i },
+    { formId: /-galar/, cardName: /^Galarian /i },
+    { formId: /-hisui/, cardName: /^Hisuian /i },
+    { formId: /-(paldea|combat|blaze|aqua)/, cardName: /^Paldean /i },
+    { formId: /-mega/, cardName: /^(M|Mega) /i },
+    { formId: /-primal/, cardName: /^Primal /i },
+    { formId: /-gmax/, cardName: /VMAX/ },
+];
+
+let formIdsByDex: Map<string, string[]> | null = null;
+
+function speciesFormIds(dexNumberFormatted: string): string[] {
+    if (!formIdsByDex && pokemonCache) {
+        formIdsByDex = new Map();
+        for (const p of pokemonCache) {
+            const ids = formIdsByDex.get(p.dexNumberFormatted);
+            if (ids) ids.push(p.id);
+            else formIdsByDex.set(p.dexNumberFormatted, [p.id]);
+        }
     }
-    if (pokemon.id.includes('-gmax')) {
-        const vmaxCards = cards.filter(c => c.name.includes('VMAX'));
-        if (vmaxCards.length > 0) return vmaxCards;
+    return formIdsByDex?.get(dexNumberFormatted) ?? [];
+}
+
+// Cards are keyed by species name, so each form picks its own out of the species' cards:
+// - a regional, Mega, Primal or Gigantamax form keeps only its cards ("Alolan …", "M …"/"Mega …"
+//   with X or Y, "Primal …", VMAX);
+// - any other entry leaves out the cards of those forms, unless "Exclude forms" is on, since the
+//   forms then aren't listed apart and the species entry stands for all of them.
+// Used by the TCG tab and by the card count next to the tab, so both always agree.
+export function cardsForForm(
+    cards: TcgCard[],
+    pokemon: Pick<PokemonSummary, 'id' | 'formName' | 'dexNumberFormatted'>,
+    excludeForms: boolean,
+): TcgCard[] {
+    const ownRule = FORM_CARD_RULES.find(rule => rule.formId.test(pokemon.id));
+    if (ownRule) {
+        const formCards = cards.filter(c => ownRule.cardName.test(c.name));
+        if (/ X$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !/ Y /i.test(c.name));
+        if (/ Y$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !/ X /i.test(c.name));
+        return formCards;
     }
-    return cards;
+    if (excludeForms) return cards;
+    const formIds = speciesFormIds(pokemon.dexNumberFormatted);
+    const otherFormRules = FORM_CARD_RULES.filter(rule => formIds.some(id => rule.formId.test(id)));
+    return cards.filter(c => !otherFormRules.some(rule => rule.cardName.test(c.name)));
 }
 
 export function getLoadedTcgSetNames(): Record<string, string> | null {

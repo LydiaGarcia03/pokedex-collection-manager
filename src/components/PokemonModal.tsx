@@ -37,6 +37,8 @@ interface PokemonModalProps {
     collection: UseCollectionReturn;
     collectionVisible: boolean;
     onToggleCollectionVisible: () => void;
+    /** The listing's "Exclude forms" filter, which decides whether a species' TCG cards include its forms'. */
+    excludeForms: boolean;
 }
 
 export function PokemonModal({
@@ -49,6 +51,7 @@ export function PokemonModal({
                                  collection,
                                  collectionVisible,
                                  onToggleCollectionVisible,
+                                 excludeForms,
                              }: PokemonModalProps) {
     const isMobile = useIsMobile();
     const [activeTab, setActiveTab] = useState<PokemonDetailTab>('info');
@@ -79,12 +82,12 @@ export function PokemonModal({
         if (activeTab !== 'tcg') return;
         for (const neighbor of [previousPokemon, nextPokemon]) {
             if (!neighbor) continue;
-            const cards = cardsForForm(getLoadedTcgCards(neighbor.name) ?? [], neighbor);
+            const cards = cardsForForm(getLoadedTcgCards(neighbor.name) ?? [], neighbor, excludeForms);
             for (const card of cards.filter(c => c.imageUrl).slice(0, NEIGHBOR_CARD_PREFETCH)) {
                 new Image().src = card.imageUrl!;
             }
         }
-    }, [activeTab, previousPokemon, nextPokemon]);
+    }, [activeTab, previousPokemon, nextPokemon, excludeForms]);
 
     // Previous (-1) / next (+1) Pokémon: the arrows on screen, the phone swipe and the desktop keys.
     function changePokemon(direction: -1 | 1) {
@@ -139,7 +142,7 @@ export function PokemonModal({
     const typeColorStyle = { '--type-color': `var(--type-${firstType})` } as CSSProperties;
     const typeSymbolStyle = { '--type-symbol': `url(${import.meta.env.BASE_URL}images/types/symbol-${firstType}.png)` } as CSSProperties;
     const loadedTcgCards = getLoadedTcgCards(summary.name);
-    const tcgCardCount = loadedTcgCards ? cardsForForm(loadedTcgCards, summary).length : null;
+    const tcgCardCount = loadedTcgCards ? cardsForForm(loadedTcgCards, summary, excludeForms).length : null;
 
     const tabContent = detailLoading ? (
         <div className="pokemon-detail-loading">
@@ -171,6 +174,7 @@ export function PokemonModal({
                     onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
                     foilCardIds={collection.getFoilCardIds(summary.id)}
                     onSetCardOwnership={(cardId, ownership) => collection.setCardOwnership(summary.id, cardId, ownership)}
+                    excludeForms={excludeForms}
                 />
             )}
         </>

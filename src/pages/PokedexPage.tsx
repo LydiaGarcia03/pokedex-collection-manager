@@ -635,6 +635,7 @@ export function PokedexPage() {
                 collection={collection}
                 collectionVisible={collectionVisible}
                 onToggleCollectionVisible={() => setCollectionVisible(v => !v)}
+                excludeForms={filterExcludeForms}
             />
 
             {showClearConfirm && (
