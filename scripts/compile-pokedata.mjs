@@ -2,8 +2,8 @@
  * compile-pokedata.mjs
  *
  * Reads source data from the sibling `pokedex` project and compiles everything
- * into a single `public/data/pokemon-compiled.json` that the static site loads
- * once at startup.
+ * into `public/data/pokemon-compiled.json`, which the static site loads once at
+ * startup, plus one moves file per Pokémon, loaded when its detail opens.
  *
  * Run from the pokedex-static root:
  *   node scripts/compile-pokedata.mjs
@@ -12,11 +12,12 @@
  *   ../pokedex/src/main/resources/data/
  *
  * Outputs:
- *   public/data/pokemon-compiled.json   ← all Pokémon, full detail
+ *   public/data/pokemon-compiled.json   ← all Pokémon, full detail except moves
+ *   public/data/moves/{id}.json         ← { moves, levelUpMoves, machineMoves } per Pokémon
  *   public/data/type-chart.json         ← raw chart (kept for tooling reference)
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -310,10 +311,23 @@ const compiled = pokedex.map(pokemon => {
 // ---------------------------------------------------------------------------
 // Write outputs
 // ---------------------------------------------------------------------------
+// Moves are ~85% of the data but only shown in the detail's Info tab, so each Pokémon's moves go
+// into their own small file, fetched when that Pokémon is opened. The listing file stays light.
+const MOVES_DIR = join(OUT_DATA, 'moves');
+rmSync(MOVES_DIR, { recursive: true, force: true });
+mkdirSync(MOVES_DIR, { recursive: true });
+
+const listing = compiled.map(({ moves, levelUpMoves, machineMoves, ...rest }) => {
+    const pokemonMoves = { moves, levelUpMoves, machineMoves };
+    writeFileSync(join(MOVES_DIR, `${rest.id}.json`), JSON.stringify(pokemonMoves, null, 0), 'utf-8');
+    return rest;
+});
+console.log(`\nWrote moves/{id}.json  (${listing.length} files)`);
+
 const compiledPath = join(OUT_DATA, 'pokemon-compiled.json');
-writeFileSync(compiledPath, JSON.stringify(compiled, null, 0), 'utf-8');
+writeFileSync(compiledPath, JSON.stringify(listing, null, 0), 'utf-8');
 const sizeKb = Math.round(readFileSync(compiledPath).length / 1024);
-console.log(`\nWrote pokemon-compiled.json  (${sizeKb} KB, ${compiled.length} Pokémon)`);
+console.log(`Wrote pokemon-compiled.json  (${sizeKb} KB, ${listing.length} Pokémon)`);
 
 // Copy type-chart for reference
 const typeChartPath = join(OUT_DATA, 'type-chart.json');

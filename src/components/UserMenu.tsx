@@ -1,10 +1,23 @@
 import type { User } from 'firebase/auth';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { userDisplayName } from '../hooks/useAuth';
 
 interface UserMenuProps {
     user: User;
     onLogout: () => void;
+}
+
+/** Same look as the UserMenu trigger, shown while Firebase is still restoring a remembered session. */
+export function UserMenuPlaceholder({ displayName }: { displayName: string }) {
+    return (
+        <div className="user-menu">
+            <button type="button" className="user-menu__trigger" disabled aria-busy="true">
+                <UserIcon size={15} />
+                <span className="user-menu__email">{displayName}</span>
+            </button>
+        </div>
+    );
 }
 
 export function UserMenu({ user, onLogout }: UserMenuProps) {
@@ -20,7 +33,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
         return () => document.removeEventListener('mousedown', handleClick);
     }, [open]);
 
-    const displayName = user.displayName ?? user.email ?? 'User';
+    const displayName = userDisplayName(user);
 
     return (
         <div className="user-menu" ref={ref}>

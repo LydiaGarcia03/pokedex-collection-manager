@@ -10,7 +10,7 @@ import { MyCollectionsModal } from '../components/MyCollectionsModal';
 import { PokemonCard } from '../components/PokemonCard';
 import { PokemonModal } from '../components/PokemonModal';
 import { SaveCollectionModal } from '../components/SaveCollectionModal';
-import { UserMenu } from '../components/UserMenu';
+import { UserMenu, UserMenuPlaceholder } from '../components/UserMenu';
 import { logout } from '../firebase/auth';
 import {
     type CloudCollection,
@@ -68,7 +68,7 @@ export function PokedexPage() {
     const [showScrollTop, setShowScrollTop] = useState(false);
 
     // Cloud / auth state
-    const { user } = useAuth();
+    const { user, loading: authLoading, lastUserName } = useAuth();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showMyCollections, setShowMyCollections] = useState(false);
@@ -504,6 +504,8 @@ export function PokedexPage() {
             <div className="pokedex-auth-corner">
                 {user ? (
                     <UserMenu user={user} onLogout={handleLogout} />
+                ) : authLoading && lastUserName ? (
+                    <UserMenuPlaceholder displayName={lastUserName} />
                 ) : (
                     <button
                         type="button"

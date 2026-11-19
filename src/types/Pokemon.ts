@@ -41,10 +41,18 @@ export interface PokemonSummary {
     capableOfMegaEvolution?: boolean;
 }
 
+// One Pokémon's moves — kept out of pokemon-compiled.json, loaded when its detail opens
+// (public/data/moves/{id}.json, see loadPokemonMoves). Learnsets are null until
+// generate-pokedata.mjs is run in the pokedex project.
+export interface PokemonMoves {
+    moves?: string[];
+    levelUpMoves?: PokemonMoveDetail[] | null;
+    machineMoves?: PokemonMoveDetail[] | null;
+}
+
 // Full detail — only loaded when a modal is opened
 export interface Pokemon extends PokemonSummary {
     abilities?: string[];
-    moves?: string[];
     previousEvolution?: string | null;
     nextEvolution?: string | null;
     megaEvolutions?: MegaEvolution[];
@@ -73,10 +81,6 @@ export interface Pokemon extends PokemonSummary {
     growthRate?: string | null;
     habitat?: string | null;
     eggGroups?: string[] | null;
-
-    // Learnsets (null until generate-pokedata.mjs is run)
-    levelUpMoves?: PokemonMoveDetail[] | null;
-    machineMoves?: PokemonMoveDetail[] | null;
 
     // Type effectiveness — only non-1.0 entries
     typeEffectiveness?: Record<string, number> | null;

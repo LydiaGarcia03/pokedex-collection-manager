@@ -1,5 +1,5 @@
-import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles, X } from 'lucide-react';
+import { type CSSProperties, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
 import { getLoadedTcgCards, getShinyImageUrl } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
 import { useImageRetry } from '../hooks/useImageRetry';
@@ -73,6 +73,32 @@ export function PokemonModal({
         }
     }, [activeTab, previousName, nextName]);
 
+    // Previous (-1) / next (+1) Pokémon: the arrows on screen, the phone swipe and the desktop keys.
+    function changePokemon(direction: -1 | 1) {
+        if (activePokemonIndex === null) return;
+        const target = activePokemonIndex + direction;
+        if (target < 0 || target >= pokemonList.length) return;
+        collection.commitPendingCleanup(pokemonList[activePokemonIndex].id);
+        setShowShiny(false);
+        onChangePokemon(target);
+    }
+
+    // Desktop: ← → switch Pokémon (the phone layout swipes instead). Skipped while typing, e.g.
+    // in the TCG search.
+    const onArrowKey = useEffectEvent(changePokemon);
+    const isOpen = activePokemonIndex !== null;
+    useEffect(() => {
+        if (isMobile || !isOpen) return;
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+            if ((event.target as HTMLElement | null)?.closest('input, textarea, select, [contenteditable="true"]')) return;
+            if (event.key === 'ArrowLeft') onArrowKey(-1);
+            else if (event.key === 'ArrowRight') onArrowKey(1);
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isMobile, isOpen]);
+
     if (!summary || activePokemonIndex === null) {
         return null;
     }
@@ -91,19 +117,15 @@ export function PokemonModal({
         onClose();
     }
 
-    function handlePrevious() {
-        if (!hasPrevious) return;
-        collection.commitPendingCleanup(summary!.id);
-        setShowShiny(false);
-        onChangePokemon(currentIndex - 1);
-    }
+    const handlePrevious = () => changePokemon(-1);
+    const handleNext = () => changePokemon(1);
 
-    function handleNext() {
-        if (!hasNext) return;
-        collection.commitPendingCleanup(summary!.id);
-        setShowShiny(false);
-        onChangePokemon(currentIndex + 1);
-    }
+    // Same type color as the phone header (see PokemonModalMobile), used by the desktop hero column,
+    // plus the first type's symbol for its corner (scripts/generate-type-symbols.py).
+    const firstType = summary.types[0]?.toLowerCase() ?? 'normal';
+    const typeColorStyle = { '--type-color': `var(--type-${firstType})` } as CSSProperties;
+    const typeSymbolStyle = { '--type-symbol': `url(${import.meta.env.BASE_URL}images/types/symbol-${firstType}.png)` } as CSSProperties;
+    const tcgCardCount = getLoadedTcgCards(summary.name)?.length ?? null;
 
     const tabContent = detailLoading ? (
         <div className="pokemon-detail-loading">
@@ -191,149 +213,131 @@ export function PokemonModal({
         );
     }
 
+    const tabs: { id: PokemonDetailTab; label: string; icon: ReactNode; count: string | null }[] = [
+        { id: 'info', label: 'Info', icon: <Info size={18} />, count: null },
+        { id: 'games', label: 'Games', icon: <Gamepad2 size={18} />, count: activePokemonDetail?.games ? `${activePokemonDetail.games.length}` : null },
+        { id: 'tcg', label: 'TCG', icon: <IdCard size={18} />, count: tcgCardCount != null ? `${tcgCardCount} cards` : null },
+    ];
+
     return (
         <div className="pokemon-detail-backdrop" role="presentation" onClick={handleClose}>
             <section
                 className="pokemon-detail-modal"
                 role="dialog"
                 aria-modal="true"
-                aria-label={`Detalhes de ${summary.name}`}
+                aria-label={`${summary.name} details`}
+                style={typeColorStyle}
                 onClick={event => event.stopPropagation()}
             >
-                <header className="pokemon-detail-modal__header">
-                    <button
-                        className={`pokemon-detail-modal__select ${selected ? 'pokemon-detail-modal__select--selected' : ''}`}
-                        type="button"
-                        aria-label={selected ? `Remover ${summary.name} da coleção` : `Adicionar ${summary.name} à coleção`}
-                        onClick={() => collection.togglePokemon(summary.id)}
-                    >
-                        {selected && <Check size={30} strokeWidth={3.4} />}
-                    </button>
+                <aside className="pokemon-detail-hero">
+                    <span className="pokemon-detail-hero__symbol" style={typeSymbolStyle} aria-hidden="true" />
+                    <div className="pokemon-detail-hero__actions">
+                        <button type="button" className="pokemon-detail-hero__icon-button" onClick={handleClose} aria-label="Close" title="Close">
+                            <X size={18} />
+                        </button>
+                        <span className="pokemon-detail-hero__spacer" />
+                        <button
+                            type="button"
+                            className={`pokemon-detail-hero__icon-button ${showShiny ? 'pokemon-detail-hero__icon-button--shiny' : ''}`}
+                            onClick={() => setShowShiny(value => !value)}
+                            aria-pressed={showShiny}
+                            title={showShiny ? 'Show regular' : 'Show shiny'}
+                        >
+                            <Sparkles size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            className="pokemon-detail-hero__icon-button"
+                            onClick={onToggleCollectionVisible}
+                            aria-pressed={collectionVisible}
+                            title={collectionVisible ? 'Hide collection' : 'Show collection'}
+                        >
+                            {collectionVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                        <button
+                            type="button"
+                            className={`pokemon-detail-hero__select ${selected ? 'pokemon-detail-hero__select--selected' : ''}`}
+                            onClick={() => collection.togglePokemon(summary.id)}
+                            aria-pressed={selected}
+                            aria-label={selected ? `Remove ${summary.name} from collection` : `Add ${summary.name} to collection`}
+                        >
+                            {selected && <Check size={24} strokeWidth={3.4} />}
+                        </button>
+                    </div>
 
-                    <button
-                        type="button"
-                        className={`pokemon-detail-modal__visibility-toggle ${collectionVisible ? 'pokemon-detail-modal__visibility-toggle--active' : ''}`}
-                        onClick={onToggleCollectionVisible}
-                        title={collectionVisible ? 'Ocultar coleção' : 'Mostrar coleção'}
-                    >
-                        {collectionVisible ? <Eye size={16} /> : <EyeOff size={16} />}
-                        Visibility
-                    </button>
+                    {/* The Pokémon stands on a ground band with a contact shadow, so it doesn't float. */}
+                    <div className="pokemon-detail-hero__stage">
+                        <span className="pokemon-detail-hero__ground" aria-hidden="true" />
+                        <span className="pokemon-detail-hero__contact-shadow" aria-hidden="true" />
+                        {imageSrc && !imageFailed && (
+                            <img
+                                src={imageSrc}
+                                alt={showShiny ? `${imageAlt} (Shiny)` : imageAlt}
+                                className="pokemon-detail-hero__image"
+                                onError={onImageError}
+                            />
+                        )}
+                    </div>
 
-                    <button
-                        type="button"
-                        className="pokemon-detail-modal__close"
-                        onClick={handleClose}
-                    >
-                        Close
-                    </button>
-                </header>
+                    <span className="pokemon-detail-hero__dex">#{summary.dexNumberFormatted}</span>
+                    <strong className="pokemon-detail-hero__name">{summary.name}</strong>
+                    {summary.formName && <span className="pokemon-detail-hero__form">{summary.formName}</span>}
+                    <div className="pokemon-detail-hero__types">
+                        {summary.types.map(type => (
+                            <TypeBadge key={type} type={type} />
+                        ))}
+                    </div>
 
-                <div className="pokemon-detail-modal__layout">
-                    <aside className="pokemon-detail-sidebar">
-                        <div className="pokemon-detail-nav">
+                    <nav className="pokemon-detail-hero__tabs" aria-label="Detail tabs">
+                        {tabs.map(tab => (
                             <button
+                                key={tab.id}
                                 type="button"
-                                className="pokemon-detail-nav__button pokemon-detail-nav__button--previous"
-                                onClick={handlePrevious}
-                                disabled={!hasPrevious}
-                                aria-label="Pokémon anterior"
+                                className={`pokemon-detail-hero__tab ${activeTab === tab.id ? 'pokemon-detail-hero__tab--active' : ''}`}
+                                aria-current={activeTab === tab.id ? 'page' : undefined}
+                                onClick={() => setActiveTab(tab.id)}
                             >
-                                <ChevronLeft size={34} />
-                                <span>{previousSummary?.id ?? ''}</span>
+                                {tab.icon}
+                                {tab.label}
+                                {tab.count && <small>{tab.count}</small>}
                             </button>
+                        ))}
+                    </nav>
 
-                            <div className="pokemon-detail-nav__spacer" aria-hidden="true" />
+                    <div className="pokemon-detail-hero__nav">
+                        <button
+                            type="button"
+                            className="pokemon-detail-hero__nav-button"
+                            onClick={handlePrevious}
+                            disabled={!hasPrevious}
+                            aria-label="Previous Pokémon"
+                        >
+                            <ChevronLeft size={18} />
+                            {previousSummary && <img src={previousSummary.imageUrl} alt="" />}
+                            {previousSummary?.id}
+                        </button>
+                        <button
+                            type="button"
+                            className="pokemon-detail-hero__nav-button"
+                            onClick={handleNext}
+                            disabled={!hasNext}
+                            aria-label="Next Pokémon"
+                        >
+                            {nextSummary?.id}
+                            {nextSummary && <img src={nextSummary.imageUrl} alt="" />}
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+                </aside>
 
-                            <button
-                                type="button"
-                                className="pokemon-detail-nav__button pokemon-detail-nav__button--next"
-                                onClick={handleNext}
-                                disabled={!hasNext}
-                                aria-label="Próximo Pokémon"
-                            >
-                                <span>{nextSummary?.id ?? ''}</span>
-                                <ChevronRight size={34} />
-                            </button>
-                        </div>
-
-                        <div className="pokemon-detail-sidebar__card">
-                            {imageSrc && !imageFailed && (
-                                <img
-                                    src={imageSrc}
-                                    alt={showShiny ? `${imageAlt} (Shiny)` : imageAlt}
-                                    className="pokemon-detail-sidebar__image"
-                                    onError={onImageError}
-                                />
-                            )}
-
-                            <button
-                                type="button"
-                                className={`pokemon-detail-sidebar__shiny-toggle ${showShiny ? 'pokemon-detail-sidebar__shiny-toggle--active' : ''}`}
-                                onClick={() => setShowShiny(s => !s)}
-                                title={showShiny ? 'Ver versão normal' : 'Ver versão shiny'}
-                            >
-                                <Sparkles size={13} />
-                                Shiny
-                            </button>
-
-                            <div className="pokemon-detail-sidebar__info-row">
-                                <div className="pokemon-detail-sidebar__text">
-                                    <span className="pokemon-detail-sidebar__dex">#{summary.dexNumberFormatted}</span>
-                                    <strong className="pokemon-detail-sidebar__name">{summary.name}</strong>
-                                    {summary.formName && (
-                                        <span className="pokemon-detail-sidebar__form">{summary.formName}</span>
-                                    )}
-                                </div>
-
-                                <div className="pokemon-detail-sidebar__types">
-                                    {summary.types.map(type => (
-                                        <TypeBadge key={type} type={type} />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <section className="pokemon-detail-content">
-                        <nav className="pokemon-detail-tabs" aria-label="Abas de detalhes">
-                            <button
-                                type="button"
-                                className={activeTab === 'info' ? 'pokemon-detail-tabs__tab pokemon-detail-tabs__tab--active' : 'pokemon-detail-tabs__tab'}
-                                onClick={() => setActiveTab('info')}
-                            >
-                                <Info size={16} />
-                                <span>Info</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                className={activeTab === 'games' ? 'pokemon-detail-tabs__tab pokemon-detail-tabs__tab--active' : 'pokemon-detail-tabs__tab'}
-                                onClick={() => setActiveTab('games')}
-                            >
-                                <Gamepad2 size={16} />
-                                <span>Games</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                className={activeTab === 'tcg' ? 'pokemon-detail-tabs__tab pokemon-detail-tabs__tab--active' : 'pokemon-detail-tabs__tab'}
-                                onClick={() => setActiveTab('tcg')}
-                            >
-                                <IdCard size={16} />
-                                <span>TCG</span>
-                            </button>
-                        </nav>
-
-                        <div className="pokemon-detail-panel">
-                            {tabContent}
-                        </div>
-                    </section>
-                </div>
-
-                <footer className="pokemon-detail-modal__footer">
-                    {externalLinks}
-                </footer>
+                <section className="pokemon-detail-content">
+                    <div className="pokemon-detail-panel">
+                        {tabContent}
+                    </div>
+                    <footer className="pokemon-detail-modal__footer">
+                        {externalLinks}
+                    </footer>
+                </section>
             </section>
         </div>
     );

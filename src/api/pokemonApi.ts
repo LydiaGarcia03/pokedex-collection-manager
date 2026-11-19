@@ -1,4 +1,4 @@
-import type { Pokemon, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
+import type { Pokemon, PokemonMoves, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
 
 // import.meta.env.BASE_URL is set by Vite to the value of `base` in vite.config.ts.
 // In production this is '/pokedex-collection-manager-static/'.
@@ -7,6 +7,22 @@ const BASE = import.meta.env.BASE_URL;
 
 let pokemonCache: Pokemon[] | null = null;
 let tcgCardCache: Record<string, TcgCard[]> | null = null;
+const movesCache = new Map<string, Promise<PokemonMoves>>();
+
+/** One Pokémon's moves, kept out of pokemon-compiled.json so the listing loads fast. */
+export function loadPokemonMoves(pokemonId: string): Promise<PokemonMoves> {
+    let request = movesCache.get(pokemonId);
+    if (!request) {
+        request = fetch(`${BASE}data/moves/${pokemonId}.json`).then(res => {
+            if (!res.ok) throw new Error(`Failed to load moves for ${pokemonId}`);
+            return res.json() as Promise<PokemonMoves>;
+        });
+        // A failed request isn't cached, so reopening the Pokémon tries again.
+        request.catch(() => movesCache.delete(pokemonId));
+        movesCache.set(pokemonId, request);
+    }
+    return request;
+}
 
 // Image URLs in the JSON are stored as absolute paths (e.g. "/images/pokemon/...").
 // Vite serves public/ files under BASE, so we must prepend BASE to avoid 404s
