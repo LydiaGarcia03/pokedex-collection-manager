@@ -51,7 +51,7 @@ export async function loadAllPokemon(): Promise<Pokemon[]> {
     return pokemonCache;
 }
 
-async function loadTcgCardCatalog(): Promise<Record<string, TcgCard[]>> {
+export async function loadTcgCardCatalog(): Promise<Record<string, TcgCard[]>> {
     if (tcgCardCache !== null) return tcgCardCache;
     try {
         const res = await fetch(`${BASE}data/tcg-cards.json`);
@@ -71,6 +71,10 @@ let tcgSetNameCache: Record<string, string> | null = null;
 
 // Synchronous reads of TCG data that is already loaded (null if not yet), so the TCG tab can
 // render cards on its first frame instead of flashing a spinner after every Pokémon switch.
+export function isTcgCardCatalogLoaded(): boolean {
+    return tcgCardCache !== null;
+}
+
 export function getLoadedTcgCards(pokemonName: string): TcgCard[] | null {
     return tcgCardCache ? tcgCardCache[pokemonName.toLowerCase()] ?? [] : null;
 }

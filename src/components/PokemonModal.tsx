@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gamepad2, IdCard, Info, Sparkles, X } from 'lucide-react';
 import { type CSSProperties, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
-import { getLoadedTcgCards, getShinyImageUrl } from '../api/pokemonApi';
+import { getLoadedTcgCards, getShinyImageUrl, isTcgCardCatalogLoaded, loadTcgCardCatalog } from '../api/pokemonApi';
 import type { UseCollectionReturn } from '../hooks/useCollection';
 import { useImageRetry } from '../hooks/useImageRetry';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -58,6 +58,18 @@ export function PokemonModal({
     const shinyUrl = summary ? getShinyImageUrl(summary.imageCode) : null;
     const rawImageSrc = summary ? (showShiny ? shinyUrl : (summary.imageUrlXl ?? summary.imageUrl)) : null;
     const { src: imageSrc, failed: imageFailed, onError: onImageError } = useImageRetry(rawImageSrc);
+
+    // The TCG card count next to the tab reads the card catalog, which otherwise only loads when
+    // the TCG tab is opened. Load it as soon as the detail opens so the count shows right away,
+    // like the Games count does.
+    const [, setTcgCatalogLoaded] = useState(isTcgCardCatalogLoaded);
+    const detailOpen = summary !== null;
+    useEffect(() => {
+        if (!detailOpen || isTcgCardCatalogLoaded()) return;
+        let cancelled = false;
+        loadTcgCardCatalog().then(() => { if (!cancelled) setTcgCatalogLoaded(true); });
+        return () => { cancelled = true; };
+    }, [detailOpen]);
 
     // While the TCG tab is open, start downloading the first cards of the previous and next
     // Pokémon, so a swipe or arrow lands on cards that are already loaded.

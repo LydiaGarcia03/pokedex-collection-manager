@@ -1,5 +1,21 @@
 # Changes Log
 
+## 2026-11-19 (18) — v1.0.1 (patch)
+
+### Contagem de cartas da aba TCG aparece assim que o detalhe abre
+
+**Files modified:**
+- `src/api/pokemonApi.ts`: `loadTcgCardCatalog` passou a ser exportada, e foi criada
+  `isTcgCardCatalogLoaded()`.
+- `src/components/PokemonModal.tsx`: quando o detalhe abre, o catálogo de cartas
+  (`tcg-cards.json`) é carregado se ainda não estiver, e o modal se redesenha quando termina. A
+  contagem "N cards" ao lado da aba TCG passa a aparecer sem precisar abrir a aba.
+- `src/appInfo.ts`: versão `1.0.1`.
+
+**Why:** a contagem lia o catálogo de forma síncrona, mas ele só era baixado pela própria aba TCG.
+Por isso, no primeiro detalhe aberto, o número só aparecia depois de abrir a aba. A contagem de
+jogos já vinha junto com os dados do Pokémon.
+
 ## 2026-11-19 (17)
 
 ### Versão no painel de filtros (computador) e no menu Actions (celular)
