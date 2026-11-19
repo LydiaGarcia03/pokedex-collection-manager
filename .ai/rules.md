@@ -89,3 +89,17 @@ português normalmente.
 
 Se notar texto de interface já existente em português (ex.: mensagens antigas), sinalizar ao User
 em vez de corrigir silenciosamente por conta própria (ver regra 5).
+
+## 9. Versão do app (`src/appInfo.ts`)
+
+A versão do app (`APP_VERSION` em `src/appInfo.ts`, formato `MAJOR.MINOR.PATCH`) aparece no pé da
+coluna de abas do painel de filtros (computador) e como última linha do menu Actions (celular), para
+o User saber se o app instalado está atualizado.
+
+A cada mudança que for commitada, avaliar o tamanho dela e subir a versão no mesmo commit:
+- **patch** (`1.0.0` → `1.0.1`): correção ou pequeno ajuste.
+- **minor** (`1.0.0` → `1.1.0`): pequena feature nova ou correção grande.
+- **major** (`1.0.0` → `2.0.0`): mudança grande. **Pedir aprovação do User antes de subir a major.**
+
+Ao subir minor, zerar o patch; ao subir major, zerar minor e patch. Registrar a nova versão na
+entrada do `.ai/changes-log.md`.

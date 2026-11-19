@@ -1,0 +1,237 @@
+VE<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onde mostrar a versão — mock</title>
+<style>
+    :root { --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.74); --line: rgba(147, 197, 253, 0.28); }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; background: #161d29; }
+    .page { max-width: 1260px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 6px; font-size: 1.5rem; }
+    .lede { margin: 0 0 20px; color: var(--muted); max-width: 940px; line-height: 1.55; font-size: .92rem; }
+    code { background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+    .option { margin-bottom: 22px; padding: 18px; border-radius: 18px; background: rgba(3, 28, 61, 0.45); border: 1px solid var(--line); }
+    .option h2 { margin: 0 0 6px; font-size: 1.12rem; }
+    .option h2 .tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #ffcb05; color: #0b3360; margin-left: 6px; vertical-align: 2px; }
+    .option > p { margin: 0 0 14px; color: var(--muted); font-size: .86rem; line-height: 1.5; max-width: 1000px; }
+    .screens { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+    .screen-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .screen-wrap small { color: rgba(226,232,240,.55); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+
+    /* Desktop: a 1100×700 browser window shown at 72% */
+    .desktop { width: 792px; border-radius: 12px; overflow: hidden; background: #05080d; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+    .desktop__bar { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: #1e2633; }
+    .desktop__bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a4558; }
+    .desktop__bar span { margin-left: 14px; flex: 1; height: 15px; border-radius: 8px; background: #121924; }
+    .desktop__view { position: relative; width: 792px; height: 504px; overflow: hidden; }
+    .desktop__view iframe { position: absolute; top: 0; left: 0; width: 1100px; height: 700px; border: 0; transform: scale(.72); transform-origin: 0 0; }
+
+    /* Android phone */
+    .phone { width: 372px; border-radius: 34px; padding: 6px; background: #05080d; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+    .phone__inner { border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; background: #082744; }
+    .phone__status { height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 12px; font-weight: 600; color: #fff; background: #082744; }
+    .phone iframe { display: block; width: 360px; height: 640px; border: 0; }
+    .phone__nav { height: 44px; display: flex; align-items: center; justify-content: space-around; padding: 0 70px; color: rgba(255,255,255,.8); background: #082744; }
+    .phone__nav .back { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-right: 11px solid currentColor; }
+    .phone__nav .home { width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; }
+    .phone__nav .recent { width: 13px; height: 13px; border: 2px solid currentColor; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Onde mostrar a versão</h1>
+    <p class="lede">
+        Cada tela carrega o <code>src/styles.css</code> real com o mesmo HTML da listagem: o computador numa janela de 1100px (reduzida
+        aqui a 72%) e o celular numa tela de 360px. A versão aparece sempre como <code>v1.0.0</code>, pequena e apagada. Nas opções 2 e 4 o
+        menu Actions ou o painel de filtros já aparece aberto, porque a versão só fica visível assim. Dá para rolar dentro de cada tela.
+    </p>
+    <div id="options"></div>
+</div>
+
+<script>
+    const VERSION = 'v1.0.0';
+    const ic = (paths, size = 22, sw = 2) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    const I = {
+        check: s => ic('<path d="M20 6 9 17l-5-5"/>', s, 3.4),
+        x: s => ic('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', s, 2.6),
+        filter: s => ic('<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>', s),
+        down: s => ic('<path d="m6 9 6 6 6-6"/>', s),
+        right: s => ic('<path d="m9 18 6-6-6-6"/>', s),
+        user: s => ic('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', s),
+    };
+    const pad = n => String(n).padStart(4, '0');
+    const typeIcon = t => `<img src="../public/images/types/type-${t.toLowerCase()}.png" alt="${t}" class="pokemon-type-icon">`;
+
+    const pokemon = [
+        [1, 'Bulbasaur', ['Grass', 'Poison'], true], [2, 'Ivysaur', ['Grass', 'Poison'], true], [3, 'Venusaur', ['Grass', 'Poison'], false],
+        [4, 'Charmander', ['Fire'], true], [5, 'Charmeleon', ['Fire'], false], [6, 'Charizard', ['Fire', 'Flying'], true],
+        [7, 'Squirtle', ['Water'], true], [8, 'Wartortle', ['Water'], false], [9, 'Blastoise', ['Water'], false],
+        [10, 'Caterpie', ['Bug'], true], [11, 'Metapod', ['Bug'], false], [12, 'Butterfree', ['Bug', 'Flying'], true],
+        [13, 'Weedle', ['Bug', 'Poison'], false], [14, 'Kakuna', ['Bug', 'Poison'], false], [15, 'Beedrill', ['Bug', 'Poison'], false],
+        [16, 'Pidgey', ['Normal', 'Flying'], true], [17, 'Pidgeotto', ['Normal', 'Flying'], false], [18, 'Pidgeot', ['Normal', 'Flying'], false],
+        [25, 'Pikachu', ['Electric'], true], [26, 'Raichu', ['Electric'], false], [133, 'Eevee', ['Normal'], true],
+        [143, 'Snorlax', ['Normal'], false], [150, 'Mewtwo', ['Psychic'], false], [151, 'Mew', ['Psychic'], true],
+    ];
+
+    const ver = extraClass => `<span class="app-version-mock ${extraClass}">${VERSION}</span>`;
+
+    function filterPanelDesktop(withVersion) {
+        const tabs = ['Collection', 'Generation', 'Type', 'Game', 'Options'].map((l, i) =>
+            `<button type="button" class="filter-panel__tab${i === 0 ? ' filter-panel__tab--active' : ''}">${l}</button>`).join('');
+        return `<div class="filter-panel filter-panel--tabs">
+            <nav class="filter-panel__tabs">${tabs}${withVersion ? ver('in-tabs') : ''}</nav>
+            <div class="filter-panel__content">
+                <div class="filter-panel__section-title">Collection</div>
+                ${segmented()}
+            </div>
+            ${footer(false)}
+        </div>`;
+    }
+
+    function segmented() {
+        return `<div class="filter-panel__segmented">
+            <button type="button" class="filter-panel__segment filter-panel__segment--active">All<em>1242</em></button>
+            <button type="button" class="filter-panel__segment">Owned<em>10</em></button>
+            <button type="button" class="filter-panel__segment">Missing<em>1232</em></button>
+        </div>`;
+    }
+
+    function footer(withVersion) {
+        return `<footer class="filter-panel__footer">
+            <button type="button" class="filter-panel__reset" disabled>Reset</button>
+            ${withVersion ? ver('in-footer') : ''}
+            <button type="button" class="filter-panel__show">Show 1242 Pokémon</button>
+        </footer>`;
+    }
+
+    function filterSheetMobile() {
+        const rows = [['Collection', 'All', true], ['Generation', 'All'], ['Type', 'All'], ['Game', 'All'], ['Options', 'Off']].map(([l, s, open]) => `
+            <div class="filter-sheet__section${open ? ' filter-sheet__section--open' : ''}">
+                <button type="button" class="filter-sheet__section-header"><strong>${l}</strong><span class="filter-sheet__summary">${s}</span>${I.right(17).replace('<svg', '<svg class="filter-sheet__chevron"')}</button>
+                ${open ? `<div class="filter-sheet__section-body">${segmented()}</div>` : ''}
+            </div>`).join('');
+        return `<div class="filter-sheet">
+            <div class="filter-sheet__backdrop"></div>
+            <div class="filter-sheet__panel">
+                <div class="filter-sheet__grab"></div>
+                <header class="filter-sheet__header"><strong>Filters</strong><button type="button" class="filter-sheet__close">${I.x(17)}</button></header>
+                <div class="filter-sheet__sections">${rows}</div>
+                ${ver('in-sheet')}
+                ${footer(false)}
+            </div>
+        </div>`;
+    }
+
+    // opt: 1 title, 2 actions, 3 count row, 4 filter footer
+    function listingHtml(opt, mobile) {
+        const cards = pokemon.map(([id, name, types, sel]) => `
+            <article class="pokemon-card ${sel ? 'pokemon-card--selected' : ''}">
+                <button class="pokemon-card__select" type="button">${sel ? I.check(23) : ''}</button>
+                <button type="button" class="pokemon-card__open-area">
+                    <div class="pokemon-card__image-wrapper"><img src="../public/images/pokemon/${pad(id)}.webp" class="pokemon-card__image" alt=""></div>
+                    <div class="pokemon-card__meta"><span class="pokemon-card__number">#${pad(id)}</span><div class="pokemon-card__types">${types.map(typeIcon).join('')}</div></div>
+                    <strong class="pokemon-card__name">${name}</strong>
+                    <span class="pokemon-card__form"> </span>
+                </button>
+            </article>`).join('');
+        const actionsOpen = opt === 2 && mobile;
+        const filterOpen = opt === 4;
+        return `<main class="pokedex-page">
+            <section class="pokedex-toolbar">
+                <input class="pokedex-search" type="search" placeholder="Search Pokémon...">
+                <div class="pokedex-filter">
+                    <button type="button" class="pokedex-filter__button">${I.filter(14)} Filters ${I.down(14)}</button>
+                    ${filterOpen && !mobile ? filterPanelDesktop(true) : ''}
+                </div>
+            </section>
+            <div class="mobile-header-band"><span class="mobile-header-band__title">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h6.5"/><path d="M15.5 12H22"/><circle cx="12" cy="12" r="3"/></svg>
+                Pokédex CM${opt === 1 ? ver('in-title') : ''}</span></div>
+            <div class="pokedex-auth-corner">
+                ${opt === 1 && !mobile ? ver('in-corner') : ''}
+                <div class="user-menu"><button type="button" class="user-menu__trigger">${I.user(15)}<span class="user-menu__email">Ash</span></button></div>
+            </div>
+            <div class="collection-actions-mobile-header"><button type="button" class="collection-actions-mobile-trigger">Actions ${actionsOpen ? '▲' : '▾'}</button></div>
+            <section class="collection-actions${actionsOpen ? ' collection-actions--mobile-open' : ''}">
+                <button type="button" class="collection-action-button">Import Collection</button>
+                <button type="button" class="collection-action-button">Export Collection</button>
+                <button type="button" class="collection-action-button">Toggle Collection Visibility</button>
+                <button type="button" class="collection-action-button collection-action-button--cloud">Save Collection</button>
+                <button type="button" class="collection-action-button collection-action-button--cloud">My Collections</button>
+                ${opt === 2 ? ver('in-actions') : ''}
+            </section>
+            <div class="pokedex-count-row">
+                <div class="pokedex-count"><span>Showing 1242 Pokémon · Selected 10</span></div>
+                ${opt === 3 ? ver('in-count') : ''}
+            </div>
+            <section class="pokedex-grid">${cards}</section>
+            ${filterOpen && mobile ? filterSheetMobile() : ''}
+        </main>`;
+    }
+
+    // Styling of the version label for each spot, layered on the real styles.css.
+    const versionCss = `
+        html, * { scrollbar-width: none; }
+        .app-version-mock { font-size: 0.66rem; font-weight: 500; color: rgba(226, 232, 240, 0.4); letter-spacing: 0.02em; white-space: nowrap; font-style: normal; }
+        .app-version-mock.in-title { margin-left: 6px; font-size: 0.62rem; align-self: flex-end; padding-bottom: 1px; }
+        .app-version-mock.in-corner { position: absolute; top: 100%; right: 4px; margin-top: 5px; }
+        .app-version-mock.in-actions { flex-basis: 100%; text-align: center; padding-top: 2px; }
+        @media (min-width: 641px) { .collection-actions { position: relative; } .app-version-mock.in-actions { position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 0; } }
+        .app-version-mock.in-count { position: absolute; right: 0; }
+        .app-version-mock.in-tabs { margin-top: auto; padding: 0 10px 8px; }
+        .app-version-mock.in-sheet { display: block; text-align: center; padding: 6px 0 8px; }
+    `;
+
+    const options = [
+        { n: 1, title: '1 — Ao lado do título', tag: true,
+          text: 'Celular: logo depois de "Pokédex CM", na faixa do topo. Computador: não existe título visível, então fica logo embaixo do botão do usuário, no canto de cima. Sempre visível, logada ou não.' },
+        { n: 2, title: '2 — No menu Actions',
+          text: 'Celular: última linha do menu Actions (aqui aberto), embaixo dos botões. Computador: no fim da linha de botões de ações, à direita. No celular só aparece com o menu aberto.' },
+        { n: 3, title: '3 — Na linha da contagem',
+          text: 'À direita de "Showing 1242 Pokémon · Selected 10", no celular e no computador. Sempre visível.' },
+        { n: 4, title: '4 — No painel de filtros',
+          text: 'Computador: no pé da coluna de abas da esquerda (Collection, Generation…), alinhada com o Reset. Celular: centralizada logo acima do rodapé com Reset e "Show 1242 Pokémon". Só aparece com o painel de filtros aberto.' },
+    ];
+
+    function frameDoc(body) {
+        return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="../src/styles.css"><style>${versionCss}</style></head><body><div id="root">${body}</div></body></html>`;
+    }
+
+    function desktop(opt) {
+        const el = document.createElement('div');
+        el.className = 'desktop';
+        el.innerHTML = '<div class="desktop__bar"><i></i><i></i><i></i><span></span></div><div class="desktop__view"><iframe></iframe></div>';
+        el.querySelector('iframe').srcdoc = frameDoc(listingHtml(opt, false));
+        return el;
+    }
+
+    function phone(opt) {
+        const el = document.createElement('div');
+        el.className = 'phone';
+        el.innerHTML = `<div class="phone__inner"><div class="phone__status"><span>9:41</span><span>▮▮▮ ●</span></div><iframe></iframe>
+            <div class="phone__nav"><span class="back"></span><span class="home"></span><span class="recent"></span></div></div>`;
+        el.querySelector('iframe').srcdoc = frameDoc(listingHtml(opt, true));
+        return el;
+    }
+
+    const host = document.getElementById('options');
+    for (const o of options) {
+        const section = document.createElement('section');
+        section.className = 'option';
+        section.innerHTML = `<h2>${o.title}${o.tag ? '<span class="tag">Recomendada</span>' : ''}</h2><p>${o.text}</p><div class="screens"></div>`;
+        const screens = section.querySelector('.screens');
+        for (const [label, el] of [['Computer', desktop(o.n)], ['Phone', phone(o.n)]]) {
+            const wrap = document.createElement('div');
+            wrap.className = 'screen-wrap';
+            wrap.append(el);
+            wrap.insertAdjacentHTML('beforeend', `<small>${label}</small>`);
+            screens.append(wrap);
+        }
+        host.append(section);
+    }
+</script>
+</body>
+</html>

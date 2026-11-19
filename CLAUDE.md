@@ -125,6 +125,7 @@ grandes.
 - Mocks de referência: `docs/mobile-detail-mock.html` (opção E), `docs/tcg-search-mock.html`
   (opção C), `docs/tcg-foil-mock.html` (D, estilo 5)
 - Exportar/importar coleção como arquivo de texto (formato `POKEDEX_COLLECTION_V2` — ver Critical Rules)
+- Versão do app (`src/appInfo.ts`) exibida bem pequena, só "v1.0.0": no computador, no pé da coluna de abas do painel de filtros; no celular, como última linha do menu Actions (opções 4 e 2 de `docs/app-version-mock.html`), para saber se o PWA instalado está atualizado. Regra de quando subir patch/minor/major em `.ai/rules.md` (regra 9)
 
 ### Detalhe do Pokémon no computador (>640px)
 - Layout em `PokemonModal.tsx`, a partir do mock `docs/desktop-detail-d-mock.html`: opção D,
@@ -153,6 +154,10 @@ grandes.
 ### PWA (instalável no celular)
 - Instalável via "Add to Home Screen"/prompt do navegador — abre em tela cheia, sem barra de
   navegador (`display: standalone`), com ícone e splash screen próprios
+- Barra de navegação do Android (◀ ● ■): o Chrome a pinta com o fundo do `:root`, que é `#082744` fixo em
+  todas as telas (mesma cor da barra de abas do detalhe). No celular, o degradê da listagem fica num
+  `body::before` fixo que termina em `#082744`, emendando com a barra. Não trocar a cor do `:root` por
+  tela: isso repinta a página e faz a barra piscar (opção A de `docs/nav-bar-color-mock.html`)
 - Gerado por `vite-plugin-pwa` (ver `vite.config.ts`) — manifest + service worker (Workbox)
   100% estáticos, nenhuma mudança necessária no `.github/workflows/deploy.yml`
 - Cache do app shell (JS/CSS/HTML, poucos MB) é pré-cacheado no build; imagens
@@ -324,6 +329,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 | `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager/'` (nome do repo no GitHub); `VitePWA` plugin (manifest + service worker) |
 | `package.json` | **Modified** | Removed `axios`; added setup scripts; `vite-plugin-pwa` (devDependency) |
 | `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON; moves split into `data/moves/{id}.json` |
+| `src/appInfo.ts` | **New** | `APP_NAME` + `APP_VERSION`; only the version is shown (filter panel tab column on desktop, Actions menu on phone) |
 | `src/hooks/useAuth.ts` | **Modified** | Remembers the last logged-in name (`pcm.lastUserName`) so the header shows the user button, not "Login", while Firebase restores the session |
 | `src/components/UserMenu.tsx` | **Modified** | `UserMenuPlaceholder`: same look as the trigger, disabled, shown during that wait |
 | `scripts/collect-tcg-data.mjs` | **New** | Fetches TCG card metadata from TCGdex |

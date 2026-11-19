@@ -1,6 +1,7 @@
 import { Check, ChevronRight, Search, Star, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { APP_VERSION } from '../appInfo';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { PokemonType, PokemonTypeFilterId } from '../types/Pokemon';
 import { TypeBadge } from './TypeBadge';
@@ -126,6 +127,7 @@ function FilterTabsPanel(props: FilterPanelProps) {
                         {counts[item.id] > 0 && <span className="filter-panel__tab-count">{counts[item.id]}</span>}
                     </button>
                 ))}
+                <span className="app-version app-version--filter-tabs">v{APP_VERSION}</span>
             </nav>
 
             <div className="filter-panel__content">

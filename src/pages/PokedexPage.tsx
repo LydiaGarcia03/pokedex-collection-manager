@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Filter, User as UserIcon, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchTcgCards, filterPokemon, loadAllPokemon } from '../api/pokemonApi';
+import { APP_VERSION } from '../appInfo';
 import { AuthModal } from '../components/AuthModal';
 import { ExportContentModal } from '../components/ExportContentModal';
 import { ExportTypeModal } from '../components/ExportTypeModal';
@@ -586,6 +587,8 @@ export function PokedexPage() {
                         Clear all
                     </button>
                 )}
+
+                <span className="app-version app-version--actions">v{APP_VERSION}</span>
             </section>
 
             <div className="pokedex-count-row">

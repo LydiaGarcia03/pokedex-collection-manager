@@ -1,7 +1,10 @@
 :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     color: #eef6ff;
-    background: #0b3360;
+    /* Newer Chrome on Android paints the system navigation bar with this background. One fixed color
+       for every screen (no switch when the detail opens), matching the detail tab bar; on phones the
+       listing background is pinned to the screen and ends in this color (see body::before). */
+    background: #082744;
 
     /* One color per elemental type — used by the type badges and by the mobile detail header
        (which takes the Pokémon's first type, see PokemonModalMobile). */
@@ -36,6 +39,24 @@ body {
     background:
             radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
             linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+}
+
+/* Phones: the gradient stays put while the list scrolls, so the bottom of the screen is always
+   #082744 and runs straight into the system navigation bar. */
+@media (max-width: 640px) {
+    body {
+        background: none;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+                radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+    }
 }
 
 button,
@@ -3419,6 +3440,33 @@ input {
     background: rgba(252, 129, 129, 0.1);
 }
 
+/* App version (src/appInfo.ts): desktop at the foot of the filter panel's tab column,
+   phone as the last line of the Actions menu. */
+.app-version {
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: rgba(226, 232, 240, 0.4);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.app-version--filter-tabs {
+    margin-top: auto;
+    padding: 0 10px 8px;
+}
+
+.app-version--actions {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .app-version--actions {
+        display: block;
+        text-align: center;
+        padding-top: 2px;
+    }
+}
+
 /* ─── Auth Modal ──────────────────────────────────────────────────────────── */
 
 .auth-modal {
@@ -4267,18 +4315,12 @@ input {
 }
 
 /* Bottom tab bar */
-/* Set by PokemonModalMobile: newer Chrome on Android paints the system navigation bar with the
-   page background, so it matches the tab bar while the detail is open. */
-:root.pokemon-detail-mobile-open {
-    background: #082744;
-}
-
 .pokemon-detail-mobile__tabbar {
     flex: 0 0 auto;
     display: flex;
     padding: 6px 8px calc(10px + env(safe-area-inset-bottom));
-    /* Same as the manifest theme_color/background_color (vite.config.ts), which Android uses for
-       the installed app's navigation bar, so the tab bar and the system bar read as one strip. */
+    /* Same as the :root background, which Android paints behind the system navigation bar, so the
+       tab bar and the system bar read as one strip. */
     background: #082744;
     border-top: 1px solid rgba(147, 197, 253, 0.16);
 }

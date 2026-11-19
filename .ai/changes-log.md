@@ -1,5 +1,84 @@
 # Changes Log
 
+## 2026-11-19 (17)
+
+### Versão no painel de filtros (computador) e no menu Actions (celular)
+
+**Files modified:**
+- `src/components/FilterPanel.tsx`: `v{APP_VERSION}` no pé da coluna de abas da esquerda
+  (`FilterTabsPanel`, que só existe no computador).
+- `src/pages/PokedexPage.tsx`: `v{APP_VERSION}` como última linha do menu Actions; escondido no
+  computador, onde as ações são uma linha de botões.
+- `src/components/UserMenu.tsx`, `src/components/AuthModal.tsx`: a versão saiu do menu do usuário
+  e do modal de login. Os dois arquivos voltaram a ser como antes da entrada (14).
+- `src/styles.css`: `.app-version` refeita, com as variações `--filter-tabs` e `--actions`; saíram
+  as regras do modal de login e do menu do usuário.
+- `.ai/rules.md` (regra 9) e `CLAUDE.md`: os novos lugares da versão.
+
+**Why:** o User comparou os lugares em `docs/app-version-mock.html` e escolheu a opção 4 no
+computador e a 2 no celular.
+
+## 2026-11-19 (16)
+
+### Mock: onde mostrar a versão do app
+
+**Files modified:**
+- `docs/app-version-mock.html` (novo): 4 lugares para a versão (`v1.0.0`). Cada um é simulado no
+  computador (janela de 1100px) e no celular (360px), com o `src/styles.css` real e o mesmo HTML
+  da listagem:
+  1. ao lado do título "Pokédex CM" no celular; no computador, embaixo do botão do usuário;
+  2. na última linha do menu Actions (celular) e no fim da linha de ações (computador);
+  3. à direita da linha "Showing … · Selected …";
+  4. no painel de filtros. Depois de uma captura de tela marcada pelo User, a versão saiu do meio
+     do rodapé: no computador foi para o pé da coluna de abas da esquerda, alinhada com o Reset;
+     no celular, fica centralizada logo acima do rodapé com Reset e "Show N Pokémon".
+
+**Why:** o User não gostou da versão embaixo do Logout e no modal de login e pediu para comparar
+outros lugares antes de decidir. O app ainda mostra a versão nos dois lugares de antes.
+
+## 2026-11-19 (15) — v1.0.0
+
+### Barra de navegação do Android com uma cor só (opção A)
+
+**Files modified:**
+- `src/styles.css`:
+  - `:root` passa a ter fundo `#082744` em todas as telas (antes `#0b3360`);
+  - no celular (≤640px), o degradê do `body` foi para um `body::before` com `position: fixed`, então
+    o pé da tela da listagem é sempre `#082744` e emenda com a barra do sistema;
+  - removida a regra `:root.pokemon-detail-mobile-open`.
+- `src/components/PokemonModalMobile.tsx`: removido o `useEffect` que punha e tirava a classe
+  `pokemon-detail-mobile-open` no `<html>`.
+- `CLAUDE.md`: a nota sobre a cor da barra foi atualizada.
+
+**Why:** a troca de cor do `:root` ao abrir e fechar o detalhe repintava a página inteira e fazia a
+barra do sistema piscar. O User escolheu a opção A de `docs/nav-bar-color-mock.html`. O
+computador não muda: lá o `body` continua cobrindo a tela com o degradê de antes.
+
+## 2026-11-19 (14) — v1.0.0
+
+### Versão do app e mock da barra de navegação do celular
+
+**Files modified:**
+- `src/appInfo.ts` (novo): `APP_NAME` e `APP_VERSION` (`1.0.0`), fonte única da versão.
+- `src/components/UserMenu.tsx`: só "v1.0.0", bem pequeno, embaixo do Logout. O User pediu para não
+  mostrar o nome do app em nenhum dos dois lugares; `APP_NAME` fica só no `appInfo.ts`.
+- `src/components/AuthModal.tsx`: só "v1.0.0" no rodapé do modal de login/cadastro/reset.
+- `src/styles.css`: classe `.app-version` (texto 0.66rem, apagado, centralizado). No modal de login
+  ela fica a ~12px da borda de baixo (margem negativa dentro do padding de 32px), a pedido do User.
+- `.ai/rules.md`: regra 9, como subir a versão (patch / minor / major; major só com aprovação).
+- `CLAUDE.md`: versão citada nas funcionalidades e no File Map.
+- `docs/nav-bar-color-mock.html` (novo): simulação da barra de navegação do Android com uma cor
+  só. Cada "celular" é um iframe de 360px que carrega o `src/styles.css` real com o mesmo HTML da
+  listagem e do detalhe (Bulbasaur e Charizard), mais a barra de status e a barra do sistema.
+  Mostra "Hoje", A (horizonte escuro, `#082744`) e B (azul único, `#0b3360`). A primeira versão,
+  abstrata, tinha também C (abas flutuantes) e D (doca); o User escolheu ver A e B simuladas de
+  verdade. Nada foi aplicado no app ainda.
+
+**Why:**
+- O User quer saber se o app instalado (PWA) está atualizado olhando a versão.
+- A troca de cor do `:root` ao abrir o detalhe repinta a página e o User acha que prejudica o PWA;
+  quer escolher uma cor única antes de mudar o código.
+
 ## 2026-11-19 (13)
 
 ### README atualizado, banner menos saturado, cinza de volta só no modo de visibilidade
