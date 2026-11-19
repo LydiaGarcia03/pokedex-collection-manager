@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detalhe no computador — mock</title>
+<style>
+    :root {
+        --bg: #0b3360; --bg-deep: #082744; --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72);
+        --faint: rgba(226, 232, 240, 0.5); --accent: #9cc8ed; --accent-ink: #092f58;
+        --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --card: rgba(8, 24, 52, 0.52); --shiny: #ffe566; --foil: #7c5cb8;
+        --type-grass: #22c55e; --type-poison: #a855f7; --type-fire: #ef4444; --type-water: #3b82f6;
+        --type-flying: #93c5fd; --type-bug: #84cc16; --type-normal: #a8a29e; --type-electric: #eab308;
+        --type-ground: #ca8a04; --type-fairy: #ec4899; --type-fighting: #dc2626; --type-psychic: #db2777;
+        --type-rock: #78716c; --type-ghost: #7c3aed; --type-ice: #67e8f9; --type-dragon: #4f46e5;
+        --type-dark: #292524; --type-steel: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+        min-height: 100vh;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    svg { flex: 0 0 auto; }
+    .page { max-width: 1320px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 18px; color: var(--muted); max-width: 900px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button {
+        padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600;
+        border: 1px solid rgba(147, 197, 253, 0.62);
+    }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .notes { margin-top: 30px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- browser frame + fake listing behind the detail ---------- */
+    .browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); background: #030f1f; overflow-x: auto; }
+    .browser__bar { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; background: #061a33; border-bottom: 1px solid var(--line-soft); }
+    .browser__bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(147,197,253,.25); }
+    .browser__url { margin-left: 14px; padding: 3px 14px; border-radius: 999px; background: rgba(147,197,253,.08); color: var(--faint); font-size: .75rem; }
+    .viewport { position: relative; width: 100%; min-width: 1100px; height: 780px; overflow: hidden;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%), linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%); }
+    .listing { position: absolute; inset: 0; padding: 22px 40px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 16px; align-content: start; }
+    .listing div { aspect-ratio: .78; border-radius: 16px; border: 1px solid var(--line); background: rgba(8,39,68,.6); display: flex; align-items: center; justify-content: center; }
+    .listing img { width: 70%; }
+    .backdrop { position: absolute; inset: 0; background: rgba(2, 10, 24, .62); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 28px; }
+
+    /* ---------- shared bits ---------- */
+    .type-icon { width: 26px; height: 26px; border-radius: 7px; display: block; }
+    .type-icon.sm { width: 18px; height: 18px; border-radius: 5px; }
+    .types { display: flex; gap: 6px; }
+    .chk {
+        width: 40px; height: 40px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(11, 51, 96, 0.45); border: 1px solid rgba(139, 191, 235, 0.65); color: transparent;
+    }
+    .chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .icon-btn {
+        width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.28);
+    }
+    .icon-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .icon-btn.shiny-on { color: var(--shiny); border-color: rgba(255, 229, 102, .6); background: rgba(255, 229, 102, .14); }
+    .icon-btn svg, .pill-btn svg { width: 18px; height: 18px; }
+    .pill-btn {
+        display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px;
+        background: rgba(147, 197, 253, 0.12); border: 1px solid rgba(147, 197, 253, 0.32); font-size: .84rem;
+    }
+    .pill-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .pill-btn.shiny-on { color: var(--shiny); border-color: rgba(255, 229, 102, .55); background: rgba(255, 229, 102, .12); }
+    .hero-img {
+        width: 100%; aspect-ratio: 1; object-fit: contain;
+        filter: drop-shadow(0 0 18px rgba(255,255,255,.18)) drop-shadow(0 14px 28px rgba(0,0,0,.55));
+    }
+    .dex { color: rgba(255,255,255,.75); font-size: .85rem; font-weight: 600; }
+    .name { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+    .genus { color: rgba(255,255,255,.75); font-size: .9rem; }
+    /* Type-colored hero, same recipe as the mobile detail header */
+    .tinted {
+        position: relative; overflow: hidden;
+        background:
+            radial-gradient(circle at 85% 40%, rgba(255,255,255,.10) 0 120px, transparent 121px),
+            radial-gradient(circle at 85% 40%, rgba(255,255,255,.06) 0 190px, transparent 191px),
+            linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%);
+    }
+    .nav-link { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; background: none; border: 0; color: #9fd0ff; font-weight: 700; font-size: .9rem; }
+    .nav-link:hover { background: rgba(147,197,253,.12); }
+    .nav-link img { width: 28px; height: 28px; object-fit: contain; }
+
+    /* Segmented tabs (mobile tab bar look, laid flat) */
+    .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(3, 20, 42, .55); border: 1px solid var(--line-soft); }
+    .seg button { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 18px; border-radius: 999px; border: 0; background: none; color: #9fc9f8; font-weight: 600; }
+    .seg button.on { background: var(--accent); color: var(--accent-ink); }
+    .seg button svg { width: 17px; height: 17px; }
+    .seg small { opacity: .7; font-weight: 500; }
+
+    /* ---------- content (new style) ---------- */
+    .content { padding: 18px 22px 28px; }
+    .cols { columns: 2; column-gap: 16px; }
+    .cols .section { break-inside: avoid; }
+    .section { margin-bottom: 16px; padding: 16px; border-radius: 16px; background: var(--card); border: 1px solid rgba(147, 197, 253, 0.11); }
+    .section h3 { margin: 0 0 12px; font-size: .98rem; color: #cfe6fb; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tile { padding: 10px 12px; border-radius: 12px; background: rgba(147, 197, 253, 0.07); }
+    .tile.wide { grid-column: span 2; }
+    .tile span { display: block; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+    .tile b { display: block; margin-top: 3px; font-size: .92rem; }
+    .flavor { margin: 0 0 12px; color: var(--muted); font-style: italic; line-height: 1.5; font-size: .9rem; }
+    .stat { display: grid; grid-template-columns: 70px 34px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; font-size: .86rem; }
+    .stat span { color: var(--muted); }
+    .bar { height: 7px; border-radius: 99px; background: rgba(147,197,253,.12); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; }
+    .bar .high { background: linear-gradient(90deg, #34d399, #a7f3d0); }
+    .bar .mid { background: linear-gradient(90deg, #60a5fa, #9cc8ed); }
+    .bar .low { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+    .bar .old { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+    .total { margin-top: 10px; font-size: .9rem; color: var(--muted); }
+    .total b { color: var(--text); }
+    .eff-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .eff-row > span { width: 92px; color: var(--muted); font-size: .84rem; }
+    .eff-row > div { display: flex; gap: 6px; flex-wrap: wrap; }
+    .switch { display: flex; gap: 6px; margin-bottom: 10px; }
+    .switch button { flex: 1; height: 34px; border-radius: 999px; background: transparent; color: #9fc9f8; border: 1px solid var(--line); font-weight: 600; font-size: .84rem; }
+    .switch button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .move-list { list-style: none; margin: 0; padding: 0; }
+    .move-list li { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--line-soft); font-size: .86rem; }
+    .move-list li small { color: var(--faint); }
+    .move-list .lvl { color: #9fd0ff; font-weight: 700; font-size: .8rem; }
+    .move-list .meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .78rem; }
+    .more { margin: 10px 0 0; color: var(--faint); font-size: .8rem; text-align: center; }
+    .games { display: grid; gap: 10px; }
+    .game { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 14px; background: rgba(147,197,253,.06); border: 1px solid var(--line-soft); }
+    .game img { width: 52px; height: 52px; object-fit: contain; border-radius: 10px; }
+    .game small { font-size: .74rem; color: var(--muted); text-align: center; line-height: 1.2; }
+    .game.on { border-color: var(--accent); background: rgba(156,200,237,.14); }
+    .game.on::after { content: ""; position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 5px; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23092f58' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/11px no-repeat; }
+    .tcg-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .search { flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(3,20,42,.5); border: 1px solid var(--line); color: var(--faint); font-size: .88rem; }
+    .search svg { width: 16px; height: 16px; }
+    .cards { display: grid; gap: 12px; }
+    .tcg-card { position: relative; border-radius: 9px; overflow: hidden; border: 2px solid transparent; background: rgba(147,197,253,.06); padding: 0; }
+    .tcg-card img { display: block; width: 100%; aspect-ratio: 63/88; object-fit: cover; }
+    .tcg-card.on { border-color: var(--accent); }
+    .tcg-card.foil { border-color: #a78bfa; box-shadow: 0 0 14px rgba(167,139,250,.45); }
+    .tcg-card .c { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 7px; background: rgba(11,51,96,.7); border: 1px solid rgba(139,191,235,.7); display: flex; align-items: center; justify-content: center; color: transparent; }
+    .tcg-card.on .c, .tcg-card.foil .c { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .tcg-card .c svg { width: 15px; height: 15px; }
+    .tcg-card .meta { padding: 5px 7px; font-size: .68rem; color: var(--muted); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ---------- old (current) content, for option A ---------- */
+    .old-section { margin-bottom: 16px; padding: 16px; border-radius: 14px; background: rgba(3,24,51,.35); border: 1px solid var(--line-soft); }
+    .old-section h3 { margin: 0 0 10px; font-size: 1rem; }
+    .old-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; font-size: .86rem; }
+    .old-grid span { display: block; color: var(--faint); font-size: .76rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+    th { color: var(--faint); font-weight: 600; }
+
+    /* ---------- A: current layout ---------- */
+    .A-modal { width: 1080px; height: 720px; display: flex; flex-direction: column; border-radius: 22px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .A-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+    .A-head .close { margin-left: auto; height: 36px; padding: 0 16px; border-radius: 10px; background: rgba(147,197,253,.12); border: 1px solid var(--line); }
+    .A-body { flex: 1; display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+    .A-side { padding: 16px; border-right: 1px solid var(--line-soft); }
+    .A-nav { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .A-card { position: relative; padding: 14px; border-radius: 18px; background: rgba(3,24,51,.4); border: 1px solid var(--line); }
+    .A-card .pill-btn { position: absolute; top: 12px; right: 12px; height: 28px; font-size: .76rem; }
+    .A-card .row { display: flex; justify-content: space-between; align-items: end; margin-top: 8px; }
+    .A-card .name { font-size: 1.35rem; }
+    .A-card .dex { color: var(--muted); }
+    .A-main { display: flex; flex-direction: column; min-height: 0; }
+    .A-tabs { display: flex; gap: 4px; padding: 12px 18px 0; border-bottom: 1px solid var(--line-soft); }
+    .A-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); }
+    .A-tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+    .A-tabs svg { width: 16px; height: 16px; }
+    .A-panel { flex: 1; overflow-y: auto; padding: 18px; }
+
+    /* ---------- B: same layout, refreshed ---------- */
+    .B-modal { width: 1100px; height: 720px; display: grid; grid-template-columns: 340px 1fr; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .B-side { display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+    .B-hero { border-radius: 20px; padding: 16px 16px 18px; }
+    .B-hero .acts { display: flex; gap: 8px; justify-content: flex-end; }
+    .B-hero .hero-img { width: 82%; margin: 4px auto 6px; display: block; }
+    .B-nav { display: flex; justify-content: space-between; }
+    .B-main { display: flex; flex-direction: column; min-height: 0; }
+    .B-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px 6px; }
+    .B-scroll { flex: 1; overflow-y: auto; }
+
+    /* ---------- C: hero header on top ---------- */
+    .C-modal { position: relative; width: 1100px; height: 724px; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .C-scroll { position: absolute; inset: 0; overflow-y: auto; }
+    .C-hero { display: grid; grid-template-columns: 1fr 300px; align-items: center; padding: 22px 70px 18px; min-height: 290px; border-radius: 0 0 28px 28px; }
+    .C-hero .hero-img { width: 270px; }
+    .C-acts { position: absolute; top: 16px; right: 18px; display: flex; gap: 8px; z-index: 2; }
+    .C-close { position: absolute; top: 16px; left: 18px; z-index: 2; }
+    .C-arrow { position: absolute; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; color: rgba(255,255,255,.85); font-size: .74rem; font-weight: 700; }
+    .C-arrow svg { width: 30px; height: 30px; }
+    .C-arrow.prev { left: 14px; } .C-arrow.next { right: 14px; }
+    .C-tabs { position: sticky; top: 0; z-index: 3; display: flex; justify-content: center; padding: 12px 0 6px; background: linear-gradient(180deg, #0b3360 70%, transparent); }
+    .C-compact { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; gap: 12px; padding: 8px 18px; transform: translateY(-110%); transition: transform .2s; border-bottom: 1px solid rgba(255,255,255,.15); }
+    .C-compact.show { transform: none; }
+    .C-compact img.sp { width: 44px; height: 44px; object-fit: contain; }
+    .C-compact .name { font-size: 1.1rem; }
+    .C-compact .seg { margin-left: auto; }
+    .C-compact .seg button { height: 30px; padding: 0 14px; }
+
+    /* ---------- D: two panes, tabs in the hero ---------- */
+    .D-modal { width: 1100px; height: 724px; display: grid; grid-template-columns: 360px 1fr; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .D-hero { display: flex; flex-direction: column; padding: 16px 18px 14px; }
+    .D-hero .top { display: flex; gap: 8px; }
+    .D-hero .top .sp { flex: 1; }
+    .D-hero .hero-img { width: 76%; margin: 0 auto; display: block; }
+    .D-vtabs { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .D-vtabs button { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); font-weight: 600; }
+    .D-vtabs button small { margin-left: auto; opacity: .75; font-weight: 500; }
+    .D-vtabs button.on { background: rgba(255,255,255,.92); color: #0b2a4a; border-color: transparent; }
+    .D-vtabs svg { width: 18px; height: 18px; }
+    .D-nav { display: flex; justify-content: space-between; margin-top: 10px; }
+    .D-nav .nav-link { color: #fff; }
+    .D-main { overflow-y: auto; }
+    .D-main h2 { margin: 20px 22px 0; font-size: 1.2rem; }
+
+    /* ---------- E: side drawer ---------- */
+    .E-wrap { position: absolute; inset: 0; background: rgba(2, 10, 24, .45); }
+    .E-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 640px; display: flex; flex-direction: column; background: linear-gradient(180deg, #0b3360, #082744); border-left: 1px solid var(--line); box-shadow: -24px 0 60px rgba(0,0,0,.45); }
+    .E-scroll { flex: 1; overflow-y: auto; position: relative; }
+    .E-hero { display: grid; grid-template-columns: 1fr 230px; align-items: center; padding: 64px 26px 22px; border-radius: 0 0 26px 26px; }
+    .E-hero .hero-img { width: 230px; }
+    .E-bar { position: absolute; top: 14px; left: 16px; right: 16px; display: flex; gap: 8px; z-index: 2; }
+    .E-bar .sp { flex: 1; }
+    .E-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px 0; color: var(--faint); font-size: .8rem; }
+    .E-tabs { display: flex; border-top: 1px solid var(--line-soft); background: #082744; }
+    .E-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 11px; border: 0; background: none; color: #9fc9f8; font-size: .78rem; font-weight: 600; position: relative; }
+    .E-tabs button.on { color: #a7f3d0; }
+    .E-tabs button.on::before { content: ""; position: absolute; top: 0; width: 46px; height: 3px; border-radius: 0 0 3px 3px; background: #34d399; }
+    .E-tabs svg { width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Detalhe do Pokémon no computador — opções</h1>
+    <p class="lede">Cada opção traz partes do visual novo do celular (cabeçalho na cor do tipo, blocos de informação em 2 colunas,
+        stats coloridos por faixa, golpes em lista com Level up / TM, botões redondos) para o detalhe do computador.
+        Tudo é clicável: abas, setas para trocar de Pokémon, shiny, marcar como coletado, jogos e cartas.</p>
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="browser">
+        <div class="browser__bar"><i></i><i></i><i></i><span class="browser__url">lydiagarcia03.github.io/pokedex-collection-manager/</span></div>
+        <div class="viewport" id="viewport"></div>
+    </div>
+    <div class="notes">
+        <h2>Igual em todas as opções novas (B a E)</h2>
+        <ul>
+            <li>Conteúdo da aba Info no estilo do celular: blocos de 2 colunas, stats verde/azul/laranja por faixa, golpes em lista com Level up / TM.</li>
+            <li>No computador há espaço, então as seções da aba Info ficam em 2 colunas lado a lado (B, C, D) ou em 1 coluna (E, que é mais estreito).</li>
+            <li>Setas ← → do teclado trocam de Pokémon, no lugar do deslizar do celular.</li>
+            <li>Os mocks mostram só parte dos golpes e das cartas, para ficarem leves. O app continua mostrando tudo.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const DEX = [{"id":"0025","name":"Pikachu","dex":"#0025","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0025.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0025.webp","genus":"Mouse Pokémon","flavor":"Possesses cheek sacs in which it stores electricity. This clever forest-dweller roasts tough berries with an electric shock before consuming them.","tiles":[["Height","0.40 m"],["Weight","6.0 kg"],["Color","yellow"],["Generation","Gen I"],["Abilities","Static, Lightning Rod"],["Region","Kanto"],["Recommended nature","Hasty, Jolly, Naive"],["Gender ratio","50% ♂ / 50% ♀"]],"species":[["Egg groups","Ground, Fairy"],["Growth","Medium"],["Habitat","Forest"],["Capture rate",190]],"stats":[["HP",35],["Attack",55],["Defense",40],["Sp. Atk",50],["Sp. Def",50],["Speed",90]],"weak":[["GROUND",2]],"resist":[["ELECTRIC",0.5],["FLYING",0.5],["STEEL",0.5]],"lv":[["1","Charm","FAIRY","status",null,100],["1","Growl","NORMAL","status",null,100],["1","Nasty Plot","DARK","status",null,null],["1","Nuzzle","ELECTRIC","physical",20,100],["1","Play Nice","NORMAL","status",null,null],["1","Quick Attack","NORMAL","physical",40,100],["1","Sweet Kiss","FAIRY","status",null,75],["1","Tail Whip","NORMAL","status",null,100],["1","Thunder Shock","ELECTRIC","special",40,100],["4","Thunder Wave","ELECTRIC","status",null,90],["8","Double Team","NORMAL","status",null,null],["9","Double Kick","FIGHTING","physical",30,100],["12","Electro Ball","ELECTRIC","special",null,100],["15","Swift","NORMAL","special",60,null]],"tm":[["TM01","Agility","PSYCHIC","status",null,null],["TM02","Alluring Voice","FAIRY","special",80,100],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Calm Mind","PSYCHIC","status",null,null],["TM08","Captivate","NORMAL","status",null,100],["TM09","Charge","ELECTRIC","status",null,null],["TM10","Charge Beam","ELECTRIC","special",50,90],["TM11","Charm","FAIRY","status",null,100],["TM12","Confide","NORMAL","status",null,null],["TM13","Curse","GHOST","status",null,null],["TM14","Defense Curl","NORMAL","status",null,null]],"totals":{"lv":24,"tm":86},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["rs-s","Sapphire"],["rs-r","Ruby"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["e","Emerald"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["oras-as","Alpha Sapphire"],["oras-or","Omega Ruby"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["fut2020-1","Pikachu on the Ball","Pokémon Futsal 2020","1","../public/images/tcg/fut2020-1/low.webp"],["basep-1","Pikachu","Wizards Black Star Promos","1","../public/images/tcg/basep-1/low.webp"],["tk-hs-r-2","Pikachu","HS trainer Kit (Raichu)","2","../public/images/tcg/tk-hs-r-2/low.webp"],["2024sv-2","Pikachu","McDonald's Collection 2024","2","../public/images/tcg/2024sv-2/low.webp"],["2018sm-4","Pikachu","McDonald's Collection 2018","4","../public/images/tcg/2018sm-4/low.webp"],["basep-4","Pikachu","Wizards Black Star Promos","4","../public/images/tcg/basep-4/low.webp"],["ex5.5-5","Pikachu","Poké Card Creator Pack","5","../public/images/tcg/ex5.5-5/low.webp"],["2014xy-5","Pikachu","McDonald's Collection 2014","5","../public/images/tcg/2014xy-5/low.webp"],["2017sm-5","Pikachu","McDonald's Collection 2017","5","../public/images/tcg/2017sm-5/low.webp"],["cel25-5","Pikachu","Celebrations","5","../public/images/tcg/cel25-5/low.webp"],["tk-ex-latio-6","Pikachu","EX trainer Kit (Latios)","6","../public/images/tcg/tk-ex-latio-6/low.webp"],["2016xy-6","Pikachu","McDonald's Collection 2016","6","../public/images/tcg/2016xy-6/low.webp"],["2023sv-6","Pikachu","McDonald's Collection 2023","6","../public/images/tcg/2023sv-6/low.webp"],["2015xy-6","Pikachu","McDonald's Collection 2015","6","../public/images/tcg/2015xy-6/low.webp"],["2019sm-6","Pikachu","McDonald's Collection 2019","6","../public/images/tcg/2019sm-6/low.webp"],["cel25-6","Flying Pikachu V","Celebrations","6","../public/images/tcg/cel25-6/low.webp"],["2022swsh-7","Pikachu","McDonald's Collection 2022","7","../public/images/tcg/2022swsh-7/low.webp"],["cel25-7","Flying Pikachu VMAX","Celebrations","7","../public/images/tcg/cel25-7/low.webp"],["ru1-7","Pikachu","Pokémon Rumble","7","../public/images/tcg/ru1-7/low.webp"],["30th-c-008","Pikachu & Zekrom GX","30th Classic Collection","008","../public/images/tcg/30th-c-008/low.webp"],["cel25-8","Surfing Pikachu V","Celebrations","8","../public/images/tcg/cel25-8/low.webp"],["P-A-009","Pikachu","Promos-A","009","../public/images/tcg/P-A-009/low.webp"],["pop6-9","Pikachu","POP Series 6","9","../public/images/tcg/pop6-9/low.webp"],["cel25-9","Surfing Pikachu VMAX","Celebrations","9","../public/images/tcg/cel25-9/low.webp"]],"cardTotal":246},{"id":"0006","name":"Charizard","dex":"#0006","types":["FIRE","FLYING"],"xl":"../public/images/pokemon-xl/0006.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0006.webp","genus":"Flame Pokémon","flavor":"Its wings can carry this Pokémon close to an altitude of 4,600 feet. It blows out fire at very high temperatures.","tiles":[["Height","1.70 m"],["Weight","90.5 kg"],["Color","red"],["Generation","Gen I"],["Abilities","Blaze, Solar Power"],["Region","Kanto"],["Recommended nature","Mild, Modest, Rash"],["Gender ratio","87.5% ♂ / 12.5% ♀"]],"species":[["Egg groups","Monster, Dragon"],["Growth","Medium Slow"],["Habitat","Mountain"],["Capture rate",45]],"stats":[["HP",78],["Attack",84],["Defense",78],["Sp. Atk",109],["Sp. Def",85],["Speed",100]],"weak":[["WATER",2],["ELECTRIC",2],["ROCK",4]],"resist":[["FIRE",0.5],["GRASS",0.25],["FIGHTING",0.5],["GROUND",0],["BUG",0.25],["STEEL",0.5],["FAIRY",0.5]],"lv":[["1","Air Slash","FLYING","special",75,95],["1","Counter","FIGHTING","physical",null,100],["1","Crunch","DARK","physical",80,100],["1","Dragon Claw","DRAGON","physical",80,100],["1","Ember","FIRE","special",40,100],["1","Growl","NORMAL","status",null,100],["1","Heat Wave","FIRE","special",95,90],["1","Leer","NORMAL","status",null,100],["1","Metal Claw","STEEL","physical",50,95],["1","Scratch","NORMAL","physical",40,100],["1","Shadow Claw","GHOST","physical",70,100],["1","Smokescreen","NORMAL","status",null,100],["1","Wing Attack","FLYING","physical",60,100],["12","Dragon Breath","DRAGON","special",60,100]],"tm":[["TM01","Acrobatics","FLYING","physical",55,100],["TM02","Aerial Ace","FLYING","physical",60,null],["TM03","Air Cutter","FLYING","special",60,95],["TM04","Air Slash","FLYING","special",75,95],["TM05","Attract","NORMAL","status",null,100],["TM06","Beat Up","DARK","physical",null,100],["TM07","Bide","NORMAL","physical",null,null],["TM08","Blast Burn","FIRE","special",150,90],["TM09","Blaze Kick","FIRE","physical",85,90],["TM10","Body Slam","NORMAL","physical",85,100],["TM11","Breaking Swipe","DRAGON","physical",60,100],["TM12","Brick Break","FIGHTING","physical",75,100],["TM13","Brutal Swing","DARK","physical",60,100],["TM14","Bulldoze","GROUND","physical",60,100]],"totals":{"lv":25,"tm":111},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["go","Pokémon GO"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["2024sv-1","Charizard","McDonald's Collection 2024","1","../public/images/tcg/2024sv-1/low.webp"],["30th-c-001","Charizard","30th Classic Collection","001","../public/images/tcg/30th-c-001/low.webp"],["pl4-1","Charizard","Arceus","1","../public/images/tcg/pl4-1/low.webp"],["gym2-2","Blaine's Charizard","Gym Challenge","2","../public/images/tcg/gym2-2/low.webp"],["sm7.5-3","Charizard","Dragon Majesty","3","../public/images/tcg/sm7.5-3/low.webp"],["lc-3","Charizard","Legendary Collection","3","../public/images/tcg/lc-3/low.webp"],["dp3-3","Charizard","Secret Wonders","3","../public/images/tcg/dp3-3/low.webp"],["base4-4","Charizard","Base Set 2","4","../public/images/tcg/base4-4/low.webp"],["base1-4","Charizard","Base Set","4","../public/images/tcg/base1-4/low.webp"],["base5-4","Dark Charizard","Team Rocket","4","../public/images/tcg/base5-4/low.webp"],["ex14-4","Charizard δ","Crystal Guardians","4","../public/images/tcg/ex14-4/low.webp"],["det1-5","Charizard","Detective Pikachu","5","../public/images/tcg/det1-5/low.webp"],["ecard1-6","Charizard","Expedition Base Set","6","../public/images/tcg/ecard1-6/low.webp"],["ex16-6","Charizard","Power Keepers","6","../public/images/tcg/ex16-6/low.webp"],["sv03.5-006","Charizard ex","151","006","../public/images/tcg/sv03.5-006/low.webp"],["sm115-9","Charizard GX","Hidden Fates","9","../public/images/tcg/sm115-9/low.webp"],["swsh10.5-010","Charizard","Pokémon GO","010","../public/images/tcg/swsh10.5-010/low.webp"],["A2b-010","Charizard ex","Shining Revelry","010","../public/images/tcg/A2b-010/low.webp"],["xy2-11","Charizard EX","Flashfire","11","../public/images/tcg/xy2-11/low.webp"],["g1-11","Charizard EX","Generations","11","../public/images/tcg/g1-11/low.webp"],["xy12-11","Charizard","Evolutions","11","../public/images/tcg/xy12-11/low.webp"],["swsh10.5-011","Radiant Charizard","Pokémon GO","011","../public/images/tcg/swsh10.5-011/low.webp"],["xy2-12","Charizard EX","Flashfire","12","../public/images/tcg/xy2-12/low.webp"],["g1-12","M Charizard EX","Generations","12","../public/images/tcg/g1-12/low.webp"]],"cardTotal":126},{"id":"0094","name":"Gengar","dex":"#0094","types":["GHOST","POISON"],"xl":"../public/images/pokemon-xl/0094.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0094.webp","genus":"Shadow Pokémon","flavor":"Possesses potential victims' shadows in an effort to steal away the victims' lives. If your shadow begins to laugh, you must take hold of a protective charm posthaste!","tiles":[["Height","1.50 m"],["Weight","40.5 kg"],["Color","purple"],["Generation","Gen I"],["Abilities","Cursed Body"],["Region","Kanto"],["Recommended nature","Mild, Modest, Rash"],["Gender ratio","50% ♂ / 50% ♀"]],"species":[["Egg groups","Indeterminate"],["Growth","Medium Slow"],["Habitat","Cave"],["Capture rate",45]],"stats":[["HP",60],["Attack",65],["Defense",60],["Sp. Atk",130],["Sp. Def",75],["Speed",110]],"weak":[["GROUND",2],["PSYCHIC",2],["GHOST",2],["DARK",2]],"resist":[["NORMAL",0],["GRASS",0.5],["FIGHTING",0],["POISON",0.25],["BUG",0.5],["FAIRY",0.5]],"lv":[["1","Astonish","GHOST","physical",30,100],["1","Confuse Ray","GHOST","status",null,100],["1","Disable","NORMAL","status",null,100],["1","Haze","ICE","status",null,null],["1","Hypnosis","PSYCHIC","status",null,60],["1","Lick","GHOST","physical",30,100],["1","Mean Look","NORMAL","status",null,null],["1","Perish Song","NORMAL","status",null,null],["1","Reflect Type","NORMAL","status",null,null],["1","Shadow Punch","GHOST","physical",60,null],["1","Smog","POISON","special",30,70],["6","Poison Gas","POISON","status",null,90],["12","Payback","DARK","physical",50,100],["14","Will O Wisp","FIRE","status",null,85]],"tm":[["TM01","Acid Spray","POISON","special",40,100],["TM02","Ally Switch","PSYCHIC","status",null,null],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Captivate","NORMAL","status",null,100],["TM08","Confide","NORMAL","status",null,null],["TM09","Confuse Ray","GHOST","status",null,100],["TM10","Counter","FIGHTING","physical",null,100],["TM11","Curse","GHOST","status",null,null],["TM12","Dark Pulse","DARK","special",80,100],["TM13","Dazzling Gleam","FAIRY","special",80,100],["TM14","Double Edge","NORMAL","physical",120,100]],"totals":{"lv":26,"tm":108},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["bw-w","White"],["bw-b","Black"],["xy-y","Y"],["xy-x","X"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["base3-5","Gengar","Fossil","5","../public/images/tcg/base3-5/low.webp"],["ex12-5","Gengar","Legend Maker","5","../public/images/tcg/ex12-5/low.webp"],["neo4-6","Dark Gengar","Neo Destiny","6","../public/images/tcg/neo4-6/low.webp"],["ecard3-10","Gengar","Skyridge","10","../public/images/tcg/ecard3-10/low.webp"],["lc-11","Gengar","Legendary Collection","11","../public/images/tcg/lc-11/low.webp"],["ecard1-13","Gengar","Expedition Base Set","13","../public/images/tcg/ecard1-13/low.webp"],["gym1-14","Sabrina's Gengar","Gym Heroes","14","../public/images/tcg/gym1-14/low.webp"],["pl4-16","Gengar","Arceus","16","../public/images/tcg/pl4-16/low.webp"],["pl4-17","Gengar","Arceus","17","../public/images/tcg/pl4-17/low.webp"],["dp7-18","Gengar","Stormfront","18","../public/images/tcg/dp7-18/low.webp"],["30th-c-018","Gengar","30th Classic Collection","018","../public/images/tcg/30th-c-018/low.webp"],["base3-20","Gengar","Fossil","20","../public/images/tcg/base3-20/low.webp"],["dp1-27","Gengar","Diamond & Pearl","27","../public/images/tcg/dp1-27/low.webp"],["gym2-29","Sabrina's Gengar","Gym Challenge","29","../public/images/tcg/gym2-29/low.webp"],["A2a-033","Gengar","Triumphant Light","033","../public/images/tcg/A2a-033/low.webp"],["xy4-34","Gengar EX","Phantom Forces","34","../public/images/tcg/xy4-34/low.webp"],["xy4-35","M Gengar EX","Phantom Forces","35","../public/images/tcg/xy4-35/low.webp"],["g1-35","Gengar","Generations","35","../public/images/tcg/g1-35/low.webp"],["sm4-38","Gengar","Crimson Invasion","38","../public/images/tcg/sm4-38/low.webp"],["pl2-40","Gengar GL","Rising Rivals","40","../public/images/tcg/pl2-40/low.webp"],["ecard1-48","Gengar","Expedition Base Set","48","../public/images/tcg/ecard1-48/low.webp"],["me03-050","Gengar","Perfect Order","050","../public/images/tcg/me03-050/low.webp"],["sm9-53","Gengar & Mimikyu GX","Team Up","53","../public/images/tcg/sm9-53/low.webp"],["me02-056","Mega Gengar ex","Phantasmal Flames","056","../public/images/tcg/me02-056/low.webp"]],"cardTotal":62}];
+
+const OPTIONS = {
+    A: { label: 'A · Atual', title: 'A — Como está hoje (referência)', points: [
+        'Barra de cima com o quadrado de coletado, "Visibility" e "Close".',
+        'Coluna da esquerda com a imagem num cartão azul neutro; abas sublinhadas em cima do conteúdo.',
+        'Aba Info com tabelas e barras de stats de uma cor só.'] },
+    B: { label: 'B · Mesma estrutura, renovada', title: 'B — Mesma estrutura, com o visual do celular', points: [
+        'Mantém a coluna da esquerda e o conteúdo à direita: a menor mudança.',
+        'O cartão da imagem ganha o degradê na cor do tipo e os botões redondos (coletado, shiny, visibilidade) por cima.',
+        'Abas viram o seletor arredondado; "Close" vira um X redondo.'] },
+    C: { label: 'C · Cabeçalho no topo', title: 'C — Cabeçalho grande no topo, igual ao celular', points: [
+        'O cabeçalho colorido ocupa a largura toda, com o Pokémon grande à direita e setas nas laterais.',
+        'Abas no meio, logo abaixo, e as seções em 2 colunas.',
+        'Ao rolar, aparece a barra compacta (miniatura + nome + abas), como no celular. Role o conteúdo para ver.'] },
+    D: { label: 'D · Coluna colorida com abas', title: 'D — Coluna colorida fixa, abas dentro dela', points: [
+        'A coluna da esquerda inteira fica na cor do tipo e não rola: imagem, nome, ações e navegação sempre visíveis.',
+        'As abas ficam empilhadas no pé da coluna, com a contagem (golpes, jogos, cartas) — a barra de abas do celular "em pé".',
+        'Só o lado direito rola.'] },
+    E: { label: 'E · Painel lateral', title: 'E — Painel lateral (o layout do celular, mais largo)', points: [
+        'O detalhe abre como um painel à direita; a listagem continua visível atrás.',
+        'Por dentro é praticamente o layout do celular: cabeçalho colorido, setas, barra de abas no pé.',
+        'Mais estreito: a aba Info fica em 1 coluna, jogos em 5 e cartas em 4 colunas.'] },
+};
+
+const state = { option: 'C', idx: 0, tab: 'info', shiny: false, moveKind: 'lv', visible: true,
+    selected: new Set(['0006']), games: new Set(['sv-s', 'swsh-sw', 'xy-x', 'lgpe-lgp', 'frlg-fr']),
+    cards: new Set(), foil: new Set(), cardFilter: 'All' };
+
+const ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M20 6 9 17l-5-5"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 15.5A2 2 0 0 0 8.5 14.1L2.4 12.5a.5.5 0 0 1 0-1l6.1-1.6a2 2 0 0 0 1.4-1.4L11.5 2.4a.5.5 0 0 1 1 0l1.6 6.1a2 2 0 0 0 1.4 1.4l6.1 1.6a.5.5 0 0 1 0 1l-6.1 1.6a2 2 0 0 0-1.4 1.4l-1.6 6.1a.5.5 0 0 1-1 0z"/><path d="M20 3v4M22 5h-4"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a13 13 0 0 1-1.7 2.7M6.6 6.6A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M2 2l20 20"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m15 18-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m9 18 6-6-6-6"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6l-.7 6.3A3 3 0 0 0 5 18c1 0 1.9-.5 2.4-1.3L9 15h6l1.6 1.7A3 3 0 0 0 19 18a3 3 0 0 0 3-3.1l-.7-6.3a4 4 0 0 0-4-3.6z"/></svg>',
+    tcg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 10h2M16 14h2"/><path d="M6.2 15a3 3 0 0 1 5.6 0"/><circle cx="9" cy="11" r="2"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+};
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const typeIcon = (t, cls = '') => `<img class="type-icon ${cls}" src="../public/images/types/type-${t.toLowerCase()}.png" alt="${t}" title="${t}">`;
+const cur = () => DEX[state.idx];
+const prev = () => DEX[(state.idx + DEX.length - 1) % DEX.length];
+const next = () => DEX[(state.idx + 1) % DEX.length];
+const img = p => state.shiny ? p.shiny : p.xl;
+const band = v => v >= 80 ? 'high' : v < 45 ? 'low' : 'mid';
+const typeColor = p => `var(--type-${p.types[0].toLowerCase()})`;
+const sprite = id => `../public/images/pokemon/${id}.webp`;
+const effLabel = v => v === 4 ? '4×' : v === 2 ? '2×' : v === 0.5 ? '½×' : v === 0.25 ? '¼×' : v === 0 ? '0×' : `${v}×`;
+
+/* ---------- actions ---------- */
+const chk = (cls = 'chk') => `<button class="${cls} ${state.selected.has(cur().id) ? 'on' : ''}" data-act="select" title="In my collection">${ICON.check}</button>`;
+const shinyBtn = () => `<button class="icon-btn ${state.shiny ? 'shiny-on' : ''}" data-act="shiny" title="${state.shiny ? 'Show regular' : 'Show shiny'}">${ICON.sparkles}</button>`;
+const visBtn = () => `<button class="icon-btn" data-act="vis" title="Toggle collection visibility">${state.visible ? ICON.eye : ICON.eyeOff}</button>`;
+const closeBtn = () => `<button class="icon-btn" title="Close">${ICON.x}</button>`;
+const navLink = (dir, p, withSprite) => dir === 'prev'
+    ? `<button class="nav-link" data-act="prev">${ICON.left}${withSprite ? `<img src="${sprite(p.id)}" alt="">` : ''}${p.id}</button>`
+    : `<button class="nav-link" data-act="next">${p.id}${withSprite ? `<img src="${sprite(p.id)}" alt="">` : ''}${ICON.right}</button>`;
+const counts = p => ({ info: '', games: p.games.length, tcg: p.cardTotal });
+const segTabs = (withCounts = false) => {
+    const c = counts(cur());
+    return `<div class="seg">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, label]) =>
+        `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${label}${withCounts && c[id] ? ` <small>${c[id]}</small>` : ''}</button>`).join('')}</div>`;
+};
+
+/* ---------- tab content (new style) ---------- */
+function infoNew(p, twoCols) {
+    const total = p.stats.reduce((s, [, v]) => s + v, 0);
+    const rows = state.moveKind === 'lv' ? p.lv : p.tm;
+    const sections = [
+        `<div class="section"><h3>General Information</h3><p class="flavor">${esc(p.flavor)}</p><div class="tiles">${p.tiles.map(([k, v], i) =>
+            `<div class="tile ${['Abilities', 'Recommended nature', 'Gender ratio'].includes(k) ? 'wide' : ''}"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`,
+        `<div class="section"><h3>Base Stats</h3>${p.stats.map(([k, v]) =>
+            `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="${band(v)}" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}
+            <div class="total">Total <b>${total}</b></div></div>`,
+        `<div class="section"><h3>Type Effectiveness</h3>
+            <div class="eff-row"><span>Weak to</span><div>${p.weak.map(([t, v]) => `${typeIcon(t)}<small>${effLabel(v)}</small>`).join('')}</div></div>
+            <div class="eff-row"><span>Resistant to</span><div>${p.resist.map(([t, v]) => `${typeIcon(t)}<small>${effLabel(v)}</small>`).join('')}</div></div></div>`,
+        `<div class="section"><h3>Species</h3><div class="tiles">${p.species.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`,
+        `<div class="section"><h3>Moves learned by ${esc(p.name)}</h3>
+            <div class="switch"><button class="${state.moveKind === 'lv' ? 'on' : ''}" data-moves="lv">Level up · ${p.totals.lv}</button><button class="${state.moveKind === 'tm' ? 'on' : ''}" data-moves="tm">TM · ${p.totals.tm}</button></div>
+            <ul class="move-list">${rows.map(([lvl, name, type, cat, pow, acc]) =>
+                `<li><span class="lvl">${lvl}</span><span><b>${esc(name)}</b><br><small>${cat}</small></span><span class="meta">${typeIcon(type, 'sm')}${pow ?? '—'} · ${acc ?? '—'}%</span></li>`).join('')}</ul>
+            <p class="more">+ ${(state.moveKind === 'lv' ? p.totals.lv : p.totals.tm) - rows.length} more in the app</p></div>`,
+    ];
+    return `<div class="${twoCols ? 'cols' : ''}">${sections.join('')}</div>`;
+}
+function gamesNew(p, cols) {
+    return `<div class="section"><h3>Games · ${p.games.filter(([id]) => state.games.has(id)).length} of ${p.games.length} collected</h3>
+        <div class="games" style="grid-template-columns:repeat(${cols},1fr)">${p.games.map(([id, name]) =>
+        `<button class="game ${state.games.has(id) ? 'on' : ''}" data-game="${id}"><img src="../public/images/games/${id}.webp" alt=""><small>${esc(name)}</small></button>`).join('')}</div></div>`;
+}
+function tcgNew(p, cols) {
+    const shown = p.cards.filter(([id]) => state.cardFilter === 'All' ? true : state.cardFilter === 'Owned' ? state.cards.has(id) || state.foil.has(id)
+        : state.cardFilter === 'Missing' ? !state.cards.has(id) && !state.foil.has(id) : state.foil.has(id));
+    return `<div class="tcg-tools"><div class="search">${ICON.search}Search by card, set or number</div>
+        ${['All', 'Owned', 'Missing', 'Foil'].map(f => `<button class="pill-btn ${state.cardFilter === f ? 'on' : ''}" data-filter="${f}">${f}</button>`).join('')}</div>
+        <div class="cards" style="grid-template-columns:repeat(${cols},1fr)">${shown.map(([id, name, set, num, src]) =>
+        `<button class="tcg-card ${state.foil.has(id) ? 'foil' : state.cards.has(id) ? 'on' : ''}" data-card="${id}" title="Click: owned · Shift+click: foil"><img src="${src}" alt="" loading="lazy"><span class="c">${ICON.check}</span><div class="meta">${esc(set)} · ${esc(num)}</div></button>`).join('')}</div>
+        <p class="more">Showing ${shown.length} of ${p.cardTotal} cards in this mock · Shift+click marks a card as foil</p>`;
+}
+function tabContent(p, layout) {
+    if (state.tab === 'games') return gamesNew(p, layout.games);
+    if (state.tab === 'tcg') return tcgNew(p, layout.cards);
+    return infoNew(p, layout.twoCols);
+}
+
+/* ---------- A: current ---------- */
+function infoOld(p) {
+    return `<div class="old-section"><h3>General Information</h3><div class="old-grid">${p.tiles.map(([k, v]) => `<div><span>${k}</span>${esc(v)}</div>`).join('')}</div></div>
+        <div class="old-section"><h3>Base Stats</h3>${p.stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="old" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}</div>
+        <div class="old-section"><h3>Moves learned by ${esc(p.name)}</h3><table><tr><th>Lv.</th><th>Move</th><th>Type</th><th>Cat.</th><th>Power</th><th>Acc.</th></tr>
+        ${p.lv.slice(0, 10).map(([l, n, t, c, pw, a]) => `<tr><td>${l}</td><td>${esc(n)}</td><td>${typeIcon(t, 'sm')}</td><td>${c}</td><td>${pw ?? '—'}</td><td>${a ?? '—'}</td></tr>`).join('')}</table></div>`;
+}
+function renderA(p) {
+    const content = state.tab === 'info' ? infoOld(p) : tabContent(p, { games: 6, cards: 6 });
+    return `<div class="backdrop"><div class="A-modal">
+        <div class="A-head">${chk()}<button class="pill-btn ${state.visible ? 'on' : ''}" data-act="vis">${state.visible ? ICON.eye : ICON.eyeOff}Visibility</button><button class="close">Close</button></div>
+        <div class="A-body"><aside class="A-side"><div class="A-nav">${navLink('prev', prev())}${navLink('next', next())}</div>
+            <div class="A-card"><button class="pill-btn ${state.shiny ? 'shiny-on' : ''}" data-act="shiny">${ICON.sparkles}Shiny</button><img class="hero-img" src="${img(p)}" alt="">
+            <div class="row"><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div></div><div class="types">${p.types.map(t => typeIcon(t)).join('')}</div></div></div></aside>
+        <section class="A-main"><nav class="A-tabs">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, l]) => `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}</button>`).join('')}</nav>
+            <div class="A-panel">${content}</div></section></div></div></div>`;
+}
+
+/* ---------- B ---------- */
+function renderB(p) {
+    return `<div class="backdrop"><div class="B-modal">
+        <aside class="B-side">
+            <div class="B-hero tinted" style="--type-color:${typeColor(p)}">
+                <div class="acts">${chk()}<span style="flex:1"></span>${shinyBtn()}${visBtn()}</div>
+                <img class="hero-img" src="${img(p)}" alt="">
+                <div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                <div class="types" style="margin-top:10px">${p.types.map(t => typeIcon(t)).join('')}</div>
+            </div>
+            <div class="B-nav">${navLink('prev', prev(), true)}${navLink('next', next(), true)}</div>
+        </aside>
+        <section class="B-main"><div class="B-top">${segTabs(true)}${closeBtn()}</div>
+            <div class="B-scroll"><div class="content">${tabContent(p, { twoCols: true, games: 6, cards: 5 })}</div></div></section>
+    </div></div>`;
+}
+
+/* ---------- C ---------- */
+function renderC(p) {
+    return `<div class="backdrop"><div class="C-modal" style="--type-color:${typeColor(p)}">
+        <div class="C-compact tinted" id="compact"><img class="sp" src="${sprite(p.id)}" alt=""><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div></div>
+            <div class="types">${p.types.map(t => typeIcon(t, 'sm')).join('')}</div>${segTabs()}${chk()}</div>
+        <div class="C-scroll" id="scroller">
+            <div class="C-hero tinted" id="hero">
+                <div class="C-close">${closeBtn()}</div>
+                <div class="C-acts">${shinyBtn()}${visBtn()}${chk()}</div>
+                <button class="C-arrow prev" data-act="prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>${prev().id}</button>
+                <button class="C-arrow next" data-act="next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>${next().id}</button>
+                <div><div class="dex">${p.dex}</div><div class="name" style="font-size:2.6rem">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                    <div class="types" style="margin-top:14px">${p.types.map(t => typeIcon(t)).join('')}</div></div>
+                <img class="hero-img" src="${img(p)}" alt="">
+            </div>
+            <div class="C-tabs">${segTabs(true)}</div>
+            <div class="content">${tabContent(p, { twoCols: true, games: 8, cards: 6 })}</div>
+        </div>
+    </div></div>`;
+}
+
+/* ---------- D ---------- */
+function renderD(p) {
+    const c = counts(p);
+    return `<div class="backdrop"><div class="D-modal">
+        <aside class="D-hero tinted" style="--type-color:${typeColor(p)}">
+            <div class="top">${closeBtn()}<span class="sp"></span>${shinyBtn()}${visBtn()}${chk()}</div>
+            <img class="hero-img" src="${img(p)}" alt="">
+            <div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+            <div class="types" style="margin:10px 0 14px">${p.types.map(t => typeIcon(t)).join('')}</div>
+            <div class="D-vtabs">${[['info', 'Info', `${p.totals.lv + p.totals.tm} moves`], ['games', 'Games', c.games], ['tcg', 'TCG', `${c.tcg} cards`]].map(([id, l, n]) =>
+                `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}<small>${n}</small></button>`).join('')}</div>
+            <div class="D-nav">${navLink('prev', prev(), true)}${navLink('next', next(), true)}</div>
+        </aside>
+        <section class="D-main"><div class="content">${tabContent(p, { twoCols: true, games: 6, cards: 5 })}</div></section>
+    </div></div>`;
+}
+
+/* ---------- E ---------- */
+function renderE(p) {
+    return `<div class="E-wrap"><aside class="E-drawer" style="--type-color:${typeColor(p)}">
+        <div class="E-scroll">
+            <div class="E-bar">${closeBtn()}<span class="sp"></span>${shinyBtn()}${visBtn()}${chk()}</div>
+            <div class="E-hero tinted"><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                <div class="types" style="margin-top:12px">${p.types.map(t => typeIcon(t)).join('')}</div></div>
+                <img class="hero-img" src="${img(p)}" alt=""></div>
+            <div class="E-nav">${navLink('prev', prev(), true)}<span>← → to switch</span>${navLink('next', next(), true)}</div>
+            <div class="content">${tabContent(p, { twoCols: false, games: 5, cards: 4 })}</div>
+        </div>
+        <nav class="E-tabs">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, l]) => `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}</button>`).join('')}</nav>
+    </aside></div>`;
+}
+
+const RENDER = { A: renderA, B: renderB, C: renderC, D: renderD, E: renderE };
+const listing = `<div class="listing">${['0001','0002','0003','0004','0005','0006','0007','0008','0009','0010','0011','0012','0013','0014','0015','0016','0017','0018','0019','0020','0021','0022','0023','0024','0025','0026','0027','0028','0029','0030','0031','0032'].map(id => `<div><img src="${sprite(id)}" alt=""></div>`).join('')}</div>`;
+
+function render(keepScroll = false) {
+    const vp = document.getElementById('viewport');
+    const scroller = vp.querySelector('.A-panel, .B-scroll, .C-scroll, .D-main, .E-scroll');
+    const top = keepScroll && scroller ? scroller.scrollTop : 0;
+    vp.innerHTML = listing + RENDER[state.option](cur());
+    const s2 = vp.querySelector('.A-panel, .B-scroll, .C-scroll, .D-main, .E-scroll');
+    if (s2) s2.scrollTop = top;
+    const o = OPTIONS[state.option];
+    document.getElementById('info').innerHTML = `<strong>${o.title}</strong><ul>${o.points.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    document.getElementById('picker').innerHTML = Object.entries(OPTIONS).map(([k, v]) => `<button aria-pressed="${state.option === k}" data-option="${k}">${v.label}</button>`).join('');
+    const hero = document.getElementById('hero'), compact = document.getElementById('compact');
+    if (hero && compact) new IntersectionObserver(([e]) => compact.classList.toggle('show', !e.isIntersecting), { root: document.getElementById('scroller'), threshold: 0.25 }).observe(hero);
+}
+
+document.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset; let keep = true;
+    if (d.option) { state.option = d.option; keep = false; }
+    else if (d.tab) { state.tab = d.tab; keep = false; }
+    else if (d.moves) state.moveKind = d.moves;
+    else if (d.filter) state.cardFilter = d.filter;
+    else if (d.game) state.games.has(d.game) ? state.games.delete(d.game) : state.games.add(d.game);
+    else if (d.card) {
+        const id = d.card;
+        if (e.shiftKey) { state.cards.delete(id); state.foil.has(id) ? state.foil.delete(id) : state.foil.add(id); }
+        else if (state.cards.has(id) || state.foil.has(id)) { state.cards.delete(id); state.foil.delete(id); }
+        else state.cards.add(id);
+    }
+    else if (d.act === 'select') state.selected.has(cur().id) ? state.selected.delete(cur().id) : state.selected.add(cur().id);
+    else if (d.act === 'shiny') state.shiny = !state.shiny;
+    else if (d.act === 'vis') state.visible = !state.visible;
+    else if (d.act === 'prev' || d.act === 'next') { state.idx = (state.idx + (d.act === 'next' ? 1 : DEX.length - 1)) % DEX.length; state.shiny = false; keep = false; }
+    else return;
+    render(keep);
+});
+document.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    state.idx = (state.idx + (e.key === 'ArrowRight' ? 1 : DEX.length - 1)) % DEX.length; state.shiny = false; render();
+});
+render();
+</script>
+</body>
+</html>

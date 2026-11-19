@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banner do detalhe — mock</title>
+<style>
+    :root {
+        --bg: #0b3360; --bg-deep: #082744; --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72);
+        --faint: rgba(226, 232, 240, 0.5); --accent: #9cc8ed; --accent-ink: #092f58;
+        --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --card: rgba(8, 24, 52, 0.52); --shiny: #ffe566; --foil: #7c5cb8;
+        --type-grass: #22c55e; --type-poison: #a855f7; --type-fire: #ef4444; --type-water: #3b82f6;
+        --type-flying: #93c5fd; --type-bug: #84cc16; --type-normal: #a8a29e; --type-electric: #eab308;
+        --type-ground: #ca8a04; --type-fairy: #ec4899; --type-fighting: #dc2626; --type-psychic: #db2777;
+        --type-rock: #78716c; --type-ghost: #7c3aed; --type-ice: #67e8f9; --type-dragon: #4f46e5;
+        --type-dark: #292524; --type-steel: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+                    linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%);
+        min-height: 100vh;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    svg { flex: 0 0 auto; }
+    .page { max-width: 1320px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 18px; color: var(--muted); max-width: 900px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button {
+        padding: 8px 14px; border-radius: 999px; background: #0A2F59; color: #9fc9f8; font-weight: 600;
+        border: 1px solid rgba(147, 197, 253, 0.62);
+    }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; }
+    .option-info strong { font-size: 1.05rem; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .notes { margin-top: 30px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- browser frame + fake listing behind the detail ---------- */
+    .browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); background: #030f1f; overflow-x: auto; }
+    .browser__bar { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; background: #061a33; border-bottom: 1px solid var(--line-soft); }
+    .browser__bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(147,197,253,.25); }
+    .browser__url { margin-left: 14px; padding: 3px 14px; border-radius: 999px; background: rgba(147,197,253,.08); color: var(--faint); font-size: .75rem; }
+    .viewport { position: relative; width: 100%; min-width: 1100px; height: 780px; overflow: hidden;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%), linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%); }
+    .listing { position: absolute; inset: 0; padding: 22px 40px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 16px; align-content: start; }
+    .listing div { aspect-ratio: .78; border-radius: 16px; border: 1px solid var(--line); background: rgba(8,39,68,.6); display: flex; align-items: center; justify-content: center; }
+    .listing img { width: 70%; }
+    .backdrop { position: absolute; inset: 0; background: rgba(2, 10, 24, .62); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 28px; }
+
+    /* ---------- shadow behind the Pokémon ---------- */
+    .shadow-picker { align-items: center; }
+    .shadow-picker span { color: var(--muted); font-size: .9rem; margin-right: 4px; }
+    /* Today: same as .pokemon-detail-mobile__image in the app, a single shadow below. */
+    .D-hero .hero-img { filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.55)); }
+    /* Every option keeps a thin light rim: it separates the Pokémon from a background of
+       the same color (e.g. Gengar on purple) whatever that color is. */
+    body[class*="shadow-"] .D-hero .hero-img {
+        filter: drop-shadow(0 0 1.5px rgba(255, 255, 255, .5)) drop-shadow(0 0 10px rgba(255, 255, 255, .16)) drop-shadow(0 14px 24px rgba(0, 0, 0, .5));
+    }
+    /* Light rim only. */
+    body.shadow-light .D-hero .hero-img {
+        background: radial-gradient(circle at 50% 55%, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, .05) 40%, transparent 64%);
+    }
+    /* Light disc: a soft pale circle behind the Pokémon, like a spotlight. */
+    body.shadow-disc-light .D-hero .hero-img {
+        background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, .18) 70%, rgba(255, 255, 255, .06) 92%, transparent 100%);
+    }
+    /* Navy disc: the app's own navy behind the Pokémon. Any Pokémon color reads on it,
+       and the type color stays around it. */
+    body.shadow-disc-navy .D-hero .hero-img {
+        background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(8, 39, 68, .7) 0%, rgba(8, 39, 68, .55) 70%, rgba(8, 39, 68, .18) 92%, transparent 100%);
+    }
+    /* Softer background: the type color is mixed with more navy, so the Pokémon itself is
+       the most saturated thing in the column. */
+    body.shadow-soft-bg .D-hero.tinted {
+        background:
+            radial-gradient(circle at 85% 40%, rgba(255,255,255,.08) 0 120px, transparent 121px),
+            linear-gradient(160deg, color-mix(in srgb, var(--type-color) 46%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 18%, #082744) 100%);
+    }
+
+    /* ---------- shared bits ---------- */
+    .type-icon { width: 26px; height: 26px; border-radius: 7px; display: block; }
+    .type-icon.sm { width: 18px; height: 18px; border-radius: 5px; }
+    .types { display: flex; gap: 6px; }
+    .chk {
+        width: 40px; height: 40px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(11, 51, 96, 0.45); border: 1px solid rgba(139, 191, 235, 0.65); color: transparent;
+    }
+    .chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .icon-btn {
+        width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.28);
+    }
+    .icon-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .icon-btn.shiny-on { color: var(--shiny); border-color: rgba(255, 229, 102, .6); background: rgba(255, 229, 102, .14); }
+    .icon-btn svg, .pill-btn svg { width: 18px; height: 18px; }
+    .pill-btn {
+        display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px;
+        background: rgba(147, 197, 253, 0.12); border: 1px solid rgba(147, 197, 253, 0.32); font-size: .84rem;
+    }
+    .pill-btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .pill-btn.shiny-on { color: var(--shiny); border-color: rgba(255, 229, 102, .55); background: rgba(255, 229, 102, .12); }
+    .hero-img {
+        width: 100%; aspect-ratio: 1; object-fit: contain;
+        filter: drop-shadow(0 0 18px rgba(255,255,255,.18)) drop-shadow(0 14px 28px rgba(0,0,0,.55));
+    }
+    .dex { color: rgba(255,255,255,.75); font-size: .85rem; font-weight: 600; }
+    .name { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+    .genus { color: rgba(255,255,255,.75); font-size: .9rem; }
+    /* Type-colored hero, same recipe as the mobile detail header */
+    .tinted {
+        position: relative; overflow: hidden;
+        background:
+            radial-gradient(circle at 85% 40%, rgba(255,255,255,.10) 0 120px, transparent 121px),
+            radial-gradient(circle at 85% 40%, rgba(255,255,255,.06) 0 190px, transparent 191px),
+            linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%);
+    }
+    .nav-link { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; background: none; border: 0; color: #9fd0ff; font-weight: 700; font-size: .9rem; }
+    .nav-link:hover { background: rgba(147,197,253,.12); }
+    .nav-link img { width: 28px; height: 28px; object-fit: contain; }
+
+    /* Segmented tabs (mobile tab bar look, laid flat) */
+    .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(3, 20, 42, .55); border: 1px solid var(--line-soft); }
+    .seg button { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 18px; border-radius: 999px; border: 0; background: none; color: #9fc9f8; font-weight: 600; }
+    .seg button.on { background: var(--accent); color: var(--accent-ink); }
+    .seg button svg { width: 17px; height: 17px; }
+    .seg small { opacity: .7; font-weight: 500; }
+
+    /* ---------- content (new style) ---------- */
+    .content { padding: 18px 22px 28px; }
+    .cols { columns: 2; column-gap: 16px; }
+    .cols .section { break-inside: avoid; }
+    .section { margin-bottom: 16px; padding: 16px; border-radius: 16px; background: var(--card); border: 1px solid rgba(147, 197, 253, 0.11); }
+    .section h3 { margin: 0 0 12px; font-size: .98rem; color: #cfe6fb; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tile { padding: 10px 12px; border-radius: 12px; background: rgba(147, 197, 253, 0.07); }
+    .tile.wide { grid-column: span 2; }
+    .tile span { display: block; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+    .tile b { display: block; margin-top: 3px; font-size: .92rem; }
+    .flavor { margin: 0 0 12px; color: var(--muted); font-style: italic; line-height: 1.5; font-size: .9rem; }
+    .stat { display: grid; grid-template-columns: 70px 34px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; font-size: .86rem; }
+    .stat span { color: var(--muted); }
+    .bar { height: 7px; border-radius: 99px; background: rgba(147,197,253,.12); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; }
+    .bar .high { background: linear-gradient(90deg, #34d399, #a7f3d0); }
+    .bar .mid { background: linear-gradient(90deg, #60a5fa, #9cc8ed); }
+    .bar .low { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+    .bar .old { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+    .total { margin-top: 10px; font-size: .9rem; color: var(--muted); }
+    .total b { color: var(--text); }
+    .eff-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .eff-row > span { width: 92px; color: var(--muted); font-size: .84rem; }
+    .eff-row > div { display: flex; gap: 6px; flex-wrap: wrap; }
+    .switch { display: flex; gap: 6px; margin-bottom: 10px; }
+    .switch button { flex: 1; height: 34px; border-radius: 999px; background: transparent; color: #9fc9f8; border: 1px solid var(--line); font-weight: 600; font-size: .84rem; }
+    .switch button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .move-list { list-style: none; margin: 0; padding: 0; }
+    .move-list li { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--line-soft); font-size: .86rem; }
+    .move-list li small { color: var(--faint); }
+    .move-list .lvl { color: #9fd0ff; font-weight: 700; font-size: .8rem; }
+    .move-list .meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .78rem; }
+    .more { margin: 10px 0 0; color: var(--faint); font-size: .8rem; text-align: center; }
+    .games { display: grid; gap: 10px; }
+    .game { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 14px; background: rgba(147,197,253,.06); border: 1px solid var(--line-soft); }
+    .game img { width: 52px; height: 52px; object-fit: contain; border-radius: 10px; }
+    .game small { font-size: .74rem; color: var(--muted); text-align: center; line-height: 1.2; }
+    .game.on { border-color: var(--accent); background: rgba(156,200,237,.14); }
+    .game.on::after { content: ""; position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 5px; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23092f58' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/11px no-repeat; }
+    .tcg-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .search { flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(3,20,42,.5); border: 1px solid var(--line); color: var(--faint); font-size: .88rem; }
+    .search svg { width: 16px; height: 16px; }
+    .cards { display: grid; gap: 12px; }
+    .tcg-card { position: relative; border-radius: 9px; overflow: hidden; border: 2px solid transparent; background: rgba(147,197,253,.06); padding: 0; }
+    .tcg-card img { display: block; width: 100%; aspect-ratio: 63/88; object-fit: cover; }
+    .tcg-card.on { border-color: var(--accent); }
+    .tcg-card.foil { border-color: #a78bfa; box-shadow: 0 0 14px rgba(167,139,250,.45); }
+    .tcg-card .c { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 7px; background: rgba(11,51,96,.7); border: 1px solid rgba(139,191,235,.7); display: flex; align-items: center; justify-content: center; color: transparent; }
+    .tcg-card.on .c, .tcg-card.foil .c { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .tcg-card .c svg { width: 15px; height: 15px; }
+    .tcg-card .meta { padding: 5px 7px; font-size: .68rem; color: var(--muted); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ---------- old (current) content, for option A ---------- */
+    .old-section { margin-bottom: 16px; padding: 16px; border-radius: 14px; background: rgba(3,24,51,.35); border: 1px solid var(--line-soft); }
+    .old-section h3 { margin: 0 0 10px; font-size: 1rem; }
+    .old-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; font-size: .86rem; }
+    .old-grid span { display: block; color: var(--faint); font-size: .76rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+    th { color: var(--faint); font-weight: 600; }
+
+    /* ---------- A: current layout ---------- */
+    .A-modal { width: 1080px; height: 720px; display: flex; flex-direction: column; border-radius: 22px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .A-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+    .A-head .close { margin-left: auto; height: 36px; padding: 0 16px; border-radius: 10px; background: rgba(147,197,253,.12); border: 1px solid var(--line); }
+    .A-body { flex: 1; display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+    .A-side { padding: 16px; border-right: 1px solid var(--line-soft); }
+    .A-nav { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .A-card { position: relative; padding: 14px; border-radius: 18px; background: rgba(3,24,51,.4); border: 1px solid var(--line); }
+    .A-card .pill-btn { position: absolute; top: 12px; right: 12px; height: 28px; font-size: .76rem; }
+    .A-card .row { display: flex; justify-content: space-between; align-items: end; margin-top: 8px; }
+    .A-card .name { font-size: 1.35rem; }
+    .A-card .dex { color: var(--muted); }
+    .A-main { display: flex; flex-direction: column; min-height: 0; }
+    .A-tabs { display: flex; gap: 4px; padding: 12px 18px 0; border-bottom: 1px solid var(--line-soft); }
+    .A-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); }
+    .A-tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+    .A-tabs svg { width: 16px; height: 16px; }
+    .A-panel { flex: 1; overflow-y: auto; padding: 18px; }
+
+    /* ---------- B: same layout, refreshed ---------- */
+    .B-modal { width: 1100px; height: 720px; display: grid; grid-template-columns: 340px 1fr; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .B-side { display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+    .B-hero { border-radius: 20px; padding: 16px 16px 18px; }
+    .B-hero .acts { display: flex; gap: 8px; justify-content: flex-end; }
+    .B-hero .hero-img { width: 82%; margin: 4px auto 6px; display: block; }
+    .B-nav { display: flex; justify-content: space-between; }
+    .B-main { display: flex; flex-direction: column; min-height: 0; }
+    .B-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px 6px; }
+    .B-scroll { flex: 1; overflow-y: auto; }
+
+    /* ---------- C: hero header on top ---------- */
+    .C-modal { position: relative; width: 1100px; height: 724px; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .C-scroll { position: absolute; inset: 0; overflow-y: auto; }
+    .C-hero { display: grid; grid-template-columns: 1fr 300px; align-items: center; padding: 22px 70px 18px; min-height: 290px; border-radius: 0 0 28px 28px; }
+    .C-hero .hero-img { width: 270px; }
+    .C-acts { position: absolute; top: 16px; right: 18px; display: flex; gap: 8px; z-index: 2; }
+    .C-close { position: absolute; top: 16px; left: 18px; z-index: 2; }
+    .C-arrow { position: absolute; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; color: rgba(255,255,255,.85); font-size: .74rem; font-weight: 700; }
+    .C-arrow svg { width: 30px; height: 30px; }
+    .C-arrow.prev { left: 14px; } .C-arrow.next { right: 14px; }
+    .C-tabs { position: sticky; top: 0; z-index: 3; display: flex; justify-content: center; padding: 12px 0 6px; background: linear-gradient(180deg, #0b3360 70%, transparent); }
+    .C-compact { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; gap: 12px; padding: 8px 18px; transform: translateY(-110%); transition: transform .2s; border-bottom: 1px solid rgba(255,255,255,.15); }
+    .C-compact.show { transform: none; }
+    .C-compact img.sp { width: 44px; height: 44px; object-fit: contain; }
+    .C-compact .name { font-size: 1.1rem; }
+    .C-compact .seg { margin-left: auto; }
+    .C-compact .seg button { height: 30px; padding: 0 14px; }
+
+    /* ---------- D: two panes, tabs in the hero ---------- */
+    .D-modal { width: 1100px; height: 724px; display: grid; grid-template-columns: 360px 1fr; border-radius: 24px; background: linear-gradient(180deg, #0b3360, #082744); border: 1px solid var(--line); overflow: hidden; }
+    .D-hero { display: flex; flex-direction: column; padding: 16px 18px 14px; }
+    .D-hero .top { display: flex; gap: 8px; }
+    .D-hero .top .sp { flex: 1; }
+    .D-hero .hero-img { width: 76%; margin: 0 auto; display: block; }
+    .D-vtabs { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .D-vtabs button { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); font-weight: 600; }
+    .D-vtabs button small { margin-left: auto; opacity: .75; font-weight: 500; }
+    .D-vtabs button.on { background: rgba(255,255,255,.92); color: #0b2a4a; border-color: transparent; }
+    .D-vtabs svg { width: 18px; height: 18px; }
+    .D-nav { display: flex; justify-content: space-between; margin-top: 10px; }
+    .D-nav .nav-link { color: #fff; }
+    .D-main { overflow-y: auto; }
+    .D-main h2 { margin: 20px 22px 0; font-size: 1.2rem; }
+
+    /* ---------- D variants: ordered info ---------- */
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+    .stack .section { margin-bottom: 0; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .grid2 .section { margin-bottom: 0; }
+    .tiles.c5 { grid-template-columns: repeat(5, 1fr); }
+    .D-main { overflow-x: hidden; }
+    .D-main .eff-row { align-items: flex-start; }
+    .D-main .eff-row > span { padding-top: 6px; flex: 0 0 92px; }
+    .tiles.c4 { grid-template-columns: repeat(4, 1fr); }
+    .tiles.c3 { grid-template-columns: repeat(3, 1fr); }
+    .tiles.c1 { grid-template-columns: 1fr; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+    .facts div { padding: 7px 10px; border-radius: 10px; background: rgba(0,0,0,.18); }
+    .facts span { display: block; font-size: .64rem; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+    .facts b { font-size: .86rem; }
+    .flavor-hero { margin: 8px 0 10px; color: rgba(255,255,255,.82); font-style: italic; font-size: .8rem; line-height: 1.45; }
+    .D2 .D-hero .hero-img { width: 50%; }
+    .moves-side { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .moves-side h4 { margin: 0 0 6px; font-size: .82rem; color: #9fd0ff; }
+    .mtable { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .mtable th { text-align: left; color: var(--faint); font-weight: 600; font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+    .mtable td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); }
+    .mtable td.lvl { color: #9fd0ff; font-weight: 700; width: 48px; }
+    .mtable .num { text-align: right; color: var(--muted); width: 56px; }
+    .mtable .t { display: inline-flex; align-items: center; gap: 6px; }
+    .cat { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .7rem; background: rgba(147,197,253,.12); color: var(--muted); }
+    .cat.physical { background: rgba(239,68,68,.16); color: #fca5a5; }
+    .cat.special { background: rgba(96,165,250,.18); color: #93c5fd; }
+    .eff-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .eff-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 3px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+    .eff-chip.w { background: rgba(239,68,68,.14); color: #fca5a5; }
+    .eff-chip.r { background: rgba(52,211,153,.12); color: #a7f3d0; }
+    .eff-chip .type-icon { width: 22px; height: 22px; }
+    .subnav { position: sticky; top: 0; z-index: 3; display: flex; gap: 6px; padding: 14px 22px 10px; background: linear-gradient(180deg, #0b3360 78%, rgba(11,51,96,0)); }
+    .subnav button { height: 32px; padding: 0 14px; border-radius: 999px; background: rgba(147,197,253,.08); border: 1px solid var(--line-soft); color: #9fc9f8; font-size: .82rem; font-weight: 600; }
+    .subnav button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .D3 .content, .D4 .content, .I1 .content, .I2 .content, .I3 .content, .I4 .content { padding-top: 4px; }
+    /* ---------- Info variants ---------- */
+    .stats-head { display: flex; align-items: baseline; justify-content: space-between; }
+    .stats-head small { color: var(--muted); font-size: .82rem; font-weight: 600; }
+    .stats-head small b { color: var(--text); font-size: 1rem; }
+    .stats-wide .stat { grid-template-columns: 90px 40px 1fr; }
+    .eff-wide .eff-row > span { flex-basis: 110px; }
+    .battle { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 22px; }
+    .battle .divider { background: var(--line-soft); }
+    .battle h4 { margin: 0 0 12px; font-size: .86rem; color: #cfe6fb; }
+    .vbars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; align-items: end; }
+    .vbar { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .vbar b { font-size: .9rem; }
+    .vbar .track { width: 22px; height: 120px; border-radius: 99px; background: rgba(147,197,253,.12); display: flex; align-items: flex-end; overflow: hidden; }
+    .vbar .track i { display: block; width: 100%; border-radius: inherit; }
+    .vbar .track .high { background: linear-gradient(0deg, #34d399, #a7f3d0); }
+    .vbar .track .mid { background: linear-gradient(0deg, #60a5fa, #9cc8ed); }
+    .vbar .track .low { background: linear-gradient(0deg, #f59e0b, #fcd34d); }
+    .vbar span { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+    /* I1/I2: Abilities & Nature grows to its neighbor's height; its two tiles share the space. */
+    .I1 .grid2, .I2 .grid2 { align-items: stretch; }
+    .I1 .grid2 > .section:last-child, .I2 .grid2 > .section:last-child { display: flex; flex-direction: column; }
+    .I1 .grid2 .tiles.c1, .I2 .grid2 .tiles.c1 { flex: 1; grid-auto-rows: 1fr; }
+    .I1 .grid2 .tiles.c1 .tile, .I2 .grid2 .tiles.c1 .tile { display: flex; flex-direction: column; justify-content: center; }
+    /* D4: Base Stats stretches to the bottom of Abilities & Nature, rows spread over the height. */
+    .grid2.stretch { align-items: stretch; }
+    .stats-fill { display: flex; flex-direction: column; }
+    .stats-fill .total { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+
+    /* ---------- banner variants ---------- */
+    .D-modal { border: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.45); }
+    .stage { position: relative; width: 76%; aspect-ratio: 1; margin: 24px auto 6px; }
+    .stage .hero-img { position: relative; z-index: 2; width: 100% !important; margin: 0 !important; display: block; }
+    .stage .mark, .stage .floor, .corner { position: absolute; pointer-events: none; display: none; }
+    /* B1, B2, B3, B4 replace the decorative circles. */
+    .B1 .D-hero.tinted, .B2 .D-hero.tinted, .B3 .D-hero.tinted, .B4 .D-hero.tinted, .B5 .D-hero.tinted, .B6 .D-hero.tinted {
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%);
+    }
+    /* B1: oval platform + contact shadow at the feet. */
+    .B1 .stage .floor { display: block; left: 2%; right: 2%; bottom: -2%; height: 26%; border-radius: 50%;
+        background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.22) 0%, rgba(255,255,255,.1) 55%, rgba(0,0,0,.12) 100%);
+        box-shadow: inset 0 -6px 14px rgba(0,0,0,.22), 0 8px 18px rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.18); }
+    .B1 .stage .mark { display: block; z-index: 1; left: 22%; right: 22%; bottom: 4%; height: 9%; border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(0,0,0,.45) 0%, rgba(0,0,0,.2) 55%, transparent 75%); }
+    .B1 .stage .hero-img, .B2 .stage .hero-img, .B5 .stage .hero-img, .B6 .stage .hero-img { filter: none; transform: translateY(-4%); }
+    /* B2: ground band with a soft horizon line + contact shadow. */
+    .B2 .stage .floor, .B5 .stage .floor, .B6 .stage .floor { display: block; left: -14%; right: -14%; bottom: -6%; height: 34%;
+        background: linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,.16) 30%, rgba(0,0,0,.24) 100%);
+        border-radius: 50% 50% 0 0 / 18% 18% 0 0;
+        -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(180deg, #000 60%, transparent);
+        -webkit-mask-composite: source-in; mask-composite: intersect; }
+    .B2 .stage .mark, .B5 .stage .mark, .B6 .stage .mark { display: block; z-index: 1; left: 20%; right: 20%; bottom: 5%; height: 8%; border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(0,0,0,.5) 0%, rgba(0,0,0,.22) 55%, transparent 75%); }
+    /* B3: Pokéball outline behind. */
+    .B3 .stage .mark { display: block; inset: -6%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='5'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3Cpath d='M4 50h30M66 50h30'/%3E%3Ccircle cx='50' cy='50' r='15'/%3E%3Ccircle cx='50' cy='50' r='6'/%3E%3C/svg%3E") center/contain no-repeat; opacity: .14; }
+    /* B4: first type's symbol, big, where the decorative circles were: top-right corner of the
+       column, cut by its edge (the white part of the type icon, used as a mask). */
+    .corner { z-index: 0; top: 30px; right: -150px; width: 420px; height: 420px; opacity: .14; }
+    .B4 .corner, .B5 .corner { display: block; background: #fff;
+        -webkit-mask: var(--symbol) center/contain no-repeat; mask: var(--symbol) center/contain no-repeat; }
+    /* B6: Pokéball in the same corner spot and size as the type symbol. */
+    .B6 .corner { display: block; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='5'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3Cpath d='M4 50h30M66 50h30'/%3E%3Ccircle cx='50' cy='50' r='15'/%3E%3Ccircle cx='50' cy='50' r='6'/%3E%3C/svg%3E") center/contain no-repeat; }
+    .B4 .D-hero > *:not(.corner), .B5 .D-hero > *:not(.corner), .B6 .D-hero > *:not(.corner) { position: relative; z-index: 1; }
+
+    /* ---------- E: side drawer ---------- */
+    .E-wrap { position: absolute; inset: 0; background: rgba(2, 10, 24, .45); }
+    .E-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 640px; display: flex; flex-direction: column; background: linear-gradient(180deg, #0b3360, #082744); border-left: 1px solid var(--line); box-shadow: -24px 0 60px rgba(0,0,0,.45); }
+    .E-scroll { flex: 1; overflow-y: auto; position: relative; }
+    .E-hero { display: grid; grid-template-columns: 1fr 230px; align-items: center; padding: 64px 26px 22px; border-radius: 0 0 26px 26px; }
+    .E-hero .hero-img { width: 230px; }
+    .E-bar { position: absolute; top: 14px; left: 16px; right: 16px; display: flex; gap: 8px; z-index: 2; }
+    .E-bar .sp { flex: 1; }
+    .E-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px 0; color: var(--faint); font-size: .8rem; }
+    .E-tabs { display: flex; border-top: 1px solid var(--line-soft); background: #082744; }
+    .E-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 11px; border: 0; background: none; color: #9fc9f8; font-size: .78rem; font-weight: 600; position: relative; }
+    .E-tabs button.on { color: #a7f3d0; }
+    .E-tabs button.on::before { content: ""; position: absolute; top: 0; width: 46px; height: 3px; border-radius: 0 0 3px 3px; background: #34d399; }
+    .E-tabs svg { width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Detalhe no computador — variações do banner do Pokémon</h1>
+    <p class="lede"><b>Igual ao que foi implementado:</b> opção D com a aba Info I1, sem a espécie no banner e sem a borda azul no modal.
+        <b>O que muda:</b> só o fundo atrás do Pokémon na coluna colorida. Use ← → para ver Pikachu (elétrico), Charizard (fogo) e Gengar (fantasma).</p>
+    <p class="lede" hidden><b>Fixo em todas (já aprovado):</b> coluna colorida da D com as abas no pé, sombra de hoje, About com os dados rápidos,
+        barra de atalhos, Espécie com o gênero e golpes de Level up e TM lado a lado. <b>O que muda:</b> como Base Stats, Fraquezas e
+        Habilidades se encaixam, para não sobrar vão.</p>
+    <p class="lede" hidden>Todas mantêm a estrutura da D (coluna colorida fixa à esquerda, com as abas no pé). O que muda é a
+        organização das informações da aba Info. Games e TCG são iguais em todas. Tudo é clicável, e ← → trocam de Pokémon.
+        O mock anterior, com as opções A a E, continua em <code>docs/desktop-detail-mock.html</code>.</p>
+    <div class="picker" id="picker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="browser">
+        <div class="browser__bar"><i></i><i></i><i></i><span class="browser__url">lydiagarcia03.github.io/pokedex-collection-manager/</span></div>
+        <div class="viewport" id="viewport"></div>
+    </div>
+    <div class="notes">
+        <h2>O que mudou em relação à D original</h2>
+        <ul>
+            <li>Na D original, as seções caíam em 2 colunas na ordem em que cabiam. "General Information" ficava longa de um lado e "Species" curta do outro, com golpes e stats espalhados.</li>
+            <li>Agora a ordem é fixa e as informações estão agrupadas por assunto: dados rápidos, stats e fraquezas, habilidades e espécie, golpes.</li>
+            <li>Com a largura do computador, os golpes mostram tipo, categoria, poder e precisão em colunas, e não espremidos como no celular.</li>
+            <li>Os mocks mostram só parte dos golpes e das cartas, para ficarem leves. O app continua mostrando tudo.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const DEX = [{"id":"0025","name":"Pikachu","dex":"#0025","types":["ELECTRIC"],"xl":"../public/images/pokemon-xl/0025.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0025.webp","genus":"Mouse Pokémon","flavor":"Possesses cheek sacs in which it stores electricity. This clever forest-dweller roasts tough berries with an electric shock before consuming them.","tiles":[["Height","0.40 m"],["Weight","6.0 kg"],["Color","yellow"],["Generation","Gen I"],["Abilities","Static, Lightning Rod"],["Region","Kanto"],["Recommended nature","Hasty, Jolly, Naive"],["Gender ratio","50% ♂ / 50% ♀"]],"species":[["Egg groups","Ground, Fairy"],["Growth","Medium"],["Habitat","Forest"],["Capture rate",190]],"stats":[["HP",35],["Attack",55],["Defense",40],["Sp. Atk",50],["Sp. Def",50],["Speed",90]],"weak":[["GROUND",2]],"resist":[["ELECTRIC",0.5],["FLYING",0.5],["STEEL",0.5]],"lv":[["1","Charm","FAIRY","status",null,100],["1","Growl","NORMAL","status",null,100],["1","Nasty Plot","DARK","status",null,null],["1","Nuzzle","ELECTRIC","physical",20,100],["1","Play Nice","NORMAL","status",null,null],["1","Quick Attack","NORMAL","physical",40,100],["1","Sweet Kiss","FAIRY","status",null,75],["1","Tail Whip","NORMAL","status",null,100],["1","Thunder Shock","ELECTRIC","special",40,100],["4","Thunder Wave","ELECTRIC","status",null,90],["8","Double Team","NORMAL","status",null,null],["9","Double Kick","FIGHTING","physical",30,100],["12","Electro Ball","ELECTRIC","special",null,100],["15","Swift","NORMAL","special",60,null]],"tm":[["TM01","Agility","PSYCHIC","status",null,null],["TM02","Alluring Voice","FAIRY","special",80,100],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Calm Mind","PSYCHIC","status",null,null],["TM08","Captivate","NORMAL","status",null,100],["TM09","Charge","ELECTRIC","status",null,null],["TM10","Charge Beam","ELECTRIC","special",50,90],["TM11","Charm","FAIRY","status",null,100],["TM12","Confide","NORMAL","status",null,null],["TM13","Curse","GHOST","status",null,null],["TM14","Defense Curl","NORMAL","status",null,null]],"totals":{"lv":24,"tm":86},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["rs-s","Sapphire"],["rs-r","Ruby"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["e","Emerald"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["oras-as","Alpha Sapphire"],["oras-or","Omega Ruby"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["fut2020-1","Pikachu on the Ball","Pokémon Futsal 2020","1","../public/images/tcg/fut2020-1/low.webp"],["basep-1","Pikachu","Wizards Black Star Promos","1","../public/images/tcg/basep-1/low.webp"],["tk-hs-r-2","Pikachu","HS trainer Kit (Raichu)","2","../public/images/tcg/tk-hs-r-2/low.webp"],["2024sv-2","Pikachu","McDonald's Collection 2024","2","../public/images/tcg/2024sv-2/low.webp"],["2018sm-4","Pikachu","McDonald's Collection 2018","4","../public/images/tcg/2018sm-4/low.webp"],["basep-4","Pikachu","Wizards Black Star Promos","4","../public/images/tcg/basep-4/low.webp"],["ex5.5-5","Pikachu","Poké Card Creator Pack","5","../public/images/tcg/ex5.5-5/low.webp"],["2014xy-5","Pikachu","McDonald's Collection 2014","5","../public/images/tcg/2014xy-5/low.webp"],["2017sm-5","Pikachu","McDonald's Collection 2017","5","../public/images/tcg/2017sm-5/low.webp"],["cel25-5","Pikachu","Celebrations","5","../public/images/tcg/cel25-5/low.webp"],["tk-ex-latio-6","Pikachu","EX trainer Kit (Latios)","6","../public/images/tcg/tk-ex-latio-6/low.webp"],["2016xy-6","Pikachu","McDonald's Collection 2016","6","../public/images/tcg/2016xy-6/low.webp"],["2023sv-6","Pikachu","McDonald's Collection 2023","6","../public/images/tcg/2023sv-6/low.webp"],["2015xy-6","Pikachu","McDonald's Collection 2015","6","../public/images/tcg/2015xy-6/low.webp"],["2019sm-6","Pikachu","McDonald's Collection 2019","6","../public/images/tcg/2019sm-6/low.webp"],["cel25-6","Flying Pikachu V","Celebrations","6","../public/images/tcg/cel25-6/low.webp"],["2022swsh-7","Pikachu","McDonald's Collection 2022","7","../public/images/tcg/2022swsh-7/low.webp"],["cel25-7","Flying Pikachu VMAX","Celebrations","7","../public/images/tcg/cel25-7/low.webp"],["ru1-7","Pikachu","Pokémon Rumble","7","../public/images/tcg/ru1-7/low.webp"],["30th-c-008","Pikachu & Zekrom GX","30th Classic Collection","008","../public/images/tcg/30th-c-008/low.webp"],["cel25-8","Surfing Pikachu V","Celebrations","8","../public/images/tcg/cel25-8/low.webp"],["P-A-009","Pikachu","Promos-A","009","../public/images/tcg/P-A-009/low.webp"],["pop6-9","Pikachu","POP Series 6","9","../public/images/tcg/pop6-9/low.webp"],["cel25-9","Surfing Pikachu VMAX","Celebrations","9","../public/images/tcg/cel25-9/low.webp"]],"cardTotal":246},{"id":"0006","name":"Charizard","dex":"#0006","types":["FIRE","FLYING"],"xl":"../public/images/pokemon-xl/0006.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0006.webp","genus":"Flame Pokémon","flavor":"Its wings can carry this Pokémon close to an altitude of 4,600 feet. It blows out fire at very high temperatures.","tiles":[["Height","1.70 m"],["Weight","90.5 kg"],["Color","red"],["Generation","Gen I"],["Abilities","Blaze, Solar Power"],["Region","Kanto"],["Recommended nature","Mild, Modest, Rash"],["Gender ratio","87.5% ♂ / 12.5% ♀"]],"species":[["Egg groups","Monster, Dragon"],["Growth","Medium Slow"],["Habitat","Mountain"],["Capture rate",45]],"stats":[["HP",78],["Attack",84],["Defense",78],["Sp. Atk",109],["Sp. Def",85],["Speed",100]],"weak":[["WATER",2],["ELECTRIC",2],["ROCK",4]],"resist":[["FIRE",0.5],["GRASS",0.25],["FIGHTING",0.5],["GROUND",0],["BUG",0.25],["STEEL",0.5],["FAIRY",0.5]],"lv":[["1","Air Slash","FLYING","special",75,95],["1","Counter","FIGHTING","physical",null,100],["1","Crunch","DARK","physical",80,100],["1","Dragon Claw","DRAGON","physical",80,100],["1","Ember","FIRE","special",40,100],["1","Growl","NORMAL","status",null,100],["1","Heat Wave","FIRE","special",95,90],["1","Leer","NORMAL","status",null,100],["1","Metal Claw","STEEL","physical",50,95],["1","Scratch","NORMAL","physical",40,100],["1","Shadow Claw","GHOST","physical",70,100],["1","Smokescreen","NORMAL","status",null,100],["1","Wing Attack","FLYING","physical",60,100],["12","Dragon Breath","DRAGON","special",60,100]],"tm":[["TM01","Acrobatics","FLYING","physical",55,100],["TM02","Aerial Ace","FLYING","physical",60,null],["TM03","Air Cutter","FLYING","special",60,95],["TM04","Air Slash","FLYING","special",75,95],["TM05","Attract","NORMAL","status",null,100],["TM06","Beat Up","DARK","physical",null,100],["TM07","Bide","NORMAL","physical",null,null],["TM08","Blast Burn","FIRE","special",150,90],["TM09","Blaze Kick","FIRE","physical",85,90],["TM10","Body Slam","NORMAL","physical",85,100],["TM11","Breaking Swipe","DRAGON","physical",60,100],["TM12","Brick Break","FIGHTING","physical",75,100],["TM13","Brutal Swing","DARK","physical",60,100],["TM14","Bulldoze","GROUND","physical",60,100]],"totals":{"lv":25,"tm":111},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["xy-y","Y"],["xy-x","X"],["go","Pokémon GO"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["2024sv-1","Charizard","McDonald's Collection 2024","1","../public/images/tcg/2024sv-1/low.webp"],["30th-c-001","Charizard","30th Classic Collection","001","../public/images/tcg/30th-c-001/low.webp"],["pl4-1","Charizard","Arceus","1","../public/images/tcg/pl4-1/low.webp"],["gym2-2","Blaine's Charizard","Gym Challenge","2","../public/images/tcg/gym2-2/low.webp"],["sm7.5-3","Charizard","Dragon Majesty","3","../public/images/tcg/sm7.5-3/low.webp"],["lc-3","Charizard","Legendary Collection","3","../public/images/tcg/lc-3/low.webp"],["dp3-3","Charizard","Secret Wonders","3","../public/images/tcg/dp3-3/low.webp"],["base4-4","Charizard","Base Set 2","4","../public/images/tcg/base4-4/low.webp"],["base1-4","Charizard","Base Set","4","../public/images/tcg/base1-4/low.webp"],["base5-4","Dark Charizard","Team Rocket","4","../public/images/tcg/base5-4/low.webp"],["ex14-4","Charizard δ","Crystal Guardians","4","../public/images/tcg/ex14-4/low.webp"],["det1-5","Charizard","Detective Pikachu","5","../public/images/tcg/det1-5/low.webp"],["ecard1-6","Charizard","Expedition Base Set","6","../public/images/tcg/ecard1-6/low.webp"],["ex16-6","Charizard","Power Keepers","6","../public/images/tcg/ex16-6/low.webp"],["sv03.5-006","Charizard ex","151","006","../public/images/tcg/sv03.5-006/low.webp"],["sm115-9","Charizard GX","Hidden Fates","9","../public/images/tcg/sm115-9/low.webp"],["swsh10.5-010","Charizard","Pokémon GO","010","../public/images/tcg/swsh10.5-010/low.webp"],["A2b-010","Charizard ex","Shining Revelry","010","../public/images/tcg/A2b-010/low.webp"],["xy2-11","Charizard EX","Flashfire","11","../public/images/tcg/xy2-11/low.webp"],["g1-11","Charizard EX","Generations","11","../public/images/tcg/g1-11/low.webp"],["xy12-11","Charizard","Evolutions","11","../public/images/tcg/xy12-11/low.webp"],["swsh10.5-011","Radiant Charizard","Pokémon GO","011","../public/images/tcg/swsh10.5-011/low.webp"],["xy2-12","Charizard EX","Flashfire","12","../public/images/tcg/xy2-12/low.webp"],["g1-12","M Charizard EX","Generations","12","../public/images/tcg/g1-12/low.webp"]],"cardTotal":126},{"id":"0094","name":"Gengar","dex":"#0094","types":["GHOST","POISON"],"xl":"../public/images/pokemon-xl/0094.webp","shiny":"https://static.pokepc.net/images/pokemon/home3d-icon-xl/shiny/0094.webp","genus":"Shadow Pokémon","flavor":"Possesses potential victims' shadows in an effort to steal away the victims' lives. If your shadow begins to laugh, you must take hold of a protective charm posthaste!","tiles":[["Height","1.50 m"],["Weight","40.5 kg"],["Color","purple"],["Generation","Gen I"],["Abilities","Cursed Body"],["Region","Kanto"],["Recommended nature","Mild, Modest, Rash"],["Gender ratio","50% ♂ / 50% ♀"]],"species":[["Egg groups","Indeterminate"],["Growth","Medium Slow"],["Habitat","Cave"],["Capture rate",45]],"stats":[["HP",60],["Attack",65],["Defense",60],["Sp. Atk",130],["Sp. Def",75],["Speed",110]],"weak":[["GROUND",2],["PSYCHIC",2],["GHOST",2],["DARK",2]],"resist":[["NORMAL",0],["GRASS",0.5],["FIGHTING",0],["POISON",0.25],["BUG",0.5],["FAIRY",0.5]],"lv":[["1","Astonish","GHOST","physical",30,100],["1","Confuse Ray","GHOST","status",null,100],["1","Disable","NORMAL","status",null,100],["1","Haze","ICE","status",null,null],["1","Hypnosis","PSYCHIC","status",null,60],["1","Lick","GHOST","physical",30,100],["1","Mean Look","NORMAL","status",null,null],["1","Perish Song","NORMAL","status",null,null],["1","Reflect Type","NORMAL","status",null,null],["1","Shadow Punch","GHOST","physical",60,null],["1","Smog","POISON","special",30,70],["6","Poison Gas","POISON","status",null,90],["12","Payback","DARK","physical",50,100],["14","Will O Wisp","FIRE","status",null,85]],"tm":[["TM01","Acid Spray","POISON","special",40,100],["TM02","Ally Switch","PSYCHIC","status",null,null],["TM03","Attract","NORMAL","status",null,100],["TM04","Bide","NORMAL","physical",null,null],["TM05","Body Slam","NORMAL","physical",85,100],["TM06","Brick Break","FIGHTING","physical",75,100],["TM07","Captivate","NORMAL","status",null,100],["TM08","Confide","NORMAL","status",null,null],["TM09","Confuse Ray","GHOST","status",null,100],["TM10","Counter","FIGHTING","physical",null,100],["TM11","Curse","GHOST","status",null,null],["TM12","Dark Pulse","DARK","special",80,100],["TM13","Dazzling Gleam","FAIRY","special",80,100],["TM14","Double Edge","NORMAL","physical",120,100]],"totals":{"lv":26,"tm":108},"games":[["rb-r","Red"],["rb-b","Blue"],["y","Yellow"],["gs-s","Silver"],["gs-g","Gold"],["c","Crystal"],["frlg-lg","LeafGreen"],["frlg-fr","FireRed"],["dp-p","Pearl"],["dp-d","Diamond"],["pt","Platinum"],["hgss-ss","SoulSilver"],["hgss-hg","HeartGold"],["bw-w","White"],["bw-b","Black"],["xy-y","Y"],["xy-x","X"],["go","Pokémon GO"],["sm-m","Moon"],["sm-s","Sun"],["usum-um","Ultra Moon"],["usum-us","Ultra Sun"],["lgpe-lge","Let's Go, Eevee!"],["lgpe-lgp","Let's Go, Pikachu!"],["swsh-sh","Shield"],["swsh-sw","Sword"],["bdsp-sp","Shining Pearl"],["bdsp-bd","Brilliant Diamond"],["la","Legends: Arceus"],["sv-v","Violet"],["sv-s","Scarlet"],["lza","Legends: Z-A"]],"cards":[["base3-5","Gengar","Fossil","5","../public/images/tcg/base3-5/low.webp"],["ex12-5","Gengar","Legend Maker","5","../public/images/tcg/ex12-5/low.webp"],["neo4-6","Dark Gengar","Neo Destiny","6","../public/images/tcg/neo4-6/low.webp"],["ecard3-10","Gengar","Skyridge","10","../public/images/tcg/ecard3-10/low.webp"],["lc-11","Gengar","Legendary Collection","11","../public/images/tcg/lc-11/low.webp"],["ecard1-13","Gengar","Expedition Base Set","13","../public/images/tcg/ecard1-13/low.webp"],["gym1-14","Sabrina's Gengar","Gym Heroes","14","../public/images/tcg/gym1-14/low.webp"],["pl4-16","Gengar","Arceus","16","../public/images/tcg/pl4-16/low.webp"],["pl4-17","Gengar","Arceus","17","../public/images/tcg/pl4-17/low.webp"],["dp7-18","Gengar","Stormfront","18","../public/images/tcg/dp7-18/low.webp"],["30th-c-018","Gengar","30th Classic Collection","018","../public/images/tcg/30th-c-018/low.webp"],["base3-20","Gengar","Fossil","20","../public/images/tcg/base3-20/low.webp"],["dp1-27","Gengar","Diamond & Pearl","27","../public/images/tcg/dp1-27/low.webp"],["gym2-29","Sabrina's Gengar","Gym Challenge","29","../public/images/tcg/gym2-29/low.webp"],["A2a-033","Gengar","Triumphant Light","033","../public/images/tcg/A2a-033/low.webp"],["xy4-34","Gengar EX","Phantom Forces","34","../public/images/tcg/xy4-34/low.webp"],["xy4-35","M Gengar EX","Phantom Forces","35","../public/images/tcg/xy4-35/low.webp"],["g1-35","Gengar","Generations","35","../public/images/tcg/g1-35/low.webp"],["sm4-38","Gengar","Crimson Invasion","38","../public/images/tcg/sm4-38/low.webp"],["pl2-40","Gengar GL","Rising Rivals","40","../public/images/tcg/pl2-40/low.webp"],["ecard1-48","Gengar","Expedition Base Set","48","../public/images/tcg/ecard1-48/low.webp"],["me03-050","Gengar","Perfect Order","050","../public/images/tcg/me03-050/low.webp"],["sm9-53","Gengar & Mimikyu GX","Team Up","53","../public/images/tcg/sm9-53/low.webp"],["me02-056","Mega Gengar ex","Phantasmal Flames","056","../public/images/tcg/me02-056/low.webp"]],"cardTotal":62}];
+
+const OPTIONS = {
+    B0: { label: 'Atual', title: 'Como está implementado', points: [
+        'Círculos decorativos claros atrás, Pokémon com a sombra embaixo.'] },
+    B1: { label: 'Plataforma', title: 'Sem flutuar — Pokémon numa plataforma', points: [
+        'O Pokémon fica em pé sobre uma plataforma oval, como as de batalha dos jogos, com uma sombra de contato bem nos pés.',
+        'Os círculos decorativos saem: a plataforma é o único elemento atrás dele.'] },
+    B2: { label: 'Chão', title: 'Sem flutuar — chão com horizonte', points: [
+        'A parte de baixo da área da imagem vira um "chão" um pouco mais escuro, com uma linha de horizonte suave.',
+        'O Pokémon apoia os pés nesse chão, com a sombra de contato embaixo.'] },
+    B3: { label: 'Pokébola', title: 'Pokébola atrás do Pokémon', points: [
+        'No lugar dos círculos, o contorno de uma Pokébola grande e clarinha atrás do Pokémon.',
+        'Mesma transparência dos círculos de hoje, para não competir com o Pokémon.'] },
+    B4: { label: 'Símbolo do tipo', title: 'Símbolo do primeiro tipo no lugar dos círculos', points: [
+        'O símbolo do primeiro tipo (raio, chama, fantasma...) bem grande e clarinho, no canto de cima à direita, cortado pela borda da coluna — onde hoje ficam os círculos.',
+        'Vem dos mesmos ícones de tipo do app (public/images/types), só o desenho branco do meio, ampliado para 512px com o contorno refeito para ficar nítido.'] },
+    B5: { label: 'Chão + símbolo do tipo', title: 'Chão com horizonte + símbolo do tipo no canto', points: [
+        'O chão da opção "Chão" (Pokémon apoiado, com sombra de contato) junto com o símbolo do primeiro tipo grande no canto.'] },
+    B6: { label: 'Chão + Pokébola', title: 'Chão com horizonte + Pokébola no canto', points: [
+        'O chão da opção "Chão" junto com a Pokébola grande no canto, na mesma posição e tamanho do símbolo do tipo.'] },
+};
+
+const state = { option: 'B5', idx: 0, tab: 'info', shiny: false, moveKind: 'lv', visible: true,
+    selected: new Set(['0006']), games: new Set(['sv-s', 'swsh-sw', 'xy-x', 'lgpe-lgp', 'frlg-fr']),
+    cards: new Set(), foil: new Set(), cardFilter: 'All' };
+
+const ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M20 6 9 17l-5-5"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 15.5A2 2 0 0 0 8.5 14.1L2.4 12.5a.5.5 0 0 1 0-1l6.1-1.6a2 2 0 0 0 1.4-1.4L11.5 2.4a.5.5 0 0 1 1 0l1.6 6.1a2 2 0 0 0 1.4 1.4l6.1 1.6a.5.5 0 0 1 0 1l-6.1 1.6a2 2 0 0 0-1.4 1.4l-1.6 6.1a.5.5 0 0 1-1 0z"/><path d="M20 3v4M22 5h-4"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a13 13 0 0 1-1.7 2.7M6.6 6.6A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M2 2l20 20"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
+    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m15 18-6-6 6-6"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m9 18 6-6-6-6"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    games: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6l-.7 6.3A3 3 0 0 0 5 18c1 0 1.9-.5 2.4-1.3L9 15h6l1.6 1.7A3 3 0 0 0 19 18a3 3 0 0 0 3-3.1l-.7-6.3a4 4 0 0 0-4-3.6z"/></svg>',
+    tcg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 10h2M16 14h2"/><path d="M6.2 15a3 3 0 0 1 5.6 0"/><circle cx="9" cy="11" r="2"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+};
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const typeIcon = (t, cls = '') => `<img class="type-icon ${cls}" src="../public/images/types/type-${t.toLowerCase()}.png" alt="${t}" title="${t}">`;
+const cur = () => DEX[state.idx];
+const prev = () => DEX[(state.idx + DEX.length - 1) % DEX.length];
+const next = () => DEX[(state.idx + 1) % DEX.length];
+const img = p => state.shiny ? p.shiny : p.xl;
+const band = v => v >= 80 ? 'high' : v < 45 ? 'low' : 'mid';
+const typeColor = p => `var(--type-${p.types[0].toLowerCase()})`;
+const sprite = id => `../public/images/pokemon/${id}.webp`;
+const effLabel = v => v === 4 ? '4×' : v === 2 ? '2×' : v === 0.5 ? '½×' : v === 0.25 ? '¼×' : v === 0 ? '0×' : `${v}×`;
+
+/* ---------- actions ---------- */
+const chk = (cls = 'chk') => `<button class="${cls} ${state.selected.has(cur().id) ? 'on' : ''}" data-act="select" title="In my collection">${ICON.check}</button>`;
+const shinyBtn = () => `<button class="icon-btn ${state.shiny ? 'shiny-on' : ''}" data-act="shiny" title="${state.shiny ? 'Show regular' : 'Show shiny'}">${ICON.sparkles}</button>`;
+const visBtn = () => `<button class="icon-btn" data-act="vis" title="Toggle collection visibility">${state.visible ? ICON.eye : ICON.eyeOff}</button>`;
+const closeBtn = () => `<button class="icon-btn" title="Close">${ICON.x}</button>`;
+const navLink = (dir, p, withSprite) => dir === 'prev'
+    ? `<button class="nav-link" data-act="prev">${ICON.left}${withSprite ? `<img src="${sprite(p.id)}" alt="">` : ''}${p.id}</button>`
+    : `<button class="nav-link" data-act="next">${p.id}${withSprite ? `<img src="${sprite(p.id)}" alt="">` : ''}${ICON.right}</button>`;
+const counts = p => ({ info: '', games: p.games.length, tcg: p.cardTotal });
+const segTabs = (withCounts = false) => {
+    const c = counts(cur());
+    return `<div class="seg">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, label]) =>
+        `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${label}${withCounts && c[id] ? ` <small>${c[id]}</small>` : ''}</button>`).join('')}</div>`;
+};
+
+/* ---------- tab content (new style) ---------- */
+function infoNew(p, twoCols) {
+    const total = p.stats.reduce((s, [, v]) => s + v, 0);
+    const rows = state.moveKind === 'lv' ? p.lv : p.tm;
+    const sections = [
+        `<div class="section"><h3>General Information</h3><p class="flavor">${esc(p.flavor)}</p><div class="tiles">${p.tiles.map(([k, v], i) =>
+            `<div class="tile ${['Abilities', 'Recommended nature', 'Gender ratio'].includes(k) ? 'wide' : ''}"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`,
+        `<div class="section"><h3>Base Stats</h3>${p.stats.map(([k, v]) =>
+            `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="${band(v)}" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}
+            <div class="total">Total <b>${total}</b></div></div>`,
+        `<div class="section"><h3>Type Effectiveness</h3>
+            <div class="eff-row"><span>Weak to</span><div>${p.weak.map(([t, v]) => `${typeIcon(t)}<small>${effLabel(v)}</small>`).join('')}</div></div>
+            <div class="eff-row"><span>Resistant to</span><div>${p.resist.map(([t, v]) => `${typeIcon(t)}<small>${effLabel(v)}</small>`).join('')}</div></div></div>`,
+        `<div class="section"><h3>Species</h3><div class="tiles">${p.species.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`,
+        `<div class="section"><h3>Moves learned by ${esc(p.name)}</h3>
+            <div class="switch"><button class="${state.moveKind === 'lv' ? 'on' : ''}" data-moves="lv">Level up · ${p.totals.lv}</button><button class="${state.moveKind === 'tm' ? 'on' : ''}" data-moves="tm">TM · ${p.totals.tm}</button></div>
+            <ul class="move-list">${rows.map(([lvl, name, type, cat, pow, acc]) =>
+                `<li><span class="lvl">${lvl}</span><span><b>${esc(name)}</b><br><small>${cat}</small></span><span class="meta">${typeIcon(type, 'sm')}${pow ?? '—'} · ${acc ?? '—'}%</span></li>`).join('')}</ul>
+            <p class="more">+ ${(state.moveKind === 'lv' ? p.totals.lv : p.totals.tm) - rows.length} more in the app</p></div>`,
+    ];
+    return `<div class="${twoCols ? 'cols' : ''}">${sections.join('')}</div>`;
+}
+function gamesNew(p, cols) {
+    return `<div class="section"><h3>Games · ${p.games.filter(([id]) => state.games.has(id)).length} of ${p.games.length} collected</h3>
+        <div class="games" style="grid-template-columns:repeat(${cols},1fr)">${p.games.map(([id, name]) =>
+        `<button class="game ${state.games.has(id) ? 'on' : ''}" data-game="${id}"><img src="../public/images/games/${id}.webp" alt=""><small>${esc(name)}</small></button>`).join('')}</div></div>`;
+}
+function tcgNew(p, cols) {
+    const shown = p.cards.filter(([id]) => state.cardFilter === 'All' ? true : state.cardFilter === 'Owned' ? state.cards.has(id) || state.foil.has(id)
+        : state.cardFilter === 'Missing' ? !state.cards.has(id) && !state.foil.has(id) : state.foil.has(id));
+    return `<div class="tcg-tools"><div class="search">${ICON.search}Search by card, set or number</div>
+        ${['All', 'Owned', 'Missing', 'Foil'].map(f => `<button class="pill-btn ${state.cardFilter === f ? 'on' : ''}" data-filter="${f}">${f}</button>`).join('')}</div>
+        <div class="cards" style="grid-template-columns:repeat(${cols},1fr)">${shown.map(([id, name, set, num, src]) =>
+        `<button class="tcg-card ${state.foil.has(id) ? 'foil' : state.cards.has(id) ? 'on' : ''}" data-card="${id}" title="Click: owned · Shift+click: foil"><img src="${src}" alt="" loading="lazy"><span class="c">${ICON.check}</span><div class="meta">${esc(set)} · ${esc(num)}</div></button>`).join('')}</div>
+        <p class="more">Showing ${shown.length} of ${p.cardTotal} cards in this mock · Shift+click marks a card as foil</p>`;
+}
+function tabContent(p, layout) {
+    if (state.tab === 'games') return gamesNew(p, layout.games);
+    if (state.tab === 'tcg') return tcgNew(p, layout.cards);
+    return infoNew(p, layout.twoCols);
+}
+
+/* ---------- A: current ---------- */
+function infoOld(p) {
+    return `<div class="old-section"><h3>General Information</h3><div class="old-grid">${p.tiles.map(([k, v]) => `<div><span>${k}</span>${esc(v)}</div>`).join('')}</div></div>
+        <div class="old-section"><h3>Base Stats</h3>${p.stats.map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="old" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}</div>
+        <div class="old-section"><h3>Moves learned by ${esc(p.name)}</h3><table><tr><th>Lv.</th><th>Move</th><th>Type</th><th>Cat.</th><th>Power</th><th>Acc.</th></tr>
+        ${p.lv.slice(0, 10).map(([l, n, t, c, pw, a]) => `<tr><td>${l}</td><td>${esc(n)}</td><td>${typeIcon(t, 'sm')}</td><td>${c}</td><td>${pw ?? '—'}</td><td>${a ?? '—'}</td></tr>`).join('')}</table></div>`;
+}
+function renderA(p) {
+    const content = state.tab === 'info' ? infoOld(p) : tabContent(p, { games: 6, cards: 6 });
+    return `<div class="backdrop"><div class="A-modal">
+        <div class="A-head">${chk()}<button class="pill-btn ${state.visible ? 'on' : ''}" data-act="vis">${state.visible ? ICON.eye : ICON.eyeOff}Visibility</button><button class="close">Close</button></div>
+        <div class="A-body"><aside class="A-side"><div class="A-nav">${navLink('prev', prev())}${navLink('next', next())}</div>
+            <div class="A-card"><button class="pill-btn ${state.shiny ? 'shiny-on' : ''}" data-act="shiny">${ICON.sparkles}Shiny</button><img class="hero-img" src="${img(p)}" alt="">
+            <div class="row"><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div></div><div class="types">${p.types.map(t => typeIcon(t)).join('')}</div></div></div></aside>
+        <section class="A-main"><nav class="A-tabs">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, l]) => `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}</button>`).join('')}</nav>
+            <div class="A-panel">${content}</div></section></div></div></div>`;
+}
+
+/* ---------- B ---------- */
+function renderB(p) {
+    return `<div class="backdrop"><div class="B-modal">
+        <aside class="B-side">
+            <div class="B-hero tinted" style="--type-color:${typeColor(p)}">
+                <div class="acts">${chk()}<span style="flex:1"></span>${shinyBtn()}${visBtn()}</div>
+                <img class="hero-img" src="${img(p)}" alt="">
+                <div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                <div class="types" style="margin-top:10px">${p.types.map(t => typeIcon(t)).join('')}</div>
+            </div>
+            <div class="B-nav">${navLink('prev', prev(), true)}${navLink('next', next(), true)}</div>
+        </aside>
+        <section class="B-main"><div class="B-top">${segTabs(true)}${closeBtn()}</div>
+            <div class="B-scroll"><div class="content">${tabContent(p, { twoCols: true, games: 6, cards: 5 })}</div></div></section>
+    </div></div>`;
+}
+
+/* ---------- C ---------- */
+function renderC(p) {
+    return `<div class="backdrop"><div class="C-modal" style="--type-color:${typeColor(p)}">
+        <div class="C-compact tinted" id="compact"><img class="sp" src="${sprite(p.id)}" alt=""><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div></div>
+            <div class="types">${p.types.map(t => typeIcon(t, 'sm')).join('')}</div>${segTabs()}${chk()}</div>
+        <div class="C-scroll" id="scroller">
+            <div class="C-hero tinted" id="hero">
+                <div class="C-close">${closeBtn()}</div>
+                <div class="C-acts">${shinyBtn()}${visBtn()}${chk()}</div>
+                <button class="C-arrow prev" data-act="prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>${prev().id}</button>
+                <button class="C-arrow next" data-act="next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>${next().id}</button>
+                <div><div class="dex">${p.dex}</div><div class="name" style="font-size:2.6rem">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                    <div class="types" style="margin-top:14px">${p.types.map(t => typeIcon(t)).join('')}</div></div>
+                <img class="hero-img" src="${img(p)}" alt="">
+            </div>
+            <div class="C-tabs">${segTabs(true)}</div>
+            <div class="content">${tabContent(p, { twoCols: true, games: 8, cards: 6 })}</div>
+        </div>
+    </div></div>`;
+}
+
+/* ---------- D ---------- */
+function renderD(p) {
+    const c = counts(p);
+    return `<div class="backdrop"><div class="D-modal">
+        <aside class="D-hero tinted" style="--type-color:${typeColor(p)}">
+            <div class="top">${closeBtn()}<span class="sp"></span>${shinyBtn()}${visBtn()}${chk()}</div>
+            <span class="corner" style="--symbol:url(${TYPE_SYMBOLS[p.types[0].toLowerCase()] ?? ''})"></span>
+            <div class="stage"><span class="mark"></span><span class="floor"></span><img class="hero-img" src="${img(p)}" alt=""></div>
+            <div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div>
+            <div class="types" style="margin:10px 0 14px">${p.types.map(t => typeIcon(t)).join('')}</div>
+            <div class="D-vtabs">${[['info', 'Info', `${p.totals.lv + p.totals.tm} moves`], ['games', 'Games', c.games], ['tcg', 'TCG', `${c.tcg} cards`]].map(([id, l, n]) =>
+                `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}<small>${n}</small></button>`).join('')}</div>
+            <div class="D-nav">${navLink('prev', prev(), true)}${navLink('next', next(), true)}</div>
+        </aside>
+        <section class="D-main"><div class="content">${tabContent(p, { twoCols: true, games: 6, cards: 5 })}</div></section>
+    </div></div>`;
+}
+
+/* ---------- E ---------- */
+function renderE(p) {
+    return `<div class="E-wrap"><aside class="E-drawer" style="--type-color:${typeColor(p)}">
+        <div class="E-scroll">
+            <div class="E-bar">${closeBtn()}<span class="sp"></span>${shinyBtn()}${visBtn()}${chk()}</div>
+            <div class="E-hero tinted"><div><div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div><div class="genus">${esc(p.genus)}</div>
+                <div class="types" style="margin-top:12px">${p.types.map(t => typeIcon(t)).join('')}</div></div>
+                <img class="hero-img" src="${img(p)}" alt=""></div>
+            <div class="E-nav">${navLink('prev', prev(), true)}<span>← → to switch</span>${navLink('next', next(), true)}</div>
+            <div class="content">${tabContent(p, { twoCols: false, games: 5, cards: 4 })}</div>
+        </div>
+        <nav class="E-tabs">${[['info', 'Info'], ['games', 'Games'], ['tcg', 'TCG']].map(([id, l]) => `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}</button>`).join('')}</nav>
+    </aside></div>`;
+}
+
+/* ---------- D variants ---------- */
+const tileMap = p => Object.fromEntries(p.tiles);
+const tilesHtml = (pairs, cls = '') => `<div class="tiles ${cls}">${pairs.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>`;
+const idAttr = id => id ? `id="${id}"` : '';
+const statsSection = (p, id) => {
+    const total = p.stats.reduce((s, [, v]) => s + v, 0);
+    return `<div class="section" ${idAttr(id)}><h3>Base Stats</h3>${p.stats.map(([k, v]) =>
+        `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="${band(v)}" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}
+        <div class="total">Total <b>${total}</b></div></div>`;
+};
+const effChips = (list, cls) => list.length
+    ? `<div class="eff-chips">${list.map(([t, v]) => `<span class="eff-chip ${cls}">${typeIcon(t)}${effLabel(v)}</span>`).join('')}</div>`
+    : '<span class="genus">None</span>';
+const effSection = (p, id) => {
+    const immune = p.resist.filter(([, v]) => v === 0);
+    return `<div class="section" ${idAttr(id)}><h3>Type Effectiveness</h3>
+    <div class="eff-row"><span>Weak to</span>${effChips(p.weak, 'w')}</div>
+    <div class="eff-row"><span>Resists</span>${effChips(p.resist.filter(([, v]) => v > 0), 'r')}</div>
+    ${immune.length ? `<div class="eff-row"><span>Immune to</span>${effChips(immune, '')}</div>` : ''}</div>`;
+};
+const abilitiesSection = p => { const t = tileMap(p); return `<div class="section"><h3>Abilities &amp; Nature</h3>${tilesHtml([['Abilities', t['Abilities']], ['Recommended nature', t['Recommended nature']]], 'c1')}</div>`; };
+const typeName = type => type[0] + type.slice(1).toLowerCase();
+const moveTable = (rows, firstCol) => `<table class="mtable"><tr><th>${firstCol}</th><th>Move</th><th>Type</th><th>Category</th><th class="num">Power</th><th class="num">Acc.</th></tr>${rows.map(([lvl, name, type, cat, pow, acc]) =>
+    `<tr><td class="lvl">${lvl}</td><td><b>${esc(name)}</b></td><td><span class="t">${typeIcon(type, 'sm')}${typeName(type)}</span></td><td><span class="cat ${cat}">${cat}</span></td><td class="num">${pow ?? '—'}</td><td class="num">${acc ? acc + '%' : '—'}</td></tr>`).join('')}</table>`;
+const compactTable = (rows, firstCol) => `<table class="mtable"><tr><th>${firstCol}</th><th>Move</th><th></th><th>Category</th><th class="num">Power</th></tr>${rows.map(([lvl, name, type, cat, pow]) =>
+    `<tr><td class="lvl">${lvl}</td><td><b>${esc(name)}</b></td><td>${typeIcon(type, 'sm')}</td><td><span class="cat ${cat}">${cat}</span></td><td class="num">${pow ?? '—'}</td></tr>`).join('')}</table>`;
+const movesSide = (p, full, id) => `<div class="section" ${idAttr(id)}><h3>Moves learned by ${esc(p.name)}</h3><div class="moves-side">
+    <div><h4>Level up · ${p.totals.lv}</h4>${(full ? moveTable : compactTable)(p.lv, 'Lv.')}<p class="more">+ ${p.totals.lv - p.lv.length} more in the app</p></div>
+    <div><h4>TM · ${p.totals.tm}</h4>${(full ? moveTable : compactTable)(p.tm, 'TM')}<p class="more">+ ${p.totals.tm - p.tm.length} more in the app</p></div></div></div>`;
+const movesSwitch = (p, id) => {
+    const rows = state.moveKind === 'lv' ? p.lv : p.tm;
+    const total = state.moveKind === 'lv' ? p.totals.lv : p.totals.tm;
+    return `<div class="section" ${idAttr(id)}><h3>Moves learned by ${esc(p.name)}</h3>
+        <div class="switch" style="max-width:360px"><button class="${state.moveKind === 'lv' ? 'on' : ''}" data-moves="lv">Level up · ${p.totals.lv}</button><button class="${state.moveKind === 'tm' ? 'on' : ''}" data-moves="tm">TM · ${p.totals.tm}</button></div>
+        ${moveTable(rows, state.moveKind === 'lv' ? 'Lv.' : 'TM')}<p class="more">+ ${total - rows.length} more in the app</p></div>`;
+};
+
+function infoD1(p) {
+    const t = tileMap(p);
+    return `<div class="stack">
+        <div class="section"><h3>About</h3><p class="flavor">${esc(p.flavor)}</p>
+            ${tilesHtml([['Height', t['Height']], ['Weight', t['Weight']], ['Generation', t['Generation']], ['Region', t['Region']], ['Color', t['Color']]], 'c5')}</div>
+        <div class="grid2">${statsSection(p)}<div class="stack">${effSection(p)}${abilitiesSection(p)}</div></div>
+        <div class="section"><h3>Species</h3><div class="tiles c4"><div class="tile wide"><span>Gender</span><b>${esc(t['Gender ratio'])}</b></div>${p.species.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>
+        ${movesSide(p, false)}
+    </div>`;
+}
+function infoD2(p) {
+    const t = tileMap(p);
+    return `<div class="stack">
+        <div class="grid2">${statsSection(p)}<div class="stack">${effSection(p)}${abilitiesSection(p)}</div></div>
+        <div class="section"><h3>Profile &amp; Species</h3>${tilesHtml([['Gender', t['Gender ratio']], ['Color', t['Color']], ...p.species], 'c3')}</div>
+        ${movesSwitch(p)}
+    </div>`;
+}
+function infoD3(p) {
+    const t = tileMap(p);
+    return `<div class="stack">
+        <div class="section" id="sec-overview"><h3>Overview</h3><p class="flavor">${esc(p.flavor)}</p>
+            ${tilesHtml([['Height', t['Height']], ['Weight', t['Weight']], ['Gender', t['Gender ratio']], ['Generation', t['Generation']], ['Region', t['Region']], ['Color', t['Color']], ['Abilities', t['Abilities']], ['Recommended nature', t['Recommended nature']], ...p.species], 'c4')}</div>
+        ${statsSection(p, 'sec-stats')}
+        ${effSection(p, 'sec-matchups')}
+        ${movesSwitch(p, 'sec-moves')}
+    </div>`;
+}
+
+function infoD4(p) {
+    const t = tileMap(p);
+    const total = p.stats.reduce((s, [, v]) => s + v, 0);
+    const stats = `<div class="section stats-fill"><h3>Base Stats</h3><div class="stat-rows">${p.stats.map(([k, v]) =>
+        `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="${band(v)}" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('')}</div>
+        <div class="total">Total <b>${total}</b></div></div>`;
+    return `<div class="stack">
+        <div class="section" id="sec-about"><h3>About</h3><p class="flavor">${esc(p.flavor)}</p>
+            ${tilesHtml([['Height', t['Height']], ['Weight', t['Weight']], ['Generation', t['Generation']], ['Region', t['Region']], ['Color', t['Color']]], 'c5')}</div>
+        <div class="grid2 stretch" id="sec-stats">${stats}<div class="stack">${effSection(p)}${abilitiesSection(p)}</div></div>
+        <div class="section" id="sec-species"><h3>Species</h3><div class="tiles c4"><div class="tile wide"><span>Gender</span><b>${esc(t['Gender ratio'])}</b></div>${p.species.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>
+        ${movesSide(p, false, 'sec-moves')}
+    </div>`;
+}
+const statRowsHtml = p => p.stats.map(([k, v]) =>
+    `<div class="stat"><span>${k}</span><b>${v}</b><div class="bar"><i class="${band(v)}" style="width:${Math.min(100, v / 1.6)}%"></i></div></div>`).join('');
+const statTotal = p => p.stats.reduce((sum, [, v]) => sum + v, 0);
+const aboutSection = (p, withAbilities) => {
+    const t = tileMap(p);
+    const quick = tilesHtml([['Height', t['Height']], ['Weight', t['Weight']], ['Generation', t['Generation']], ['Region', t['Region']], ['Color', t['Color']]], 'c5');
+    const extra = withAbilities ? `<div class="tiles" style="margin-top:8px">${[['Abilities', t['Abilities']], ['Recommended nature', t['Recommended nature']]].map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>` : '';
+    return `<div class="section" id="sec-about"><h3>About</h3><p class="flavor">${esc(p.flavor)}</p>${quick}${extra}</div>`;
+};
+const speciesBlock = p => { const t = tileMap(p); return `<div class="section" id="sec-species"><h3>Species</h3><div class="tiles c4"><div class="tile wide"><span>Gender</span><b>${esc(t['Gender ratio'])}</b></div>${p.species.map(([k, v]) => `<div class="tile"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`; };
+const statsCard = p => `<div class="section"><h3>Base Stats</h3>${statRowsHtml(p)}<div class="total">Total <b>${statTotal(p)}</b></div></div>`;
+
+function infoI1(p) {
+    return `<div class="stack">${aboutSection(p, false)}
+        <div id="sec-stats" class="stack"><div class="grid2">${statsCard(p)}${abilitiesSection(p)}</div>
+        <div class="eff-wide">${effSection(p)}</div></div>
+        ${speciesBlock(p)}${movesSide(p, false, 'sec-moves')}</div>`;
+}
+function infoI2(p) {
+    return `<div class="stack">${aboutSection(p, false)}
+        <div id="sec-stats" class="stack"><div class="section stats-wide"><div class="stats-head"><h3>Base Stats</h3><small>Total <b>${statTotal(p)}</b></small></div>${statRowsHtml(p)}</div>
+        <div class="grid2">${effSection(p)}${abilitiesSection(p)}</div></div>
+        ${speciesBlock(p)}${movesSide(p, false, 'sec-moves')}</div>`;
+}
+function infoI3(p) {
+    const immune = p.resist.filter(([, v]) => v === 0);
+    return `<div class="stack">${aboutSection(p, true)}
+        <div class="section" id="sec-stats"><h3>Battle</h3><div class="battle">
+            <div><h4>Base Stats</h4>${statRowsHtml(p)}<div class="total">Total <b>${statTotal(p)}</b></div></div>
+            <div class="divider"></div>
+            <div><h4>Type Effectiveness</h4>
+                <div class="eff-row"><span>Weak to</span>${effChips(p.weak, 'w')}</div>
+                <div class="eff-row"><span>Resists</span>${effChips(p.resist.filter(([, v]) => v > 0), 'r')}</div>
+                ${immune.length ? `<div class="eff-row"><span>Immune to</span>${effChips(immune, '')}</div>` : ''}</div>
+        </div></div>
+        ${speciesBlock(p)}${movesSide(p, false, 'sec-moves')}</div>`;
+}
+function infoI4(p) {
+    const short = { 'HP': 'HP', 'Attack': 'Atk', 'Defense': 'Def', 'Sp. Atk': 'Sp. Atk', 'Sp. Def': 'Sp. Def', 'Speed': 'Speed' };
+    const bars = `<div class="section"><div class="stats-head"><h3>Base Stats</h3><small>Total <b>${statTotal(p)}</b></small></div><div class="vbars">${p.stats.map(([k, v]) =>
+        `<div class="vbar"><b>${v}</b><div class="track"><i class="${band(v)}" style="height:${Math.min(100, v / 1.6)}%"></i></div><span>${short[k]}</span></div>`).join('')}</div></div>`;
+    return `<div class="stack">${aboutSection(p, true)}
+        <div class="grid2" id="sec-stats">${bars}${effSection(p)}</div>
+        ${speciesBlock(p)}${movesSide(p, false, 'sec-moves')}</div>`;
+}
+const INFO_VARIANTS = { I1: infoI1, I2: infoI2, I3: infoI3, I4: infoI4, B0: infoI1, B1: infoI1, B2: infoI1, B3: infoI1, B4: infoI1, B5: infoI1, B6: infoI1 };
+const TYPE_SYMBOLS = {"electric": "data:image/png;base64,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", "fire": "data:image/png;base64,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", "ghost": "data:image/png;base64,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"};
+
+const SUBNAV = {
+    D3: [['sec-overview', 'Overview'], ['sec-stats', 'Stats'], ['sec-matchups', 'Matchups'], ['sec-moves', 'Moves']],
+    D4: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B0: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B1: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B2: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B3: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B4: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B5: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    B6: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    I1: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    I2: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    I3: [['sec-about', 'About'], ['sec-stats', 'Battle'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+    I4: [['sec-about', 'About'], ['sec-stats', 'Stats'], ['sec-species', 'Species'], ['sec-moves', 'Moves']],
+};
+
+function renderDVariant(p, variant) {
+    const c = counts(p), t = tileMap(p);
+    const info = variant === 'D1' ? infoD1(p) : variant === 'D2' ? infoD2(p) : variant === 'D3' ? infoD3(p) : variant === 'D4' ? infoD4(p) : INFO_VARIANTS[variant] ? INFO_VARIANTS[variant](p) : infoNew(p, true);
+    const content = state.tab === 'info' ? info : tabContent(p, { games: 6, cards: 5 });
+    const heroExtra = variant === 'D2'
+        ? `<p class="flavor-hero">${esc(p.flavor)}</p><div class="facts">${[['Height', t['Height']], ['Weight', t['Weight']], ['Generation', t['Generation']], ['Region', t['Region']]].map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>`
+        : '';
+    const subnav = SUBNAV[variant] && state.tab === 'info'
+        ? `<div class="subnav" id="subnav">${SUBNAV[variant].map(([id, l], i) => `<button data-jump="${id}" class="${i === 0 ? 'on' : ''}">${l}</button>`).join('')}</div>`
+        : '';
+    return `<div class="backdrop"><div class="D-modal ${variant}">
+        <aside class="D-hero tinted" style="--type-color:${typeColor(p)}">
+            <div class="top">${closeBtn()}<span class="sp"></span>${shinyBtn()}${visBtn()}${chk()}</div>
+            <span class="corner" style="--symbol:url(${TYPE_SYMBOLS[p.types[0].toLowerCase()] ?? ''})"></span>
+            <div class="stage"><span class="mark"></span><span class="floor"></span><img class="hero-img" src="${img(p)}" alt=""></div>
+            <div class="dex">${p.dex}</div><div class="name">${esc(p.name)}</div>
+            <div class="types" style="margin:10px 0 ${variant === 'D2' ? 4 : 14}px">${p.types.map(type => typeIcon(type)).join('')}</div>
+            ${heroExtra}
+            <div class="D-vtabs">${[['info', 'Info', `${p.totals.lv + p.totals.tm} moves`], ['games', 'Games', c.games], ['tcg', 'TCG', `${c.tcg} cards`]].map(([id, l, n]) =>
+                `<button class="${state.tab === id ? 'on' : ''}" data-tab="${id}">${ICON[id]}${l}<small>${n}</small></button>`).join('')}</div>
+            <div class="D-nav">${navLink('prev', prev(), true)}${navLink('next', next(), true)}</div>
+        </aside>
+        <section class="D-main" id="dmain">${subnav}<div class="content">${content}</div></section>
+    </div></div>`;
+}
+
+const RENDER = Object.fromEntries(['D', 'D1', 'D2', 'D3', 'D4', 'I1', 'I2', 'I3', 'I4', 'B0', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6'].map(v => [v, p => renderDVariant(p, v)]));
+const listing = `<div class="listing">${['0001','0002','0003','0004','0005','0006','0007','0008','0009','0010','0011','0012','0013','0014','0015','0016','0017','0018','0019','0020','0021','0022','0023','0024','0025','0026','0027','0028','0029','0030','0031','0032'].map(id => `<div><img src="${sprite(id)}" alt=""></div>`).join('')}</div>`;
+
+function render(keepScroll = false) {
+    const vp = document.getElementById('viewport');
+    const scroller = vp.querySelector('.A-panel, .B-scroll, .C-scroll, .D-main, .E-scroll');
+    const top = keepScroll && scroller ? scroller.scrollTop : 0;
+    vp.innerHTML = listing + RENDER[state.option](cur());
+    const s2 = vp.querySelector('.A-panel, .B-scroll, .C-scroll, .D-main, .E-scroll');
+    if (s2) s2.scrollTop = top;
+    const o = OPTIONS[state.option];
+    document.getElementById('info').innerHTML = `<strong>${o.title}</strong><ul>${o.points.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    document.getElementById('picker').innerHTML = Object.entries(OPTIONS).map(([k, v]) => `<button aria-pressed="${state.option === k}" data-option="${k}">${v.label}</button>`).join('');
+    const subnav = document.getElementById('subnav'), dmain = document.getElementById('dmain');
+    if (subnav && dmain) dmain.addEventListener('scroll', () => {
+        let active = subnav.querySelector('button').dataset.jump;
+        for (const b of subnav.querySelectorAll('button')) {
+            const sec = document.getElementById(b.dataset.jump);
+            if (sec && sec.offsetTop - dmain.scrollTop < 140) active = b.dataset.jump;
+        }
+        subnav.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.jump === active));
+    });
+    const hero = document.getElementById('hero'), compact = document.getElementById('compact');
+    if (hero && compact) new IntersectionObserver(([e]) => compact.classList.toggle('show', !e.isIntersecting), { root: document.getElementById('scroller'), threshold: 0.25 }).observe(hero);
+}
+
+document.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset; let keep = true;
+    if (d.shadow) {
+        document.body.classList.remove('shadow-light', 'shadow-disc-light', 'shadow-disc-navy', 'shadow-soft-bg');
+        if (d.shadow !== 'today') document.body.classList.add(`shadow-${d.shadow}`);
+        document.querySelectorAll('[data-shadow]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+        return;
+    }
+    if (d.jump) { const sec = document.getElementById(d.jump); if (sec) document.getElementById('dmain').scrollTo({ top: sec.offsetTop - 60, behavior: 'smooth' }); return; }
+    if (d.option) { state.option = d.option; keep = false; }
+    else if (d.tab) { state.tab = d.tab; keep = false; }
+    else if (d.moves) state.moveKind = d.moves;
+    else if (d.filter) state.cardFilter = d.filter;
+    else if (d.game) state.games.has(d.game) ? state.games.delete(d.game) : state.games.add(d.game);
+    else if (d.card) {
+        const id = d.card;
+        if (e.shiftKey) { state.cards.delete(id); state.foil.has(id) ? state.foil.delete(id) : state.foil.add(id); }
+        else if (state.cards.has(id) || state.foil.has(id)) { state.cards.delete(id); state.foil.delete(id); }
+        else state.cards.add(id);
+    }
+    else if (d.act === 'select') state.selected.has(cur().id) ? state.selected.delete(cur().id) : state.selected.add(cur().id);
+    else if (d.act === 'shiny') state.shiny = !state.shiny;
+    else if (d.act === 'vis') state.visible = !state.visible;
+    else if (d.act === 'prev' || d.act === 'next') { state.idx = (state.idx + (d.act === 'next' ? 1 : DEX.length - 1)) % DEX.length; state.shiny = false; keep = false; }
+    else return;
+    render(keep);
+});
+document.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    state.idx = (state.idx + (e.key === 'ArrowRight' ? 1 : DEX.length - 1)) % DEX.length; state.shiny = false; render();
+});
+render();
+</script>
+</body>
+</html>

@@ -33,7 +33,7 @@ grandes.
 | Feature | `pokedex` (Spring Boot) | `pokedex-static` (this) |
 |---------|-------------------------|--------------------------|
 | Backend | Java / Spring Boot | None |
-| Data source | REST API → pokedex.json | `public/data/pokemon-compiled.json` |
+| Data source | REST API → pokedex.json | `public/data/pokemon-compiled.json` + `public/data/moves/{id}.json` |
 | Search/filter | Server-side | Client-side (same logic) |
 | Pokemon images | CDN (runtime) | Local files in `public/images/pokemon/` |
 | TCG card images | CDN via backend proxy | Local files in `public/images/tcg/` |
@@ -49,11 +49,24 @@ grandes.
 ### Navegação e coleção
 - Navegação por todos os ~1242 Pokémon (incluindo formas regionais, Mega Evolution e Gigantamax)
 - Busca por nome/número, filtro por geração (Gen I–IX)
+- Painel de filtros da listagem em `src/components/FilterPanel.tsx`: no computador, abas à esquerda
+  (Collection / Generation / Type / Game / Options) e conteúdo à direita; no celular, folha que sobe de
+  baixo com seções em acordeão e resumo do que está escolhido. Rodapé com Reset e "Show N Pokémon"
+  (os filtros aplicam na hora; o botão só fecha). O `PokedexPage` continua dono do estado e da filtragem
+- Filtro de coleção no painel de filtros da listagem: **All / Owned / Missing**, com contagem. Um Pokémon
+  que acabou de mudar de estado continua visível até o mouse/dedo sair do card, o detalhe fechar ou o
+  filtro mudar (`stickyCollectionIds` em `PokedexPage.tsx`), para não sumir debaixo do dedo nem fazer o
+  detalhe aberto pular de Pokémon
 - Detalhes por Pokémon: stats, efetividade de tipo, habilidades, learnsets, dados de espécie
-- Cartas TCG por Pokémon com imagens locais — cartas que o TCGdex ainda não tem imagem (comum em
-  sets/promos muito recentes) buscam a imagem no Serebii como fallback (best-effort; o que não
-  bate aparece como placeholder nome/set/número em vez de ficar escondido — ver
-  `.ai/changes-log.md` 2026-08-24 e `scripts/fetch-serebii-tcg-images.mjs`)
+- Cartas TCG por Pokémon com imagens locais — cartas que o TCGdex ainda não tem imagem buscam a
+  imagem, nesta ordem, no Serebii (`scripts/fetch-serebii-tcg-images.mjs`) e depois em fontes
+  gratuitas extras (`scripts/fetch-fallback-tcg-images.mjs`: pokemon-tcg-data/Scrydex,
+  pkmncards.com para Trainer Kits, Limitless para TCG Pocket, e overrides manuais em
+  `scripts/tcg-image-overrides.json`). O que nenhuma fonte encontra fica listado em
+  `scripts/tcg-missing-images.json` e aparece como placeholder nome/set/número (ver
+  `.ai/changes-log.md` 2026-08-24 e 2026-11-15)
+- **O pipeline de cartas é aditivo:** nenhum script remove carta ou imagem já existente no
+  catálogo — `collect-tcg` faz merge com o `tcg-cards.json` atual em vez de reescrever do zero
 - Jogos em que cada Pokémon aparece — cada versão de um par (ex. Scarlet vs Violet) mostra sua
   lista correta e distinta de exclusivos (ver `.ai/changes-log.md` 2026-08-19)
 - Filtro de DLC (Isle of Armor, Crown Tundra, The Teal Mask, The Indigo Disk) — habilitado só
@@ -67,10 +80,52 @@ grandes.
   do projeto `pokedex`); `legendary`/`mythical` já existiam nos dados (ver `.ai/changes-log.md`
   2026-08-24)
 - Marcar Pokémon/cartas/jogos como coletados, modo "Toggle Collection Visibility"
-- Marcar uma carta TCG já selecionada como **foil** (badge de "sparkle" com gradiente roxo-neon
-  metálico no canto inferior-esquerdo do card, só aparece depois que a carta está marcada — ver
-  `src/components/PokemonTcgTab.tsx`)
+- Marcar uma carta TCG já selecionada como **foil**. No computador, pelo badge de "sparkle" com
+  gradiente roxo-neon metálico no canto inferior-esquerdo do card, que só aparece depois que a carta
+  está marcada. No celular, tocando na carta, que abre a carta grande com "In my collection:
+  No / Yes / Yes, foil" (`useCollection.setCardOwnership`). Cartas foil têm borda roxa e brilho
+  holográfico (ver `src/components/PokemonTcgTab.tsx`)
+- Busca na aba TCG (computador e celular): campo por nome da carta, nome do set e número, mais os
+  filtros All / Owned / Missing / Foil (estes só com o Pokémon selecionado). Os nomes dos sets vêm
+  de `public/data/tcg-sets.json`
+
+### Detalhe do Pokémon no celular (≤640px)
+- Layout próprio em `src/components/PokemonModalMobile.tsx`, escolhido por `useIsMobile`
+  (`src/hooks/useIsMobile.ts`). O `PokemonModal` continua dono do estado e da lógica
+- Tela cheia; cabeçalho com degradê na cor do primeiro tipo do Pokémon (`--type-color`, a partir
+  das variáveis `--type-*` em `:root` no `styles.css`, as mesmas dos badges de tipo); barra
+  compacta que desce ao rolar (`IntersectionObserver`); abas Info / Games / TCG numa barra no
+  rodapé; deslizar para o lado em qualquer ponto da tela troca de Pokémon (elementos com
+  `data-no-pokemon-swipe`, campos de texto e a carta ampliada ficam de fora)
+- Conteúdo adaptado: informações em blocos de 2 colunas, stats coloridos por faixa, moves em lista
+  com "Level up / TM" (`MoveList` em `PokemonInfoTab.tsx`), games em 4 colunas, cartas em 3
+- Mocks de referência: `docs/mobile-detail-mock.html` (opção E), `docs/tcg-search-mock.html`
+  (opção C), `docs/tcg-foil-mock.html` (D, estilo 5)
 - Exportar/importar coleção como arquivo de texto (formato `POKEDEX_COLLECTION_V2` — ver Critical Rules)
+
+### Detalhe do Pokémon no computador (>640px)
+- Layout em `PokemonModal.tsx`, a partir do mock `docs/desktop-detail-d-mock.html`: opção D,
+  com a aba Info na variação I1. As outras opções estão em `docs/desktop-detail-mock.html`.
+- Coluna fixa à esquerda (`.pokemon-detail-hero`) na cor do primeiro tipo, com a mesma
+  `--type-color` do celular. Nela ficam os botões redondos (fechar, shiny, visibilidade,
+  coletado), o Pokémon apoiado num "chão" escuro com sombra de contato, o nome, os tipos, as abas
+  Info / Games / TCG empilhadas com contagem e a navegação ← → com miniatura. Só o lado direito
+  rola. As setas ← → do teclado trocam de Pokémon, exceto durante a digitação.
+- O fundo da coluna tem o símbolo do primeiro tipo grande e clarinho, no canto de cima à direita
+  (`.pokemon-detail-hero__symbol`). A opção escolhida foi "Chão + símbolo do tipo" do mock
+  `docs/desktop-banner-mock.html`. Os símbolos são máscaras brancas de 512px em
+  `public/images/types/symbol-{type}.png`, geradas uma vez a partir dos ícones de tipo por
+  `python scripts/generate-type-symbols.py`, que precisa de Pillow. Só é preciso rodar de novo se
+  os ícones mudarem.
+- A aba Info do computador fica em `PokemonInfoDesktop`, dentro de `PokemonInfoTab.tsx`. Ela tem:
+  - uma barra fixa de atalhos (About · Stats · Species · Moves) que acompanha a rolagem;
+  - About com a descrição e os dados rápidos;
+  - Base Stats ao lado de "Abilities & Nature", terminando na mesma linha;
+  - Type Effectiveness na largura toda, com fraquezas, resistências e imunidades em linhas
+    separadas;
+  - Species com o gênero e a categoria (genus);
+  - golpes de Level up e TM lado a lado, cada lista com rolagem própria.
+- Abaixo de 1100px de largura, os blocos lado a lado ficam um embaixo do outro.
 
 ### PWA (instalável no celular)
 - Instalável via "Add to Home Screen"/prompt do navegador — abre em tela cheia, sem barra de
@@ -113,7 +168,11 @@ npm install
 
 ### Step 2 — Compile Pokémon data
 Reads source JSON files from the sibling `../pokedex/src/main/resources/data/` directory
-and produces `public/data/pokemon-compiled.json`.
+and produces `public/data/pokemon-compiled.json` (everything except moves) plus one
+`public/data/moves/{id}.json` per Pokémon (`moves`, `levelUpMoves`, `machineMoves`). Moves were
+~85% of the old single file and are only shown in the detail's Info tab, so they're fetched when
+a Pokémon is opened (`loadPokemonMoves` in `src/api/pokemonApi.ts`). The folder is rewritten on
+every run.
 
 ```powershell
 npm run compile-data
@@ -128,6 +187,8 @@ Calls TCGdex API (~900 requests, ~5 minutes) and produces:
   TCGdex hasn't uploaded an image for yet are kept with `imageUrl: null` (not dropped) — see Step
   3b.
 - `public/data/tcg-download-manifest.json` — source URLs for downloading (NOT committed)
+- `public/data/tcg-sets.json` — `{ setId: setName }` for the TCG search, written right after by
+  `scripts/collect-tcg-sets.mjs` (can also be run on its own: `node scripts/collect-tcg-sets.mjs`)
 
 ```powershell
 npm run collect-tcg
@@ -148,6 +209,28 @@ npm run fetch-serebii-tcg
 Run this again on its own whenever you notice new cards without images — no need to re-run
 `collect-tcg` first, as long as `tcg-cards.json` already has the `imageUrl: null` entries.
 
+### Step 3c — Fill in the rest from other free sources (optional, re-run anytime)
+Resolves whatever TCGdex and Serebii both missed: pokemon-tcg-data / Scrydex (subsets como Shiny
+Vault/Trainer Gallery/Galarian Gallery, promos, McDonald's, Classic Collection), pkmncards.com
+(Trainer Kits XY/BW/SM/HS/DP/EX), Limitless (TCG Pocket). Downloads each image itself and validates it (404s and Scrydex's
+"no image" placeholder are rejected), so a card only gets a local `imageUrl` once the file is on
+disk.
+
+```powershell
+npm run fetch-fallback-tcg            # all missing cards
+node scripts/fetch-fallback-tcg-images.mjs --dry-run --only=mep,svp   # preview specific sets
+```
+
+Whatever is still missing is written to `scripts/tcg-missing-images.json`. To fix one by hand,
+add `"cardId": "https://..."` to `scripts/tcg-image-overrides.json` and re-run the command.
+Reprints (Trainer Kits, Yellow A Alternate, Classic Collection) reuse the original card's image,
+matched by name + illustrator + attack names via TCGdex card details.
+
+Known gap: My First Battle, Poké Card Creator Pack and a few one-off promos exist only on
+Bulbagarden Archives, which blocks scripted downloads. Save those through a browser straight to
+`public/images/tcg/{cardId}/low.webp` and re-run the command — a file already on disk for a card
+without `imageUrl` is adopted as-is and never overwritten.
+
 ### Step 4 — Download all images
 Downloads ~1100 Pokémon sprites + ~19000 TCG card images (~440MB total, TCGdex + Serebii-sourced).
 Idempotent — skips files already downloaded.
@@ -161,7 +244,9 @@ Estimated time: ~20 minutes.
 ### Step 5 — Commit images and data
 ```powershell
 git add public/data/pokemon-compiled.json
+git add public/data/moves/
 git add public/data/tcg-cards.json
+git add public/data/tcg-sets.json
 git add public/data/type-chart.json
 git add public/images/
 git commit -m "Add compiled data and local images"
@@ -203,13 +288,25 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|--------|--------|
 | `src/api/pokemonApi.ts` | **Modified** | Loads local JSON; no backend calls |
 | `src/pages/PokedexPage.tsx` | **Modified** | Client-side filtering; no detail fetch |
-| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup |
+| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; mobile card viewer with No / Yes / Yes, foil |
+| `src/components/PokemonModal.tsx` | **Modified** | Renders `PokemonModalMobile` at ≤640px; desktop = type-colored hero column with stacked tabs + ← → keys; tab content and links shared by both layouts |
+| `src/components/PokemonModalMobile.tsx` | **New** | Phone layout of the Pokémon detail |
+| `src/components/PokemonInfoTab.tsx` | **Modified** | `MoveList` on mobile; `PokemonInfoDesktop` (I1 layout, section shortcuts) on desktop; stat band classes; loads moves on open (`loadPokemonMoves`) |
+| `src/components/FilterPanel.tsx` | **New** | Listing filter panel (desktop tabs / mobile bottom sheet); replaced `FilterCombobox.tsx` |
+| `src/hooks/useIsMobile.ts` | **New** | `(max-width: 640px)` media query as a hook |
+| `src/hooks/useCollection.ts` | **Modified** | `getCardOwnership` / `setCardOwnership` (same saved format) |
 | `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager/'` (nome do repo no GitHub); `VitePWA` plugin (manifest + service worker) |
 | `package.json` | **Modified** | Removed `axios`; added setup scripts; `vite-plugin-pwa` (devDependency) |
-| `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON |
+| `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON; moves split into `data/moves/{id}.json` |
+| `src/hooks/useAuth.ts` | **Modified** | Remembers the last logged-in name (`pcm.lastUserName`) so the header shows the user button, not "Login", while Firebase restores the session |
+| `src/components/UserMenu.tsx` | **Modified** | `UserMenuPlaceholder`: same look as the trigger, disabled, shown during that wait |
 | `scripts/collect-tcg-data.mjs` | **New** | Fetches TCG card metadata from TCGdex |
+| `scripts/collect-tcg-sets.mjs` | **New** | Writes `tcg-sets.json` (set names for the TCG search) |
 | `scripts/fetch-serebii-tcg-images.mjs` | **New** | Fills in TCG card images TCGdex is missing, from Serebii |
+| `scripts/fetch-fallback-tcg-images.mjs` | **New** | Fills in what's still missing from pokemon-tcg-data/Scrydex, pkmncards, Limitless, manual overrides |
+| `scripts/tcg-image-overrides.json` | **New** | Manual `cardId → imageUrl` overrides used by the fallback script |
 | `scripts/download-images.mjs` | **New** | Downloads all images locally |
+| `scripts/generate-type-symbols.py` | **New** | One-off (Python + Pillow): type icon → big white symbol mask for the desktop detail corner |
 | `.github/workflows/deploy.yml` | **New** | GitHub Pages deployment via Actions |
 | All other `src/` files | **Unchanged** | Identical to `pokedex/frontend/src/` |
 
@@ -219,14 +316,17 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 
 | File | Size (est.) | When Generated | Committed? |
 |------|-------------|----------------|------------|
-| `public/data/pokemon-compiled.json` | ~10MB | `npm run compile-data` | Yes |
-| `public/data/tcg-cards.json` | ~2MB | `npm run collect-tcg`, updated by `npm run fetch-serebii-tcg` | Yes |
+| `public/data/pokemon-compiled.json` | ~3.5MB | `npm run compile-data` | Yes |
+| `public/data/moves/{id}.json` | ~23MB total, 1288 files | `npm run compile-data` | Yes |
+| `public/data/tcg-cards.json` | ~2MB | `npm run collect-tcg` (merge), updated by `npm run fetch-serebii-tcg` and `npm run fetch-fallback-tcg` | Yes |
 | `public/data/type-chart.json` | <10KB | `npm run compile-data` | Yes |
+| `public/data/tcg-sets.json` | ~6KB | `npm run collect-tcg` (or `node scripts/collect-tcg-sets.mjs`) | Yes |
 | `public/data/tcg-download-manifest.json` | ~3MB | `npm run collect-tcg`, extended by `npm run fetch-serebii-tcg` | **No** (gitignored) |
 | `public/data/download-errors.json` | varies | `npm run download-images` | Optional |
 | `public/images/pokemon/*.webp` | ~44MB | `npm run download-images` | Yes |
 | `public/images/pokemon-xl/*.webp` | ~88MB | `npm run download-images` | Yes |
 | `public/images/games/*.png` | ~1MB | `npm run download-images` | Yes |
+| `public/images/types/symbol-*.png` | ~170KB (18 files) | `python scripts/generate-type-symbols.py` | Yes |
 | `public/images/tcg/**/*.webp` | ~440MB | `npm run download-images` | Yes |
 
 **Total committed size: ~570MB** — within GitHub Pages 1GB limit.

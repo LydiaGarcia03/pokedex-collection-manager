@@ -1,0 +1,590 @@
+{
+  "timestamp": "2026-06-15T23:29:27.803Z",
+  "datasetUrl": "https://cdn.pokepc.net/dataset/pokepc-static-data-e7d526ecab218b16.min.json",
+  "siteTotal": 1595,
+  "ourTotal": 1287,
+  "missingCount": 83,
+  "missing": [
+    {
+      "id": "pikachu-original",
+      "nid": "0025-original",
+      "dexNum": 25,
+      "name": "pikachu-original",
+      "formName": null
+    },
+    {
+      "id": "pikachu-hoenn",
+      "nid": "0025-hoenn",
+      "dexNum": 25,
+      "name": "pikachu-hoenn",
+      "formName": null
+    },
+    {
+      "id": "pikachu-sinnoh",
+      "nid": "0025-sinnoh",
+      "dexNum": 25,
+      "name": "pikachu-sinnoh",
+      "formName": null
+    },
+    {
+      "id": "pikachu-unova",
+      "nid": "0025-unova",
+      "dexNum": 25,
+      "name": "pikachu-unova",
+      "formName": null
+    },
+    {
+      "id": "pikachu-kalos",
+      "nid": "0025-kalos",
+      "dexNum": 25,
+      "name": "pikachu-kalos",
+      "formName": null
+    },
+    {
+      "id": "pikachu-alola",
+      "nid": "0025-alola",
+      "dexNum": 25,
+      "name": "pikachu-alola",
+      "formName": null
+    },
+    {
+      "id": "pikachu-partner",
+      "nid": "0025-partner",
+      "dexNum": 25,
+      "name": "pikachu-partner",
+      "formName": null
+    },
+    {
+      "id": "pikachu-world",
+      "nid": "0025-world",
+      "dexNum": 25,
+      "name": "pikachu-world",
+      "formName": null
+    },
+    {
+      "id": "tauros-paldea",
+      "nid": "0128-paldea",
+      "dexNum": 128,
+      "name": "tauros-paldea",
+      "formName": null
+    },
+    {
+      "id": "tauros-paldea-fire",
+      "nid": "0128-paldea-fire",
+      "dexNum": 128,
+      "name": "tauros-paldea-fire",
+      "formName": null
+    },
+    {
+      "id": "tauros-paldea-water",
+      "nid": "0128-paldea-water",
+      "dexNum": 128,
+      "name": "tauros-paldea-water",
+      "formName": null
+    },
+    {
+      "id": "shellos-east",
+      "nid": "0422-east",
+      "dexNum": 422,
+      "name": "shellos-east",
+      "formName": null
+    },
+    {
+      "id": "gastrodon-east",
+      "nid": "0423-east",
+      "dexNum": 423,
+      "name": "gastrodon-east",
+      "formName": null
+    },
+    {
+      "id": "arceus-fighting",
+      "nid": "0493-fighting",
+      "dexNum": 493,
+      "name": "arceus-fighting",
+      "formName": null
+    },
+    {
+      "id": "arceus-flying",
+      "nid": "0493-flying",
+      "dexNum": 493,
+      "name": "arceus-flying",
+      "formName": null
+    },
+    {
+      "id": "arceus-poison",
+      "nid": "0493-poison",
+      "dexNum": 493,
+      "name": "arceus-poison",
+      "formName": null
+    },
+    {
+      "id": "arceus-ground",
+      "nid": "0493-ground",
+      "dexNum": 493,
+      "name": "arceus-ground",
+      "formName": null
+    },
+    {
+      "id": "arceus-rock",
+      "nid": "0493-rock",
+      "dexNum": 493,
+      "name": "arceus-rock",
+      "formName": null
+    },
+    {
+      "id": "arceus-bug",
+      "nid": "0493-bug",
+      "dexNum": 493,
+      "name": "arceus-bug",
+      "formName": null
+    },
+    {
+      "id": "arceus-ghost",
+      "nid": "0493-ghost",
+      "dexNum": 493,
+      "name": "arceus-ghost",
+      "formName": null
+    },
+    {
+      "id": "arceus-steel",
+      "nid": "0493-steel",
+      "dexNum": 493,
+      "name": "arceus-steel",
+      "formName": null
+    },
+    {
+      "id": "arceus-fire",
+      "nid": "0493-fire",
+      "dexNum": 493,
+      "name": "arceus-fire",
+      "formName": null
+    },
+    {
+      "id": "arceus-water",
+      "nid": "0493-water",
+      "dexNum": 493,
+      "name": "arceus-water",
+      "formName": null
+    },
+    {
+      "id": "arceus-grass",
+      "nid": "0493-grass",
+      "dexNum": 493,
+      "name": "arceus-grass",
+      "formName": null
+    },
+    {
+      "id": "arceus-electric",
+      "nid": "0493-electric",
+      "dexNum": 493,
+      "name": "arceus-electric",
+      "formName": null
+    },
+    {
+      "id": "arceus-psychic",
+      "nid": "0493-psychic",
+      "dexNum": 493,
+      "name": "arceus-psychic",
+      "formName": null
+    },
+    {
+      "id": "arceus-ice",
+      "nid": "0493-ice",
+      "dexNum": 493,
+      "name": "arceus-ice",
+      "formName": null
+    },
+    {
+      "id": "arceus-dragon",
+      "nid": "0493-dragon",
+      "dexNum": 493,
+      "name": "arceus-dragon",
+      "formName": null
+    },
+    {
+      "id": "arceus-dark",
+      "nid": "0493-dark",
+      "dexNum": 493,
+      "name": "arceus-dark",
+      "formName": null
+    },
+    {
+      "id": "arceus-fairy",
+      "nid": "0493-fairy",
+      "dexNum": 493,
+      "name": "arceus-fairy",
+      "formName": null
+    },
+    {
+      "id": "arceus-legendary",
+      "nid": "0493-legendary",
+      "dexNum": 493,
+      "name": "arceus-legendary",
+      "formName": null
+    },
+    {
+      "id": "darmanitan-galar",
+      "nid": "0555-galar",
+      "dexNum": 555,
+      "name": "darmanitan-galar",
+      "formName": null
+    },
+    {
+      "id": "deerling-summer",
+      "nid": "0585-summer",
+      "dexNum": 585,
+      "name": "deerling-summer",
+      "formName": null
+    },
+    {
+      "id": "deerling-autumn",
+      "nid": "0585-autumn",
+      "dexNum": 585,
+      "name": "deerling-autumn",
+      "formName": null
+    },
+    {
+      "id": "deerling-winter",
+      "nid": "0585-winter",
+      "dexNum": 585,
+      "name": "deerling-winter",
+      "formName": null
+    },
+    {
+      "id": "sawsbuck-summer",
+      "nid": "0586-summer",
+      "dexNum": 586,
+      "name": "sawsbuck-summer",
+      "formName": null
+    },
+    {
+      "id": "sawsbuck-autumn",
+      "nid": "0586-autumn",
+      "dexNum": 586,
+      "name": "sawsbuck-autumn",
+      "formName": null
+    },
+    {
+      "id": "sawsbuck-winter",
+      "nid": "0586-winter",
+      "dexNum": 586,
+      "name": "sawsbuck-winter",
+      "formName": null
+    },
+    {
+      "id": "vivillon-polar",
+      "nid": "0666-polar",
+      "dexNum": 666,
+      "name": "vivillon-polar",
+      "formName": null
+    },
+    {
+      "id": "vivillon-tundra",
+      "nid": "0666-tundra",
+      "dexNum": 666,
+      "name": "vivillon-tundra",
+      "formName": null
+    },
+    {
+      "id": "vivillon-continental",
+      "nid": "0666-continental",
+      "dexNum": 666,
+      "name": "vivillon-continental",
+      "formName": null
+    },
+    {
+      "id": "vivillon-garden",
+      "nid": "0666-garden",
+      "dexNum": 666,
+      "name": "vivillon-garden",
+      "formName": null
+    },
+    {
+      "id": "vivillon-elegant",
+      "nid": "0666-elegant",
+      "dexNum": 666,
+      "name": "vivillon-elegant",
+      "formName": null
+    },
+    {
+      "id": "vivillon-meadow",
+      "nid": "0666-meadow",
+      "dexNum": 666,
+      "name": "vivillon-meadow",
+      "formName": null
+    },
+    {
+      "id": "vivillon-modern",
+      "nid": "0666-modern",
+      "dexNum": 666,
+      "name": "vivillon-modern",
+      "formName": null
+    },
+    {
+      "id": "vivillon-marine",
+      "nid": "0666-marine",
+      "dexNum": 666,
+      "name": "vivillon-marine",
+      "formName": null
+    },
+    {
+      "id": "vivillon-archipelago",
+      "nid": "0666-archipelago",
+      "dexNum": 666,
+      "name": "vivillon-archipelago",
+      "formName": null
+    },
+    {
+      "id": "vivillon-high-plains",
+      "nid": "0666-high-plains",
+      "dexNum": 666,
+      "name": "vivillon-high-plains",
+      "formName": null
+    },
+    {
+      "id": "vivillon-sandstorm",
+      "nid": "0666-sandstorm",
+      "dexNum": 666,
+      "name": "vivillon-sandstorm",
+      "formName": null
+    },
+    {
+      "id": "vivillon-river",
+      "nid": "0666-river",
+      "dexNum": 666,
+      "name": "vivillon-river",
+      "formName": null
+    },
+    {
+      "id": "vivillon-monsoon",
+      "nid": "0666-monsoon",
+      "dexNum": 666,
+      "name": "vivillon-monsoon",
+      "formName": null
+    },
+    {
+      "id": "vivillon-savanna",
+      "nid": "0666-savanna",
+      "dexNum": 666,
+      "name": "vivillon-savanna",
+      "formName": null
+    },
+    {
+      "id": "vivillon-sun",
+      "nid": "0666-sun",
+      "dexNum": 666,
+      "name": "vivillon-sun",
+      "formName": null
+    },
+    {
+      "id": "vivillon-ocean",
+      "nid": "0666-ocean",
+      "dexNum": 666,
+      "name": "vivillon-ocean",
+      "formName": null
+    },
+    {
+      "id": "vivillon-jungle",
+      "nid": "0666-jungle",
+      "dexNum": 666,
+      "name": "vivillon-jungle",
+      "formName": null
+    },
+    {
+      "id": "vivillon-fancy",
+      "nid": "0666-fancy",
+      "dexNum": 666,
+      "name": "vivillon-fancy",
+      "formName": null
+    },
+    {
+      "id": "vivillon-pokeball",
+      "nid": "0666-pokeball",
+      "dexNum": 666,
+      "name": "vivillon-pokeball",
+      "formName": null
+    },
+    {
+      "id": "flabebe-yellow",
+      "nid": "0669-yellow",
+      "dexNum": 669,
+      "name": "flabebe-yellow",
+      "formName": null
+    },
+    {
+      "id": "flabebe-orange",
+      "nid": "0669-orange",
+      "dexNum": 669,
+      "name": "flabebe-orange",
+      "formName": null
+    },
+    {
+      "id": "flabebe-blue",
+      "nid": "0669-blue",
+      "dexNum": 669,
+      "name": "flabebe-blue",
+      "formName": null
+    },
+    {
+      "id": "flabebe-white",
+      "nid": "0669-white",
+      "dexNum": 669,
+      "name": "flabebe-white",
+      "formName": null
+    },
+    {
+      "id": "florges-yellow",
+      "nid": "0671-yellow",
+      "dexNum": 671,
+      "name": "florges-yellow",
+      "formName": null
+    },
+    {
+      "id": "florges-orange",
+      "nid": "0671-orange",
+      "dexNum": 671,
+      "name": "florges-orange",
+      "formName": null
+    },
+    {
+      "id": "florges-blue",
+      "nid": "0671-blue",
+      "dexNum": 671,
+      "name": "florges-blue",
+      "formName": null
+    },
+    {
+      "id": "florges-white",
+      "nid": "0671-white",
+      "dexNum": 671,
+      "name": "florges-white",
+      "formName": null
+    },
+    {
+      "id": "furfrou-heart",
+      "nid": "0676-heart",
+      "dexNum": 676,
+      "name": "furfrou-heart",
+      "formName": null
+    },
+    {
+      "id": "furfrou-star",
+      "nid": "0676-star",
+      "dexNum": 676,
+      "name": "furfrou-star",
+      "formName": null
+    },
+    {
+      "id": "furfrou-diamond",
+      "nid": "0676-diamond",
+      "dexNum": 676,
+      "name": "furfrou-diamond",
+      "formName": null
+    },
+    {
+      "id": "furfrou-debutante",
+      "nid": "0676-debutante",
+      "dexNum": 676,
+      "name": "furfrou-debutante",
+      "formName": null
+    },
+    {
+      "id": "furfrou-matron",
+      "nid": "0676-matron",
+      "dexNum": 676,
+      "name": "furfrou-matron",
+      "formName": null
+    },
+    {
+      "id": "furfrou-dandy",
+      "nid": "0676-dandy",
+      "dexNum": 676,
+      "name": "furfrou-dandy",
+      "formName": null
+    },
+    {
+      "id": "furfrou-la-reine",
+      "nid": "0676-la-reine",
+      "dexNum": 676,
+      "name": "furfrou-la-reine",
+      "formName": null
+    },
+    {
+      "id": "furfrou-kabuki",
+      "nid": "0676-kabuki",
+      "dexNum": 676,
+      "name": "furfrou-kabuki",
+      "formName": null
+    },
+    {
+      "id": "furfrou-pharaoh",
+      "nid": "0676-pharaoh",
+      "dexNum": 676,
+      "name": "furfrou-pharaoh",
+      "formName": null
+    },
+    {
+      "id": "oricorio-pau",
+      "nid": "0741-pau",
+      "dexNum": 741,
+      "name": "oricorio-pau",
+      "formName": null
+    },
+    {
+      "id": "zacian-crowned",
+      "nid": "0888-crowned",
+      "dexNum": 888,
+      "name": "zacian-crowned",
+      "formName": null
+    },
+    {
+      "id": "zamazenta-crowned",
+      "nid": "0889-crowned",
+      "dexNum": 889,
+      "name": "zamazenta-crowned",
+      "formName": null
+    },
+    {
+      "id": "urshifu-gmax",
+      "nid": "0892-gmax",
+      "dexNum": 892,
+      "name": "urshifu-gmax",
+      "formName": null
+    },
+    {
+      "id": "calyrex-ice",
+      "nid": "0898-ice",
+      "dexNum": 898,
+      "name": "calyrex-ice",
+      "formName": null
+    },
+    {
+      "id": "calyrex-shadow",
+      "nid": "0898-shadow",
+      "dexNum": 898,
+      "name": "calyrex-shadow",
+      "formName": null
+    },
+    {
+      "id": "maushold-three",
+      "nid": "0925-three",
+      "dexNum": 925,
+      "name": "maushold-three",
+      "formName": null
+    },
+    {
+      "id": "tatsugiri-droopy-mega",
+      "nid": "0978-droopy-mega",
+      "dexNum": 978,
+      "name": "tatsugiri-droopy-mega",
+      "formName": null
+    },
+    {
+      "id": "tatsugiri-stretchy-mega",
+      "nid": "0978-stretchy-mega",
+      "dexNum": 978,
+      "name": "tatsugiri-stretchy-mega",
+      "formName": null
+    }
+  ]
+}
