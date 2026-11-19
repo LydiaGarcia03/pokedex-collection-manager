@@ -1197,7 +1197,10 @@ input {
     overflow-y: auto;
     scrollbar-width: none;
     color: #fff;
-    background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%);
+    /* The type color mixed with a muted slate and with ~25% less chroma, so vivid types (Dragon,
+       Poison…) don't glare. The first line is the fallback for browsers without oklch(from …). */
+    background: linear-gradient(160deg, color-mix(in oklab, var(--type-color) 62%, #2a3a55) 0%, color-mix(in oklab, var(--type-color) 26%, #0a2240) 100%);
+    background: linear-gradient(160deg, oklch(from color-mix(in oklab, var(--type-color) 66%, #2a3a55) l calc(c * 0.75) h) 0%, color-mix(in oklab, var(--type-color) 26%, #0a2240) 100%);
 }
 
 /* Everything in the column sits above the big type symbol. */
@@ -1924,7 +1927,7 @@ input {
     border-radius: 8px;
 }
 
-/* A game you don't have loses its color. */
+/* "Collection visible" mode: a game you don't have loses its color. */
 .pokemon-game-swatch--muted {
     color: rgba(226, 232, 240, 0.72);
     background: rgba(147, 197, 253, 0.06);
@@ -2011,6 +2014,176 @@ input {
     transition: filter 0.2s ease;
 }
 
+/* ─── Desktop TCG (option T4 of docs/tcg-tab-mock.html) ───────────────────── */
+
+/* "Collection visible" mode, desktop: a card you don't have has its art grayed out; the corner
+   box stays clickable. */
+.pokemon-tcg-card--missing img,
+.pokemon-tcg-card--missing .pokemon-tcg-card__placeholder {
+    filter: grayscale(0.9);
+    opacity: 0.45;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+/* The corner box is a button on desktop: empty → have (blue check) → have, foil (silver box with
+   the three-sparkles icon, see .selectable-item-checkbox--foil).
+   Two classes so it beats .selectable-item-checkbox--compact (pointer-events: none), defined
+   further down — otherwise the click falls through to the card and opens the viewer. */
+.pokemon-tcg-card .pokemon-tcg-card__state {
+    padding: 0;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.pokemon-tcg-card .pokemon-tcg-card__state:hover {
+    border-color: rgba(159, 212, 255, 0.9);
+}
+
+/* Foil state of the corner box (phone and desktop). Combined with --selected so it wins over
+   that rule's blue, defined further down. */
+.selectable-item-checkbox--selected.selectable-item-checkbox--foil {
+    color: #111827;
+    background: linear-gradient(135deg, #f9fafb, #cbd5e1 40%, #f1f5f9 55%, #94a3b8);
+    border-color: #f8fafc;
+}
+
+/* Select mode: picked cards get a yellow outline and a filled dot. */
+.pokemon-tcg-card--picked {
+    outline: 3px solid #fde68a;
+    outline-offset: 2px;
+}
+
+.pokemon-tcg-card__pick {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    background: rgba(3, 14, 30, 0.5);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.pokemon-tcg-card--picked .pokemon-tcg-card__pick {
+    background: #fde68a;
+    border-color: #fde68a;
+}
+
+/* Desktop hint for multi-select (Shift+click). */
+.pokemon-tcg-tip {
+    margin: 6px 0 12px;
+    color: rgba(226, 232, 240, 0.55);
+    font-size: 0.72rem;
+}
+
+.pokemon-tcg-tip kbd {
+    padding: 1px 6px;
+    font: inherit;
+    font-weight: 700;
+    color: #cfe6fb;
+    background: rgba(147, 197, 253, 0.12);
+    border: 1px solid rgba(147, 197, 253, 0.25);
+    border-radius: 5px;
+}
+
+/* Floating bar that marks every picked card at once; sticks to the bottom of the tab. */
+.pokemon-tcg-batch {
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 8px;
+    background: #0a2343;
+    border: 1px solid rgba(147, 197, 253, 0.32);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.pokemon-tcg-batch strong {
+    margin: 0 6px;
+    font-size: 0.86rem;
+}
+
+.pokemon-tcg-batch__action {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 12px;
+    color: #e8f4ff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(147, 197, 253, 0.1);
+    border: 1px solid rgba(147, 197, 253, 0.16);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.pokemon-tcg-batch__action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pokemon-tcg-batch__action--owned {
+    color: #092f58;
+    background: #9cc8ed;
+    border-color: #9cc8ed;
+}
+
+.pokemon-tcg-batch__action--foil {
+    color: #111827;
+    background: linear-gradient(135deg, #f9fafb, #cbd5e1 40%, #f1f5f9 55%, #94a3b8);
+    border-color: #f8fafc;
+}
+
+.pokemon-tcg-batch__action--ghost {
+    margin-left: auto;
+    background: none;
+}
+
+/* The enlarged card (same viewer as the phone) as a centered window on desktop. */
+.pokemon-tcg-viewer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(1, 10, 25, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+/* Doubled class: wins over the base .pokemon-tcg-viewer rule (full screen), defined further down. */
+.pokemon-tcg-viewer.pokemon-tcg-viewer--desktop {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: min(520px, calc(100vw - 32px));
+    height: min(820px, calc(100vh - 48px));
+    transform: translate(-50%, -50%);
+    touch-action: auto;
+    background: #0b2c52;
+    border: 1px solid rgba(147, 197, 253, 0.32);
+    border-radius: 22px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    outline: none;
+}
+
+.pokemon-tcg-viewer--desktop .pokemon-tcg-viewer__header {
+    padding: 14px 14px 10px;
+}
+
+.pokemon-tcg-viewer--desktop .pokemon-tcg-viewer__card {
+    width: min(78%, calc((min(820px, 100vh - 48px) - 240px) * 5 / 7));
+}
+
+.pokemon-tcg-viewer--desktop .pokemon-tcg-viewer__ownership {
+    padding: 14px 18px 20px;
+}
+
 /*rollback se nao ficar legal*/
 /*.selectable-item-checkbox {
     position: absolute;
@@ -2073,46 +2246,6 @@ input {
             0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-.pokemon-tcg-card__foil-toggle {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    z-index: 2;
-
-    width: 20px;
-    height: 20px;
-    padding: 0;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    color: rgba(226, 232, 240, 0.75);
-    background: rgba(11, 51, 96, 0.34);
-    border: 1px solid rgba(139, 191, 235, 0.32);
-    border-radius: 5px;
-    backdrop-filter: blur(4px);
-    cursor: pointer;
-    transition:
-            color 160ms ease,
-            background 160ms ease,
-            border-color 160ms ease,
-            box-shadow 160ms ease;
-}
-
-.pokemon-tcg-card__foil-toggle:hover {
-    border-color: rgba(139, 108, 189, 0.55);
-}
-
-.pokemon-tcg-card__foil-toggle--active {
-    color: #eaeaee;
-    background: #7c5cb8;
-    border: 1px solid #7c5cb8;
-    box-shadow:
-            0 0 5px rgba(234, 234, 238, 0.5),
-            0 2px 6px rgba(0, 0, 0, 0.25);
-}
-
 .pokemon-tcg-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));
@@ -2169,51 +2302,6 @@ input {
 .pokemon-tcg-card--selectable:hover {
     border-color: rgba(159, 212, 255, 0.9);
     box-shadow: 0 0 0 1px rgba(159, 212, 255, 0.22);
-}
-
-/* Double-click (desktop) / long-press (touch) opens the full-size focus view below */
-.pokemon-tcg-card--zoomable:not(.pokemon-tcg-card--selectable) {
-    cursor: zoom-in;
-}
-
-.pokemon-tcg-card-focus {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: min(65vh, 560px);
-    padding: 16px;
-    background: rgba(3, 28, 61, 0.35);
-    border: 1px solid rgba(147, 197, 253, 0.32);
-    border-radius: 16px;
-}
-
-.pokemon-tcg-card-focus img {
-    max-width: 100%;
-    max-height: min(65vh, 560px);
-    border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-
-.pokemon-tcg-card-focus__close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    color: #e8f4ff;
-    background: rgba(11, 51, 96, 0.85);
-    border: 1px solid rgba(147, 197, 253, 0.5);
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-.pokemon-tcg-card-focus__close:hover {
-    background: rgba(11, 51, 96, 1);
-    border-color: rgba(159, 212, 255, 0.9);
 }
 
 .pokemon-detail-panel,
@@ -3825,36 +3913,85 @@ input {
     color: #e8f4ff;
 }
 
-/* Foil cards: purple border + a moving holographic sheen, so they stand out at a glance. */
+/* Foil cards: like the back of a CD — a rainbow ring that turns around the card and a soft
+   iridescent shimmer over the art — plus the FOIL tag (.pokemon-tcg-foil-tag). The angle is a
+   registered property so the conic gradients can rotate; browsers without @property just show
+   them still. */
+@property --foil-angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
 .pokemon-tcg-card--foil {
-    border-color: #b79cf0;
-    box-shadow: 0 0 0 1px rgba(183, 156, 240, 0.55), 0 0 14px rgba(124, 92, 184, 0.55);
+    border: 3px solid transparent;
+    background:
+        linear-gradient(#0b3360, #0b3360) padding-box,
+        conic-gradient(from var(--foil-angle), #ff9ad5, #9ad8ff, #b8ffb0, #fff59a, #ffb3e6, #a5b4fc, #7ee8fa, #ff9ad5) border-box;
+    box-shadow: 0 0 12px rgba(165, 210, 255, 0.45);
+    animation: tcg-foil-spin 6s linear infinite;
 }
 
 .pokemon-tcg-card--foil::after {
     content: '';
     position: absolute;
     inset: 0;
+    z-index: 1;
     border-radius: inherit;
     pointer-events: none;
-    mix-blend-mode: color-dodge;
-    opacity: 0.35;
-    background: linear-gradient(115deg, transparent 20%, rgba(255, 120, 220, 0.55) 35%, rgba(120, 200, 255, 0.55) 50%, rgba(170, 255, 170, 0.5) 62%, transparent 78%);
-    background-size: 250% 250%;
-    animation: tcg-foil-sheen 3.2s linear infinite;
+    mix-blend-mode: overlay;
+    opacity: 0.45;
+    background:
+        conic-gradient(from var(--foil-angle) at 30% 25%, rgba(255, 0, 170, 0.45), rgba(0, 200, 255, 0.45), rgba(120, 255, 120, 0.4), rgba(255, 235, 0, 0.4), rgba(255, 0, 170, 0.45)),
+        radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.5), transparent 45%);
+    animation: tcg-foil-spin 6s linear infinite;
 }
 
-@keyframes tcg-foil-sheen {
-    from { background-position: 100% 0; }
-    to { background-position: -150% 0; }
+@keyframes tcg-foil-spin {
+    to { --foil-angle: 360deg; }
+}
+
+.pokemon-tcg-viewer__card.pokemon-tcg-card--foil {
+    border-width: 4px;
+}
+
+/* Keep the rainbow ring on hover (the selectable hover paints the border blue). */
+.pokemon-tcg-card--foil.pokemon-tcg-card--selectable:hover {
+    border-color: transparent;
+    box-shadow: 0 0 16px rgba(165, 210, 255, 0.65);
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .pokemon-tcg-card--foil,
     .pokemon-tcg-card--foil::after {
         animation: none;
-        background-position: 30% 0;
     }
 }
+
+/* A silver "FOIL" sticker on the card's left edge. */
+.pokemon-tcg-foil-tag {
+    position: absolute;
+    left: 0;
+    bottom: 10px;
+    z-index: 3;
+    padding: 2px 8px 2px 6px;
+    color: #111827;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #f9fafb, #cbd5e1 40%, #f1f5f9 55%, #94a3b8);
+    border-radius: 0 6px 6px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.pokemon-tcg-viewer__card .pokemon-tcg-foil-tag {
+    bottom: 16px;
+    padding: 4px 12px 4px 10px;
+    font-size: 0.8rem;
+}
+
 
 /* ==========================================================================
    Mobile Pokémon detail (PokemonModalMobile — only rendered at ≤640px)
@@ -4384,22 +4521,6 @@ input {
     cursor: pointer;
 }
 
-.pokemon-tcg-card__foil-badge {
-    position: absolute;
-    left: 6px;
-    bottom: 6px;
-    z-index: 2;
-    width: 22px;
-    height: 22px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    background: linear-gradient(135deg, #e4d4ff, #7c5cb8 55%, #4b2d86);
-    border: 1px solid #b79cf0;
-    border-radius: 50%;
-}
-
 /* Enlarged card on mobile, with No / Yes / Yes, foil */
 .pokemon-tcg-viewer {
     position: fixed;
@@ -4537,8 +4658,8 @@ input {
 }
 
 .pokemon-tcg-ownership__option--foil.pokemon-tcg-ownership__option--active {
-    color: #ffffff;
-    background: linear-gradient(90deg, #5b3ea0, #9b6ff0, #5b3ea0);
+    color: #111827;
+    background: linear-gradient(135deg, #f9fafb, #cbd5e1 40%, #f1f5f9 55%, #94a3b8);
 }
 
 .pokemon-tcg-viewer__hint {

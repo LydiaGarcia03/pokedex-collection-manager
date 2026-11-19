@@ -7,6 +7,7 @@ import { getGameColor, getGameYear } from '../utils/gameDetails';
 interface PokemonGamesTabProps {
     pokemon: Pokemon;
     selected: boolean;
+    collectionVisible: boolean;
     selectedGameIds: string[];
     onToggleGame: (gameId: string) => void;
 }
@@ -34,13 +35,15 @@ function describeGame(game: PokemonGame): string {
 }
 
 /**
- * One block per game (option H4 of docs/games-tab-mock.html): a game you have shows its signature
- * color, one you don't is grayed out. Games can be marked once the Pokémon itself is in the
- * collection, with the same corner checkbox as the TCG cards.
+ * One block per game, in its signature color (option H4 of docs/games-tab-mock.html). Games can be
+ * marked once the Pokémon itself is in the collection, with the same corner checkbox as the TCG
+ * cards. Like the Pokémon cards and the TCG cards, games you don't have turn gray only in
+ * "collection visible" mode.
  */
 export function PokemonGamesTab({
                                     pokemon,
                                     selected,
+                                    collectionVisible,
                                     selectedGameIds,
                                     onToggleGame,
                                 }: PokemonGamesTabProps) {
@@ -72,7 +75,8 @@ export function PokemonGamesTab({
                             className={[
                                 'pokemon-game-swatch',
                                 selected ? 'pokemon-game-swatch--selectable' : '',
-                                owned ? 'pokemon-game-swatch--owned' : 'pokemon-game-swatch--muted',
+                                owned ? 'pokemon-game-swatch--owned' : '',
+                                collectionVisible && !owned ? 'pokemon-game-swatch--muted' : '',
                             ].join(' ')}
                             style={{ '--game-color': getGameColor(game.id) } as CSSProperties}
                             onClick={() => selected && onToggleGame(game.id)}

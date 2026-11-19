@@ -246,32 +246,13 @@ export function useCollection() {
         });
     }
 
-    function toggleFoil(pokemonId: string, cardId: string) {
-        setState(current => {
-            const currentCards = current.selectedCardsByPokemonId[pokemonId] ?? [];
-
-            if (!currentCards.some(card => card.id === cardId)) {
-                return current;
-            }
-
-            return {
-                ...current,
-                selectedCardsByPokemonId: {
-                    ...current.selectedCardsByPokemonId,
-                    [pokemonId]: currentCards.map(card =>
-                        card.id === cardId ? { ...card, foil: !card.foil } : card
-                    )
-                }
-            };
-        });
-    }
-
     function getCardOwnership(pokemonId: string, cardId: string): CardOwnership {
         const card = getSelectedCardEntries(pokemonId).find(entry => entry.id === cardId);
         return !card ? 'none' : card.foil ? 'foil' : 'owned';
     }
 
-    // Sets a card straight to one of the three states (mobile "No / Yes / Yes, foil" control).
+    // Sets a card straight to one of the three states (the card viewer's "No / Yes / Yes, foil",
+    // the desktop corner box that cycles them, and desktop multi-select).
     // Same rule as toggleCard: cards can only be marked while their Pokémon is selected.
     function setCardOwnership(pokemonId: string, cardId: string, ownership: CardOwnership) {
         setState(current => {
@@ -281,7 +262,7 @@ export function useCollection() {
 
             const currentCards = current.selectedCardsByPokemonId[pokemonId] ?? [];
             const foil = ownership === 'foil';
-            // Keep an already-owned card in place (only its foil flag changes), like toggleFoil.
+            // Keep an already-owned card in place: only its foil flag changes.
             const nextCards = ownership === 'none'
                 ? currentCards.filter(card => card.id !== cardId)
                 : currentCards.some(card => card.id === cardId)
@@ -378,7 +359,6 @@ export function useCollection() {
 
         getFoilCardIds,
         isCardFoil,
-        toggleFoil,
 
         getCardOwnership,
         setCardOwnership,

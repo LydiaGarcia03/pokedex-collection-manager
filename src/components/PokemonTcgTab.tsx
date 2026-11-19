@@ -1,13 +1,16 @@
-import { Check, ChevronLeft, ChevronRight, MinusCircle, Search, Sparkle, WifiOff, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, MinusCircle, Search, WifiOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, TouchEvent } from 'react';
 import { fetchTcgCards, getLoadedTcgCards, getLoadedTcgSetNames, loadTcgSetNames } from '../api/pokemonApi';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { CardOwnership, Pokemon, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
+import { FoilSparklesIcon } from './FoilSparklesIcon';
 
 const IMAGE_TIMEOUT_MS = 8000;
-const LONG_PRESS_MS = 500;
 const SWIPE_MIN_PX = 50;
+
+// Desktop corner box: each click moves the card to the next state.
+const NEXT_OWNERSHIP: Record<CardOwnership, CardOwnership> = { none: 'owned', owned: 'foil', foil: 'none' };
 
 type StatusFilter = 'all' | 'owned' | 'missing' | 'foil';
 
@@ -21,7 +24,7 @@ const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
 const OWNERSHIP_OPTIONS: { id: CardOwnership; label: string; icon: ReactNode }[] = [
     { id: 'none', label: 'No', icon: <MinusCircle size={17} strokeWidth={2.4} /> },
     { id: 'owned', label: 'Yes', icon: <Check size={17} strokeWidth={3} /> },
-    { id: 'foil', label: 'Yes, foil', icon: <Sparkle size={17} strokeWidth={2.4} fill="currentColor" /> },
+    { id: 'foil', label: 'Yes, foil', icon: <FoilSparklesIcon size={17} /> },
 ];
 
 function foldText(text: string) {
@@ -89,7 +92,6 @@ interface PokemonTcgTabProps {
     selectedCardIds: string[];
     onToggleCard: (cardId: string) => void;
     foilCardIds: string[];
-    onToggleFoil: (cardId: string) => void;
     onSetCardOwnership: (cardId: string, ownership: CardOwnership) => void;
 }
 
@@ -102,7 +104,6 @@ export function PokemonTcgTab({
     selectedCardIds,
     onToggleCard,
     foilCardIds,
-    onToggleFoil,
     onSetCardOwnership,
 }: PokemonTcgTabProps) {
     const isMobile = useIsMobile();
@@ -114,45 +115,42 @@ export function PokemonTcgTab({
     const [setNames, setSetNames] = useState<Record<string, string>>(() => getLoadedTcgSetNames() ?? {});
     const [loading, setLoading] = useState(() => getLoadedTcgCards(pokemon.name) === null || getLoadedTcgSetNames() === null);
     const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
-    // Mobile viewer: the cards it pages through, frozen when it opens — otherwise marking a card
+    // Card viewer: the cards it pages through, frozen when it opens — otherwise marking a card
     // "No" while filtering by Owned would drop it from the list and close the viewer mid-review.
     const [viewerCardIds, setViewerCardIds] = useState<string[]>([]);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    // Desktop multi-select (option T4 of docs/tcg-tab-mock.html, started with Shift+click): pick
+    // several cards, then mark them all at once from the bar at the bottom.
+    const [picking, setPicking] = useState(false);
+    const [pickedIds, setPickedIds] = useState<Set<string>>(() => new Set());
 
-    // A long press (touch, non-mobile layout) fires a synthetic click on release — this ref
-    // suppresses that one click so it doesn't also toggle the card right after opening the focus view.
-    const suppressNextClickRef = useRef(false);
-    const longPressTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
     const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+    const viewerRef = useRef<HTMLDivElement>(null);
 
-    function clearLongPressTimer() {
-        if (longPressTimerRef.current !== null) {
-            window.clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-        }
+    // Focus the viewer when it opens, so Esc and ← → reach it (and not the Pokémon navigation).
+    const viewerOpen = focusedCardId !== null;
+    useEffect(() => {
+        if (viewerOpen) viewerRef.current?.focus();
+    }, [viewerOpen]);
+
+    function stopPicking() {
+        setPicking(false);
+        setPickedIds(new Set());
     }
 
-    function handleCardTouchStart(card: TcgCard) {
-        if (isMobile || !card.imageUrl) return; // mobile: a plain tap already opens the card
-        clearLongPressTimer();
-        longPressTimerRef.current = window.setTimeout(() => {
-            suppressNextClickRef.current = true;
-            setFocusedCardId(card.id);
-        }, LONG_PRESS_MS);
+    function togglePicked(cardId: string) {
+        setPickedIds(current => {
+            const next = new Set(current);
+            if (next.has(cardId)) next.delete(cardId);
+            else next.add(cardId);
+            return next;
+        });
     }
 
-    function handleCardClick(card: TcgCard) {
-        clearLongPressTimer();
-        if (suppressNextClickRef.current) {
-            suppressNextClickRef.current = false;
-            return;
-        }
-        if (isMobile) {
-            openViewer(card.id);
-        } else if (selected) {
-            onToggleCard(card.id);
-        }
+    function applyToPicked(ownership: CardOwnership) {
+        for (const cardId of pickedIds) onSetCardOwnership(cardId, ownership);
+        stopPicking();
     }
 
     useEffect(() => {
@@ -257,15 +255,27 @@ export function PokemonTcgTab({
         return statusOk && matchesQuery(card, setNameOf(card), query);
     });
 
-    const viewerCards = isMobile
-        ? viewerCardIds.map(id => displayCards.find(c => c.id === id)).filter((c): c is TcgCard => c !== undefined)
-        : displayCards;
+    const isPicking = picking && selected && !isMobile;
+    const viewerCards = viewerCardIds
+        .map(id => displayCards.find(c => c.id === id))
+        .filter((c): c is TcgCard => c !== undefined);
     const focusedIndex = focusedCardId ? viewerCards.findIndex(c => c.id === focusedCardId) : -1;
     const focusedCard = focusedIndex >= 0 ? viewerCards[focusedIndex] : null;
 
     function openViewer(cardId: string) {
         setViewerCardIds(visibleCards.map(c => c.id));
         setFocusedCardId(cardId);
+    }
+
+    // A click on the card opens it big (phone and desktop). On desktop, Shift+click starts picking
+    // several cards; while picking, a plain click picks too.
+    function handleCardClick(card: TcgCard, shiftKey = false) {
+        if (!isMobile && selected && (shiftKey || isPicking)) {
+            setPicking(true);
+            togglePicked(card.id);
+        } else {
+            openViewer(card.id);
+        }
     }
 
     function stepFocus(delta: number) {
@@ -316,7 +326,7 @@ export function PokemonTcgTab({
                                 aria-pressed={activeStatus === filter.id}
                                 onClick={() => setStatusFilter(filter.id)}
                             >
-                                {filter.id === 'foil' && <Sparkle size={12} strokeWidth={2.4} fill="currentColor" />}
+                                {filter.id === 'foil' && <FoilSparklesIcon size={13} />}
                                 {filter.label}
                                 <em>{statusCounts[filter.id]}</em>
                             </button>
@@ -327,184 +337,211 @@ export function PokemonTcgTab({
                     {visibleCards.length} of {displayCards.length} cards
                 </span>
             </div>
+            {selected && !isMobile && !isPicking && (
+                <p className="pokemon-tcg-tip">Tip: <kbd>Shift</kbd> + Click cards to mark several at once</p>
+            )}
         </div>
     );
 
     return (
         <div className="pokemon-tcg-tab">
-            <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
-                <defs>
-                    <linearGradient id="foil-toggle-silver" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#ffffff" />
-                        <stop offset="40%" stopColor="#d4d4d8" />
-                        <stop offset="50%" stopColor="#8a8a94" />
-                        <stop offset="60%" stopColor="#d4d4d8" />
-                        <stop offset="100%" stopColor="#ffffff" />
-                    </linearGradient>
-                </defs>
-            </svg>
+            {toolbar}
 
-            {focusedCard && !isMobile ? (
-                <div className="pokemon-tcg-card-focus">
-                    <button
-                        type="button"
-                        className="pokemon-tcg-card-focus__close"
-                        onClick={() => setFocusedCardId(null)}
-                        title="Close"
-                    >
-                        <X size={22} strokeWidth={2.4} />
-                    </button>
-                    <img src={focusedCard.imageUrl ?? undefined} alt={focusedCard.name} />
+            {visibleCards.length === 0 ? (
+                <div className="pokemon-tcg-empty">
+                    <strong>No cards found</strong>
+                    Try another search or clear the filters.
                 </div>
             ) : (
-                <>
-                    {toolbar}
+                <div className="pokemon-tcg-grid">
+                    {visibleCards.map(card => {
+                        const ownership = ownershipOf(card.id);
+                        const checked = ownership !== 'none';
+                        const isFoil = ownership === 'foil';
+                        // A card you don't have turns gray only in "collection visible" mode, like the
+                        // Pokémon cards and the games. Desktop grays only the art, so the corner box
+                        // stays readable and clickable.
+                        const dimmed = isMobile && collectionVisible && !checked;
+                        const missing = !isMobile && collectionVisible && !checked;
 
-                    {visibleCards.length === 0 ? (
-                        <div className="pokemon-tcg-empty">
-                            <strong>No cards found</strong>
-                            Try another search or clear the filters.
-                        </div>
-                    ) : (
-                        <div className="pokemon-tcg-grid">
-                            {visibleCards.map(card => {
-                                const ownership = ownershipOf(card.id);
-                                const checked = ownership !== 'none';
-                                const isFoil = ownership === 'foil';
-
-                                return (
-                                    <div
-                                        key={card.id}
-                                        className={`pokemon-tcg-card ${selected ? 'pokemon-tcg-card--selectable' : ''} ${checked ? 'pokemon-tcg-card--checked' : ''} ${isFoil ? 'pokemon-tcg-card--foil' : ''} ${collectionVisible && !checked ? 'pokemon-tcg-card--dimmed' : ''} ${card.imageUrl ? 'pokemon-tcg-card--zoomable' : ''}`}
-                                        role={selected || isMobile ? 'button' : undefined}
-                                        tabIndex={selected || isMobile ? 0 : undefined}
-                                        onClick={() => handleCardClick(card)}
-                                        onDoubleClick={() => !isMobile && card.imageUrl && setFocusedCardId(card.id)}
-                                        onTouchStart={() => handleCardTouchStart(card)}
-                                        onTouchEnd={clearLongPressTimer}
-                                        onTouchMove={clearLongPressTimer}
-                                        onTouchCancel={clearLongPressTimer}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                handleCardClick(card);
-                                            }
-                                        }}
-                                        title={`${card.name}${card.setId ? ` · ${setNameOf(card)}` : ''}${card.number ? ` #${card.number}` : ''}`}
+                        return (
+                            <div
+                                key={card.id}
+                                className={[
+                                    'pokemon-tcg-card',
+                                    selected || isMobile || card.imageUrl ? 'pokemon-tcg-card--selectable' : '',
+                                    checked ? 'pokemon-tcg-card--checked' : '',
+                                    isFoil ? 'pokemon-tcg-card--foil' : '',
+                                    dimmed ? 'pokemon-tcg-card--dimmed' : '',
+                                    missing ? 'pokemon-tcg-card--missing' : '',
+                                    isPicking && pickedIds.has(card.id) ? 'pokemon-tcg-card--picked' : '',
+                                ].join(' ')}
+                                role="button"
+                                tabIndex={0}
+                                aria-pressed={isPicking ? pickedIds.has(card.id) : undefined}
+                                onClick={event => handleCardClick(card, event.shiftKey)}
+                                // Shift+click would otherwise select the page text between clicks.
+                                onMouseDown={event => event.shiftKey && event.preventDefault()}
+                                onKeyDown={e => {
+                                    if (e.target !== e.currentTarget) return;
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleCardClick(card, e.shiftKey);
+                                    }
+                                }}
+                                title={`${card.name}${card.setId ? ` · ${setNameOf(card)}` : ''}${card.number ? ` #${card.number}` : ''}`}
+                            >
+                                {selected && isMobile && (
+                                    <span
+                                        className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
+                                            checked ? 'selectable-item-checkbox--selected' : ''
+                                        } ${isFoil ? 'selectable-item-checkbox--foil' : ''}`}
                                     >
-                                        {selected && (
-                                            <span
-                                                className={`selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred ${
-                                                    checked ? 'selectable-item-checkbox--selected' : ''
-                                                }`}
-                                            >
-                                                {checked && <Check size={20} strokeWidth={3.2} />}
-                                            </span>
-                                        )}
+                                        {isFoil ? <FoilSparklesIcon size={16} /> : checked && <Check size={20} strokeWidth={3.2} />}
+                                    </span>
+                                )}
 
-                                        {/* Mobile: tapping the card opens it, so the corner check gets its own 44px tap target. */}
-                                        {selected && isMobile && (
-                                            <button
-                                                type="button"
-                                                className="pokemon-tcg-card__check-hit"
-                                                aria-label={checked ? `Remove ${card.name} from collection` : `Add ${card.name} to collection`}
-                                                onClick={event => {
-                                                    event.stopPropagation();
-                                                    onToggleCard(card.id);
-                                                }}
-                                            />
-                                        )}
+                                {/* Mobile: tapping the card opens it, so the corner check gets its own 44px tap target. */}
+                                {selected && isMobile && (
+                                    <button
+                                        type="button"
+                                        className="pokemon-tcg-card__check-hit"
+                                        aria-label={checked ? `Remove ${card.name} from collection` : `Add ${card.name} to collection`}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            onToggleCard(card.id);
+                                        }}
+                                    />
+                                )}
 
-                                        <CardImage card={card} lazy />
+                                {/* Desktop: the corner box cycles empty → have → foil → empty. */}
+                                {selected && !isMobile && (
+                                    <button
+                                        type="button"
+                                        className={[
+                                            'selectable-item-checkbox selectable-item-checkbox--compact selectable-item-checkbox--blurred',
+                                            'pokemon-tcg-card__state',
+                                            checked ? 'selectable-item-checkbox--selected' : '',
+                                            isFoil ? 'selectable-item-checkbox--foil' : '',
+                                        ].join(' ')}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            onSetCardOwnership(card.id, NEXT_OWNERSHIP[ownership]);
+                                        }}
+                                        aria-label={`${card.name}: ${isFoil ? 'have, foil' : checked ? 'have' : "don't have"}. Click to change.`}
+                                        title={isFoil ? 'Have, foil — click to remove' : checked ? 'Have — click again to mark as foil' : 'Click to mark as have'}
+                                    >
+                                        {isFoil ? <FoilSparklesIcon size={18} /> : checked && <Check size={20} strokeWidth={3.2} />}
+                                    </button>
+                                )}
 
-                                        {checked && !isMobile && (
-                                            <button
-                                                type="button"
-                                                className={`pokemon-tcg-card__foil-toggle ${isFoil ? 'pokemon-tcg-card__foil-toggle--active' : ''}`}
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    onToggleFoil(card.id);
-                                                }}
-                                                title={isFoil ? 'Marked as foil' : 'Mark as foil'}
-                                            >
-                                                <Sparkle size={16} strokeWidth={2.4} fill={isFoil ? 'url(#foil-toggle-silver)' : 'none'} />
-                                            </button>
-                                        )}
+                                {isPicking && <span className="pokemon-tcg-card__pick" aria-hidden="true" />}
 
-                                        {isFoil && isMobile && (
-                                            <span className="pokemon-tcg-card__foil-badge" aria-label="Foil">
-                                                <Sparkle size={12} strokeWidth={2.4} fill="currentColor" />
-                                            </span>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </>
+                                <CardImage card={card} lazy />
+
+                                {isFoil && <span className="pokemon-tcg-foil-tag">Foil</span>}
+                            </div>
+                        );
+                    })}
+                </div>
             )}
 
-            {focusedCard && isMobile && (
-                <div
-                    className="pokemon-tcg-viewer"
-                    role="dialog"
-                    aria-label={focusedCard.name}
-                    data-no-pokemon-swipe
-                    onTouchStart={event => {
-                        const touch = event.touches[0];
-                        swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
-                    }}
-                    onTouchEnd={handleFocusTouchEnd}
-                >
-                    <header className="pokemon-tcg-viewer__header">
-                        <button type="button" className="pokemon-tcg-viewer__round" onClick={() => setFocusedCardId(null)} aria-label="Close">
-                            <X size={18} strokeWidth={2.6} />
-                        </button>
-                        <div className="pokemon-tcg-viewer__title">
-                            <strong>{focusedCard.name}</strong>
-                            <span>{setNameOf(focusedCard)}{focusedCard.number ? ` · #${focusedCard.number}` : ''}</span>
-                        </div>
-                        <span className="pokemon-tcg-viewer__position">{focusedIndex + 1}/{viewerCards.length}</span>
-                    </header>
-
-                    <div className="pokemon-tcg-viewer__stage">
-                        <button type="button" className="pokemon-tcg-viewer__round" onClick={() => stepFocus(-1)} aria-label="Previous card">
-                            <ChevronLeft size={18} strokeWidth={2.6} />
-                        </button>
-                        <div className={`pokemon-tcg-viewer__card ${ownershipOf(focusedCard.id) === 'foil' ? 'pokemon-tcg-card--foil' : ''}`}>
-                            <CardImage card={focusedCard} />
-                        </div>
-                        <button type="button" className="pokemon-tcg-viewer__round" onClick={() => stepFocus(1)} aria-label="Next card">
-                            <ChevronRight size={18} strokeWidth={2.6} />
-                        </button>
-                    </div>
-
-                    <div className="pokemon-tcg-viewer__ownership">
-                        <span className="pokemon-tcg-viewer__label">In my collection</span>
-                        <div className="pokemon-tcg-ownership" role="radiogroup" aria-label="In my collection">
-                            {OWNERSHIP_OPTIONS.map(option => {
-                                const active = ownershipOf(focusedCard.id) === option.id;
-                                return (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={active}
-                                        disabled={!selected}
-                                        className={`pokemon-tcg-ownership__option pokemon-tcg-ownership__option--${option.id} ${active ? 'pokemon-tcg-ownership__option--active' : ''}`}
-                                        onClick={() => onSetCardOwnership(focusedCard.id, option.id)}
-                                    >
-                                        {option.icon}
-                                        {option.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        {!selected && (
-                            <p className="pokemon-tcg-viewer__hint">Add {pokemon.name} to your collection to mark cards.</p>
-                        )}
-                    </div>
+            {isPicking && (
+                <div className="pokemon-tcg-batch" role="toolbar" aria-label="Mark selected cards">
+                    <strong>{pickedIds.size} selected</strong>
+                    <button type="button" className="pokemon-tcg-batch__action pokemon-tcg-batch__action--owned" disabled={pickedIds.size === 0} onClick={() => applyToPicked('owned')}>
+                        <Check size={15} strokeWidth={3} />
+                        Have
+                    </button>
+                    <button type="button" className="pokemon-tcg-batch__action pokemon-tcg-batch__action--foil" disabled={pickedIds.size === 0} onClick={() => applyToPicked('foil')}>
+                        <FoilSparklesIcon size={15} />
+                        Foil
+                    </button>
+                    <button type="button" className="pokemon-tcg-batch__action" disabled={pickedIds.size === 0} onClick={() => applyToPicked('none')}>
+                        <X size={15} strokeWidth={2.8} />
+                        Remove
+                    </button>
+                    <button type="button" className="pokemon-tcg-batch__action pokemon-tcg-batch__action--ghost" onClick={stopPicking}>
+                        Cancel
+                    </button>
                 </div>
+            )}
+
+            {focusedCard && (
+                <>
+                    {!isMobile && <div className="pokemon-tcg-viewer-backdrop" onClick={() => setFocusedCardId(null)} />}
+                    <div
+                        ref={viewerRef}
+                        className={`pokemon-tcg-viewer ${isMobile ? '' : 'pokemon-tcg-viewer--desktop'}`}
+                        role="dialog"
+                        aria-label={focusedCard.name}
+                        tabIndex={-1}
+                        data-no-pokemon-swipe
+                        onKeyDown={event => {
+                            // preventDefault also keeps ← → from switching Pokémon (PokemonModal checks it).
+                            if (event.key === 'Escape') setFocusedCardId(null);
+                            else if (event.key === 'ArrowLeft') stepFocus(-1);
+                            else if (event.key === 'ArrowRight') stepFocus(1);
+                            else return;
+                            event.preventDefault();
+                        }}
+                        onTouchStart={event => {
+                            const touch = event.touches[0];
+                            swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+                        }}
+                        onTouchEnd={handleFocusTouchEnd}
+                    >
+                        <header className="pokemon-tcg-viewer__header">
+                            <button type="button" className="pokemon-tcg-viewer__round" onClick={() => setFocusedCardId(null)} aria-label="Close">
+                                <X size={18} strokeWidth={2.6} />
+                            </button>
+                            <div className="pokemon-tcg-viewer__title">
+                                <strong>{focusedCard.name}</strong>
+                                <span>{setNameOf(focusedCard)}{focusedCard.number ? ` · #${focusedCard.number}` : ''}</span>
+                            </div>
+                            <span className="pokemon-tcg-viewer__position">{focusedIndex + 1}/{viewerCards.length}</span>
+                        </header>
+
+                        <div className="pokemon-tcg-viewer__stage">
+                            <button type="button" className="pokemon-tcg-viewer__round" onClick={() => stepFocus(-1)} aria-label="Previous card">
+                                <ChevronLeft size={18} strokeWidth={2.6} />
+                            </button>
+                            <div className={`pokemon-tcg-viewer__card ${ownershipOf(focusedCard.id) === 'foil' ? 'pokemon-tcg-card--foil' : ''}`}>
+                                <CardImage card={focusedCard} />
+                                {ownershipOf(focusedCard.id) === 'foil' && <span className="pokemon-tcg-foil-tag">Foil</span>}
+                            </div>
+                            <button type="button" className="pokemon-tcg-viewer__round" onClick={() => stepFocus(1)} aria-label="Next card">
+                                <ChevronRight size={18} strokeWidth={2.6} />
+                            </button>
+                        </div>
+
+                        <div className="pokemon-tcg-viewer__ownership">
+                            <span className="pokemon-tcg-viewer__label">In my collection</span>
+                            <div className="pokemon-tcg-ownership" role="radiogroup" aria-label="In my collection">
+                                {OWNERSHIP_OPTIONS.map(option => {
+                                    const active = ownershipOf(focusedCard.id) === option.id;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={active}
+                                            disabled={!selected}
+                                            className={`pokemon-tcg-ownership__option pokemon-tcg-ownership__option--${option.id} ${active ? 'pokemon-tcg-ownership__option--active' : ''}`}
+                                            onClick={() => onSetCardOwnership(focusedCard.id, option.id)}
+                                        >
+                                            {option.icon}
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {!selected && (
+                                <p className="pokemon-tcg-viewer__hint">Add {pokemon.name} to your collection to mark cards.</p>
+                            )}
+                        </div>
+                    </div>
+                </>
             )}
         </div>
     );

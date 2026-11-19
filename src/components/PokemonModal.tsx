@@ -141,6 +141,7 @@ export function PokemonModal({
                 <PokemonGamesTab
                     pokemon={activePokemonDetail}
                     selected={selected}
+                    collectionVisible={collectionVisible}
                     selectedGameIds={collection.getSelectedGameIds(summary.id)}
                     onToggleGame={gameId => collection.toggleGame(summary.id, gameId)}
                 />
@@ -155,7 +156,6 @@ export function PokemonModal({
                     selectedCardIds={collection.getSelectedCardIds(summary.id)}
                     onToggleCard={cardId => collection.toggleCard(summary.id, cardId)}
                     foilCardIds={collection.getFoilCardIds(summary.id)}
-                    onToggleFoil={cardId => collection.toggleFoil(summary.id, cardId)}
                     onSetCardOwnership={(cardId, ownership) => collection.setCardOwnership(summary.id, cardId, ownership)}
                 />
             )}
