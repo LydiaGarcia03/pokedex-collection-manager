@@ -3942,7 +3942,7 @@ input {
     border-color: #9cc8ed;
 }
 
-/* Desktop: collection chips │ Type [Or|And] Full art · Promo · JP, on one line that wraps */
+/* Desktop: collection chips │ [OR|AND] Full art · Promo · JP, on one line that wraps */
 .pokemon-tcg-filters--wrap {
     flex-wrap: wrap;
     align-items: center;
@@ -3956,16 +3956,29 @@ input {
     background: rgba(147, 197, 253, 0.32);
 }
 
-.pokemon-tcg-filters__label {
-    color: rgba(226, 232, 240, 0.5);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+/* Desktop chips are smaller than the phone sheet's, so the whole filter set fits on one line */
+.pokemon-tcg-filters--wrap {
+    gap: 7px;
 }
 
-.pokemon-tcg-filters__hint {
-    color: rgba(226, 232, 240, 0.5);
-    font-size: 0.72rem;
+.pokemon-tcg-filters--wrap .pokemon-tcg-filter {
+    height: 31px;
+    padding: 0 12px;
+    gap: 5px;
+    font-size: 0.82rem;
+}
+
+.pokemon-tcg-filters--wrap .pokemon-tcg-match {
+    height: 31px;
+}
+
+.pokemon-tcg-filters--wrap .pokemon-tcg-match button {
+    padding: 0 11px;
+    font-size: 0.74rem;
+}
+
+.pokemon-tcg-toolbar__row .pokemon-tcg-tip {
+    margin: 0;
 }
 
 .pokemon-tcg-filter--excluded {

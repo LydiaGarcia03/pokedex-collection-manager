@@ -1,5 +1,24 @@
 # Changes Log
 
+## 2026-11-20 (8) — v1.2.2 (patch)
+
+### Filtros da aba TCG mais compactos no computador
+
+**Files modified:**
+- `src/components/PokemonTcgTab.tsx` (só o computador):
+  - saíram o rótulo "Type" antes do seletor OR / AND e a dica "Click again to exclude";
+  - "X of Y cards" foi para a linha do "Tip: Shift + Click cards to mark several at once", à
+    direita. Quando a dica não aparece (Pokémon fora da coleção ou modo de várias cartas ligado),
+    a contagem fica sozinha nessa linha, à direita;
+  - a linha verde que descreve o filtro fica entre os chips e essa linha.
+- `src/styles.css`: chips e seletor OR / AND menores no computador (31px de altura em vez de 34px,
+  fonte e espaçamento menores; 28px ficou pequeno demais no teste), só dentro de `.pokemon-tcg-filters--wrap`, então a folha de
+  filtros do celular não muda. Removidos `.pokemon-tcg-filters__label` e
+  `.pokemon-tcg-filters__hint`, que ficaram sem uso.
+- `src/appInfo.ts`: 1.2.1 → 1.2.2.
+
+**Why:** pedido da User a partir de um print da aba TCG (Sandslash), para dar espaço aos filtros.
+
 ## 2026-11-20 (7) — v1.2.1 (patch)
 
 ### "Click again to exclude" na mesma linha que a contagem de cartas; OR / AND em maiúsculas

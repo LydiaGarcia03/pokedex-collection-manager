@@ -487,18 +487,16 @@ export function PokemonTcgTab({
                         <span className="pokemon-tcg-filters__divider" aria-hidden="true" />
                     </>
                 )}
-                <span className="pokemon-tcg-filters__label">Type</span>
                 <KindMatchSwitch value={kindMatch} onChange={setKindMatch} />
                 {kindChips}
             </div>
+            {filterDescription && <p className="pokemon-tcg-filter-description">{filterDescription}</p>}
             <div className="pokemon-tcg-toolbar__row">
-                <span className="pokemon-tcg-filters__hint">Click again to exclude</span>
+                {selected && !isPicking && (
+                    <p className="pokemon-tcg-tip">Tip: <kbd>Shift</kbd> + Click cards to mark several at once</p>
+                )}
                 {count}
             </div>
-            {filterDescription && <p className="pokemon-tcg-filter-description">{filterDescription}</p>}
-            {selected && !isPicking && (
-                <p className="pokemon-tcg-tip">Tip: <kbd>Shift</kbd> + Click cards to mark several at once</p>
-            )}
         </div>
     );
 
