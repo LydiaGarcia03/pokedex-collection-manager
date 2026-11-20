@@ -50,14 +50,36 @@ function matchesQuery(card: TcgCard, setName: string, query: string) {
 function CardImage({ card, lazy = false }: { card: TcgCard; lazy?: boolean }) {
     const [imgFailed, setImgFailed] = useState(false);
     const timerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+    const imgRef = useRef<HTMLImageElement>(null);
 
+    // A lazy image only starts downloading when scrolled near, so the hang timeout must start then
+    // too — counting from mount gave up on every card further down a long list.
     useEffect(() => {
-        if (!card.imageUrl) return;
-        timerRef.current = window.setTimeout(() => setImgFailed(true), IMAGE_TIMEOUT_MS);
-        return () => {
-            if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+        const img = imgRef.current;
+        if (!card.imageUrl || !img) return;
+        const startTimer = () => {
+            if (timerRef.current === null && !img.complete) {
+                timerRef.current = window.setTimeout(() => setImgFailed(true), IMAGE_TIMEOUT_MS);
+            }
         };
-    }, [card.imageUrl]);
+        let observer: IntersectionObserver | null = null;
+        if (lazy) {
+            observer = new IntersectionObserver(entries => {
+                if (entries.some(entry => entry.isIntersecting)) {
+                    startTimer();
+                    observer?.disconnect();
+                }
+            });
+            observer.observe(img);
+        } else {
+            startTimer();
+        }
+        return () => {
+            observer?.disconnect();
+            if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+            timerRef.current = null;
+        };
+    }, [card.imageUrl, lazy]);
 
     if (!card.imageUrl || imgFailed) {
         return (
@@ -75,6 +97,7 @@ function CardImage({ card, lazy = false }: { card: TcgCard; lazy?: boolean }) {
 
     return (
         <img
+            ref={imgRef}
             src={card.imageUrl}
             alt={card.name}
             loading={lazy ? 'lazy' : undefined}

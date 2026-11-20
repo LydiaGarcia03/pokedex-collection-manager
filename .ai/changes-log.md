@@ -1,5 +1,21 @@
 # Changes Log
 
+## 2026-11-20 (4) — v1.1.1 (patch)
+
+### Cartas TCG mais abaixo na lista mostravam placeholder em vez da imagem
+
+**Files modified:**
+- `src/components/PokemonTcgTab.tsx` (`CardImage`): o limite de 8s para desistir de uma imagem
+  travada agora só começa quando a carta aparece na tela (`IntersectionObserver`), não quando a
+  lista é montada.
+- `src/appInfo.ts`: versão `1.1.1`.
+
+**Why:** as imagens da grade usam `loading="lazy"`, então o navegador só as baixa quando você rola
+até perto delas. O limite contava a partir da abertura da aba. Num Pokémon com muitas cartas (o
+Pikachu tem 243), quem rolava até as cartas de baixo depois de 8s as encontrava já marcadas como
+falha, e elas ficavam no placeholder (nome/set/número) para sempre. As imagens existiam e estavam
+publicadas (ex.: `smp-SM109`, `smp-SM194` respondem 200 no GitHub Pages).
+
 ## 2026-11-20 (3) — v1.1.0 (minor)
 
 ### Cartas TCG exclusivas do Japão
