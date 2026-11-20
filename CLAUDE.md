@@ -119,6 +119,16 @@ grandes.
 - Busca na aba TCG (computador e celular): campo por nome da carta, nome do set e número, mais os
   filtros All / Owned / Missing / Foil (estes só com o Pokémon selecionado). Os nomes dos sets vêm
   de `public/data/tcg-sets.json`
+- Filtro de tipo de carta na aba TCG: **Full art**, **Promo** e **JP**. Ele aparece sempre, mesmo
+  com o Pokémon fora da coleção. Cada chip tem 3 estados: desligado → só esses → escondidos
+  (vermelho riscado). O seletor **Or / And** decide se a carta precisa ter um dos tipos ligados
+  ou todos. Uma linha verde descreve o filtro em palavras ("Showing cards that are Full art or
+  Promo, except JP"). Opção "★ Chosen" de `docs/tcg-card-type-filter-mock.html`:
+  - **Computador:** tudo numa linha, que quebra se faltar espaço;
+  - **Celular:** botão "Filters" ao lado da busca, que abre uma folha de baixo com Collection,
+    Type e Or / And.
+
+  Os dados `fullArt` / `promo` vêm de `scripts/tag-tcg-cards.mjs` (Step 3e); JP é `lang: 'ja'`.
 
 ### Detalhe do Pokémon no celular (≤640px)
 - Layout próprio em `src/components/PokemonModalMobile.tsx`, escolhido por `useIsMobile`
@@ -280,6 +290,29 @@ npm run collect-tcg-japanese
 node scripts/collect-tcg-japanese.mjs --dry-run   # only report what would be added
 ```
 
+### Step 3e — Tag full art and promo cards (re-run after any step that adds cards)
+Writes `fullArt: true` / `promo: true` into `tcg-cards.json` for the TCG tab's type filter. The
+script owns both fields: each run recomputes them, and it never adds or removes cards. About 80
+TCGdex calls (rarity lists, full card lists of the BW/XY/SM sets, Japanese cards, these last
+cached in `scripts/.cache/`). Takes about a minute.
+
+- **Promo:** sets whose name in `tcg-sets.json` has "Promo", plus Japanese sets `ja-*-P`.
+- **Full art** comes from the TCGdex rarity, because TCGdex has no full art field:
+  - full art rarities: Illustration rare, Special illustration rare, Hyper rare, Secret Rare,
+    and in Pocket ★ / ★★ / ★★★ / Crown / Two Shiny. One Shiny doesn't count, because it has a
+    text box;
+  - Ultra Rare from Sword & Shield on;
+  - every card of Trainer Gallery / Galarian Gallery.
+- **BW/XY/SM:** TCGdex also calls the regular EX/GX "Ultra Rare". There, an Ultra Rare is full
+  art only when its number comes after the set's last regular card.
+- **Manual fixes:** `scripts/tcg-full-art-overrides.json` (`{ "cardId": true | false }`) wins
+  over every rule. This is the only way to mark promo full arts.
+
+```powershell
+npm run tag-tcg
+node scripts/tag-tcg-cards.mjs --dry-run   # counts per rule + scripts/.cache/tag-tcg-review.json
+```
+
 ### Step 4 — Download all images
 Downloads ~1100 Pokémon sprites + ~19000 TCG card images (~440MB total, TCGdex + Serebii-sourced).
 Idempotent — skips files already downloaded.
@@ -296,6 +329,7 @@ git add public/data/pokemon-compiled.json
 git add public/data/moves/
 git add public/data/tcg-cards.json
 git add public/data/tcg-sets.json
+git add scripts/tcg-full-art-overrides.json
 git add public/data/type-chart.json
 git add public/images/
 git commit -m "Add compiled data and local images"
@@ -337,7 +371,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|--------|--------|
 | `src/api/pokemonApi.ts` | **Modified** | Loads local JSON; no backend calls |
 | `src/pages/PokedexPage.tsx` | **Modified** | Client-side filtering; no detail fetch |
-| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; card viewer with No / Yes / Yes, foil (phone full screen, desktop window); desktop corner box cycles have/foil and Shift+click multi-mark; "JP" tag on Japan-exclusive cards |
+| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; Full art / Promo / JP type filter with Or / And (desktop row, phone "Filters" sheet); card viewer with No / Yes / Yes, foil (phone full screen, desktop window); desktop corner box cycles have/foil and Shift+click multi-mark; "JP" tag on Japan-exclusive cards |
 | `src/components/PokemonModal.tsx` | **Modified** | Renders `PokemonModalMobile` at ≤640px; desktop = type-colored hero column with stacked tabs + ← → keys; tab content and links shared by both layouts |
 | `src/components/PokemonModalMobile.tsx` | **New** | Phone layout of the Pokémon detail |
 | `src/components/PokemonGamesTab.tsx` | **Modified** | Game swatches in each game's color (H4); hint when the Pokémon isn't collected |
@@ -359,6 +393,8 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 | `scripts/fetch-fallback-tcg-images.mjs` | **New** | Fills in what's still missing from pokemon-tcg-data/Scrydex, pkmncards, Limitless, manual overrides |
 | `scripts/collect-tcg-japanese.mjs` | **New** | Adds Japan-exclusive cards (`lang: 'ja'`, `form`), images from TCGdex or pokemon-card.com |
 | `scripts/tcg-image-overrides.json` | **New** | Manual `cardId → imageUrl` overrides used by the fallback script |
+| `scripts/tag-tcg-cards.mjs` | **New** | Tags `fullArt` / `promo` on TCG cards (rarity rules + overrides) |
+| `scripts/tcg-full-art-overrides.json` | **New** | Manual `cardId → true/false` full art fixes used by `tag-tcg-cards` |
 | `scripts/download-images.mjs` | **New** | Downloads all images locally |
 | `scripts/generate-type-symbols.py` | **New** | One-off (Python + Pillow): type icon → big white symbol mask for the desktop detail corner |
 | `.github/workflows/deploy.yml` | **New** | GitHub Pages deployment via Actions |
@@ -372,7 +408,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|-------------|----------------|------------|
 | `public/data/pokemon-compiled.json` | ~3.5MB | `npm run compile-data` | Yes |
 | `public/data/moves/{id}.json` | ~23MB total, 1288 files | `npm run compile-data` | Yes |
-| `public/data/tcg-cards.json` | ~2MB | `npm run collect-tcg` (merge), updated by `npm run fetch-serebii-tcg`, `npm run fetch-fallback-tcg` and `npm run collect-tcg-japanese` | Yes |
+| `public/data/tcg-cards.json` | ~2.4MB | `npm run collect-tcg` (merge), updated by `npm run fetch-serebii-tcg`, `npm run fetch-fallback-tcg`, `npm run collect-tcg-japanese` and `npm run tag-tcg` | Yes |
 | `scripts/.cache/*.json` | ~3MB | `npm run collect-tcg-japanese` | **No** (gitignored) |
 | `public/data/type-chart.json` | <10KB | `npm run compile-data` | Yes |
 | `public/data/tcg-sets.json` | ~6KB | `npm run collect-tcg` (or `node scripts/collect-tcg-sets.mjs`) | Yes |

@@ -21,6 +21,83 @@ const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
     { id: 'foil', label: 'Foil' },
 ];
 
+type CardKind = 'fullArt' | 'promo' | 'jp';
+type KindFilters = Partial<Record<CardKind, 'include' | 'exclude'>>;
+type KindMatch = 'or' | 'and';
+
+const CARD_KINDS: { id: CardKind; label: string }[] = [
+    { id: 'fullArt', label: 'Full art' },
+    { id: 'promo', label: 'Promo' },
+    { id: 'jp', label: 'JP' },
+];
+
+// Each click on a kind chip: off → include → exclude → off.
+const NEXT_KIND_STATE = { off: 'include', include: 'exclude', exclude: 'off' } as const;
+
+function hasKind(card: TcgCard, kind: CardKind) {
+    if (kind === 'fullArt') return Boolean(card.fullArt);
+    if (kind === 'promo') return Boolean(card.promo);
+    return card.lang === 'ja';
+}
+
+// Excluded kinds always drop the card; included kinds combine with Or (any) / And (every).
+function matchesKinds(card: TcgCard, filters: KindFilters, match: KindMatch) {
+    const included = CARD_KINDS.filter(k => filters[k.id] === 'include').map(k => k.id);
+    if (CARD_KINDS.some(k => filters[k.id] === 'exclude' && hasKind(card, k.id))) return false;
+    if (included.length === 0) return true;
+    return match === 'or' ? included.some(k => hasKind(card, k)) : included.every(k => hasKind(card, k));
+}
+
+// "Showing missing cards that are Full art or Promo, except JP" — null when nothing is filtered.
+function describeFilters(filters: KindFilters, match: KindMatch, status: StatusFilter | null): ReactNode {
+    const named = (state: 'include' | 'exclude') => CARD_KINDS.filter(k => filters[k.id] === state).map(k => k.label);
+    const included = named('include');
+    const excluded = named('exclude');
+    const statusLabel = status && status !== 'all' ? STATUS_FILTERS.find(f => f.id === status)?.label.toLowerCase() : null;
+    if (included.length === 0 && excluded.length === 0 && !statusLabel) return null;
+
+    const list = (labels: string[], joiner: string) =>
+        labels.map((label, i) => (
+            <span key={label}>
+                {i > 0 && ` ${joiner} `}
+                <b>{label}</b>
+            </span>
+        ));
+    const statusPart = statusLabel ? <><b>{statusLabel}</b> </> : null;
+    return (
+        <>
+            Showing {statusPart}
+            {included.length > 1 ? (
+                <>cards that are {list(included, match)}</>
+            ) : included.length === 1 ? (
+                <><b>{included[0]}</b> cards</>
+            ) : (
+                <>{statusPart ? '' : 'all '}cards</>
+            )}
+            {excluded.length > 0 && <>, except {list(excluded, 'and')}</>}
+        </>
+    );
+}
+
+function KindMatchSwitch({ value, onChange, wide = false }: { value: KindMatch; onChange: (value: KindMatch) => void; wide?: boolean }) {
+    return (
+        <span className={`pokemon-tcg-match ${wide ? 'pokemon-tcg-match--wide' : ''}`} role="group" aria-label="Combine card types with">
+            {(['or', 'and'] as const).map(option => (
+                <button
+                    key={option}
+                    type="button"
+                    className={value === option ? 'pokemon-tcg-match__option--active' : ''}
+                    aria-pressed={value === option}
+                    title={option === 'or' ? 'Cards with at least one of the picked types' : 'Cards with every picked type'}
+                    onClick={() => onChange(option)}
+                >
+                    {option === 'or' ? 'Or' : 'And'}
+                </button>
+            ))}
+        </span>
+    );
+}
+
 const OWNERSHIP_OPTIONS: { id: CardOwnership; label: string; icon: ReactNode }[] = [
     { id: 'none', label: 'No', icon: <MinusCircle size={17} strokeWidth={2.4} /> },
     { id: 'owned', label: 'Yes', icon: <Check size={17} strokeWidth={3} /> },
@@ -146,6 +223,9 @@ export function PokemonTcgTab({
     const [viewerCardIds, setViewerCardIds] = useState<string[]>([]);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [kindFilters, setKindFilters] = useState<KindFilters>({});
+    const [kindMatch, setKindMatch] = useState<KindMatch>('or');
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     // Desktop multi-select (option T4 of docs/tcg-tab-mock.html, started with Shift+click): pick
     // several cards, then mark them all at once from the bar at the bottom.
     const [picking, setPicking] = useState(false);
@@ -257,8 +337,28 @@ export function PokemonTcgTab({
             (activeStatus === 'owned' && ownership !== 'none') ||
             (activeStatus === 'missing' && ownership === 'none') ||
             (activeStatus === 'foil' && ownership === 'foil');
-        return statusOk && matchesQuery(card, setNameOf(card), query);
+        return statusOk && matchesKinds(card, kindFilters, kindMatch) && matchesQuery(card, setNameOf(card), query);
     });
+    const kindCounts = Object.fromEntries(
+        CARD_KINDS.map(k => [k.id, displayCards.filter(card => hasKind(card, k.id)).length])
+    ) as Record<CardKind, number>;
+    const activeFilterCount = Object.keys(kindFilters).length + (activeStatus !== 'all' ? 1 : 0);
+
+    function cycleKind(kind: CardKind) {
+        setKindFilters(current => {
+            const updated = { ...current };
+            const next = NEXT_KIND_STATE[current[kind] ?? 'off'];
+            if (next === 'off') delete updated[kind];
+            else updated[kind] = next;
+            return updated;
+        });
+    }
+
+    function resetFilters() {
+        setStatusFilter('all');
+        setKindFilters({});
+        setKindMatch('or');
+    }
 
     const isPicking = picking && selected && !isMobile;
     const viewerCards = viewerCardIds
@@ -301,56 +401,154 @@ export function PokemonTcgTab({
         }
     }
 
-    const toolbar = (
-        <div className="pokemon-tcg-toolbar">
-            <label className={`pokemon-tcg-search ${query ? 'pokemon-tcg-search--has-value' : ''}`}>
-                <Search size={17} strokeWidth={2.4} className="pokemon-tcg-search__icon" />
-                <input
-                    type="search"
-                    value={query}
-                    onChange={event => setQuery(event.target.value)}
-                    placeholder="Search card, set or number"
-                    aria-label="Search cards"
-                    autoComplete="off"
-                />
-                {query && (
-                    <button type="button" className="pokemon-tcg-search__clear" onClick={() => setQuery('')} aria-label="Clear search">
-                        <X size={14} strokeWidth={3} />
-                    </button>
-                )}
-            </label>
+    const searchField = (
+        <label className={`pokemon-tcg-search ${query ? 'pokemon-tcg-search--has-value' : ''}`}>
+            <Search size={17} strokeWidth={2.4} className="pokemon-tcg-search__icon" />
+            <input
+                type="search"
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="Search card, set or number"
+                aria-label="Search cards"
+                autoComplete="off"
+            />
+            {query && (
+                <button type="button" className="pokemon-tcg-search__clear" onClick={() => setQuery('')} aria-label="Clear search">
+                    <X size={14} strokeWidth={3} />
+                </button>
+            )}
+        </label>
+    );
 
-            <div className="pokemon-tcg-toolbar__row">
-                {selected && (
-                    <div className="pokemon-tcg-filters" role="group" aria-label="Filter cards" data-no-pokemon-swipe>
-                        {STATUS_FILTERS.map(filter => (
-                            <button
-                                key={filter.id}
-                                type="button"
-                                className={`pokemon-tcg-filter ${activeStatus === filter.id ? 'pokemon-tcg-filter--active' : ''}`}
-                                aria-pressed={activeStatus === filter.id}
-                                onClick={() => setStatusFilter(filter.id)}
-                            >
-                                {filter.id === 'foil' && <FoilSparklesIcon size={13} />}
-                                {filter.label}
-                                <em>{statusCounts[filter.id]}</em>
-                            </button>
-                        ))}
-                    </div>
-                )}
-                <span className="pokemon-tcg-count">
-                    {visibleCards.length} of {displayCards.length} cards
-                </span>
+    const statusChips = STATUS_FILTERS.map(filter => (
+        <button
+            key={filter.id}
+            type="button"
+            className={`pokemon-tcg-filter ${activeStatus === filter.id ? 'pokemon-tcg-filter--active' : ''}`}
+            aria-pressed={activeStatus === filter.id}
+            onClick={() => setStatusFilter(filter.id)}
+        >
+            {filter.id === 'foil' && <FoilSparklesIcon size={13} />}
+            {filter.label}
+            <em>{statusCounts[filter.id]}</em>
+        </button>
+    ));
+
+    const kindChips = CARD_KINDS.map(kind => {
+        const state = kindFilters[kind.id];
+        return (
+            <button
+                key={kind.id}
+                type="button"
+                className={`pokemon-tcg-filter ${state === 'include' ? 'pokemon-tcg-filter--active' : ''} ${state === 'exclude' ? 'pokemon-tcg-filter--excluded' : ''}`}
+                aria-label={`${kind.label}: ${state === 'include' ? 'only these' : state === 'exclude' ? 'hidden' : 'off'}`}
+                onClick={() => cycleKind(kind.id)}
+            >
+                {kind.label}
+                <em>{kindCounts[kind.id]}</em>
+            </button>
+        );
+    });
+
+    const count = (
+        <span className="pokemon-tcg-count">
+            {visibleCards.length} of {displayCards.length} cards
+        </span>
+    );
+
+    // On the phone the collection filter sits inside the sheet, so the line names it too.
+    const filterDescription = describeFilters(kindFilters, kindMatch, isMobile ? activeStatus : null);
+
+    const toolbar = isMobile ? (
+        <div className="pokemon-tcg-toolbar">
+            <div className="pokemon-tcg-search-row">
+                {searchField}
+                <button
+                    type="button"
+                    className={`pokemon-tcg-filters-button ${activeFilterCount > 0 ? 'pokemon-tcg-filters-button--active' : ''}`}
+                    onClick={() => setFilterSheetOpen(true)}
+                >
+                    Filters
+                    {activeFilterCount > 0 && <span className="pokemon-tcg-filters-button__badge">{activeFilterCount}</span>}
+                </button>
             </div>
-            {selected && !isMobile && !isPicking && (
+            <div className="pokemon-tcg-toolbar__row">
+                {filterDescription && <p className="pokemon-tcg-filter-description">{filterDescription}</p>}
+                {count}
+            </div>
+        </div>
+    ) : (
+        <div className="pokemon-tcg-toolbar">
+            {searchField}
+            <div className="pokemon-tcg-toolbar__row">
+                <div className="pokemon-tcg-filters pokemon-tcg-filters--wrap" role="group" aria-label="Filter cards">
+                    {selected && (
+                        <>
+                            {statusChips}
+                            <span className="pokemon-tcg-filters__divider" aria-hidden="true" />
+                        </>
+                    )}
+                    <span className="pokemon-tcg-filters__label">Type</span>
+                    <KindMatchSwitch value={kindMatch} onChange={setKindMatch} />
+                    {kindChips}
+                    <span className="pokemon-tcg-filters__hint">Click again to exclude</span>
+                </div>
+                {count}
+            </div>
+            {filterDescription && <p className="pokemon-tcg-filter-description">{filterDescription}</p>}
+            {selected && !isPicking && (
                 <p className="pokemon-tcg-tip">Tip: <kbd>Shift</kbd> + Click cards to mark several at once</p>
             )}
+        </div>
+    );
+
+    const filterSheet = isMobile && filterSheetOpen && (
+        <div className="filter-sheet" role="dialog" aria-modal="true" aria-label="Card filters" data-no-pokemon-swipe>
+            <div className="filter-sheet__backdrop" onClick={() => setFilterSheetOpen(false)} />
+            <div className="filter-sheet__panel filter-sheet__panel--fit">
+                <div className="filter-sheet__grab" aria-hidden="true" />
+                <header className="filter-sheet__header">
+                    <strong>Filters</strong>
+                    <button type="button" className="filter-sheet__close" onClick={() => setFilterSheetOpen(false)} aria-label="Close filters">
+                        <X size={17} strokeWidth={2.6} />
+                    </button>
+                </header>
+                <div className="pokemon-tcg-sheet__body">
+                    {selected && (
+                        <section>
+                            <h3>Collection</h3>
+                            <div className="pokemon-tcg-sheet__chips">{statusChips}</div>
+                        </section>
+                    )}
+                    <section>
+                        <h3>Type</h3>
+                        <div className="pokemon-tcg-sheet__chips">{kindChips}</div>
+                        <p className="pokemon-tcg-sheet__note">Tap again to exclude a type.</p>
+                    </section>
+                    <section>
+                        <h3>Cards must match</h3>
+                        <KindMatchSwitch value={kindMatch} onChange={setKindMatch} wide />
+                        <p className="pokemon-tcg-sheet__note">
+                            {kindMatch === 'or' ? 'Cards with at least one of the picked types.' : 'Cards with every picked type.'}
+                        </p>
+                    </section>
+                </div>
+                <footer className="filter-panel__footer">
+                    <button type="button" className="filter-panel__reset" onClick={resetFilters} disabled={activeFilterCount === 0 && kindMatch === 'or'}>
+                        Reset
+                    </button>
+                    <button type="button" className="filter-panel__show" onClick={() => setFilterSheetOpen(false)}>
+                        Show {visibleCards.length} cards
+                    </button>
+                </footer>
+            </div>
         </div>
     );
 
     return (
         <div className="pokemon-tcg-tab">
             {toolbar}
+            {filterSheet}
 
             {visibleCards.length === 0 ? (
                 <div className="pokemon-tcg-empty">

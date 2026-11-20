@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filtro de tipo de carta — mock</title>
+<style>
+    :root {
+        --text: #e8f4ff; --muted: rgba(226, 232, 240, 0.72); --faint: rgba(226, 232, 240, 0.5);
+        --accent: #9cc8ed; --accent-ink: #092f58; --line: rgba(147, 197, 253, 0.32); --line-soft: rgba(147, 197, 253, 0.16);
+        --chip-bg: #0A2F59; --chip-ink: #9fc9f8; --chip-line: rgba(147, 197, 253, 0.5);
+        --exclude: #f87171; --type-color: #eab308;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; min-height: 100vh;
+        background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%), linear-gradient(180deg, #0b3360 0%, #0a2d55 45%, #082744 100%); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    code { font-size: .85em; }
+    .page { max-width: 1480px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.5rem; }
+    .lede { margin: 0 0 16px; color: var(--muted); max-width: 1000px; line-height: 1.5; }
+    .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .picker button { padding: 8px 14px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-ink); font-weight: 600; border: 1px solid rgba(147, 197, 253, 0.62); }
+    .picker button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .option-info { margin: 0 0 14px; padding: 14px 16px; border-radius: 14px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.5; max-width: 1000px; }
+    .option-info ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .rule { margin: 0 0 22px; padding: 10px 14px; border-radius: 12px; max-width: 1000px; background: rgba(52, 211, 153, .08); border: 1px solid rgba(52, 211, 153, .35); font-size: .92rem; }
+    .rule b { color: #a7f3d0; }
+    .frames { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { margin: 0 0 8px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .notes { margin-top: 30px; padding: 18px 20px; border-radius: 16px; background: rgba(3, 28, 61, 0.35); border: 1px solid var(--line); line-height: 1.55; max-width: 1000px; }
+    .notes h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* ---------- frames ---------- */
+    .pc { position: relative; width: 1000px; max-width: 100%; height: 640px; display: grid; grid-template-columns: 230px 1fr; border-radius: 22px; overflow: hidden; background: #0b3360;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.45); }
+    .hero { display: flex; flex-direction: column; padding: 16px; color: #fff;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 78%, #0b3360) 0%, color-mix(in srgb, var(--type-color) 34%, #082744) 100%); }
+    .hero .name { margin-top: 140px; font-size: 1.6rem; font-weight: 800; }
+    .hero .dex { color: rgba(255,255,255,.78); font-size: .8rem; font-weight: 600; }
+    .vtabs { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+    .vtabs span { padding: 11px 13px; border-radius: 11px; font-weight: 600; font-size: .9rem; background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); }
+    .vtabs span.on { background: rgba(255,255,255,.92); color: #0b2a4a; border-color: transparent; }
+    .panel { position: relative; overflow-y: auto; padding: 18px 22px 40px; }
+    .phone { width: 375px; height: 740px; padding: 10px; border-radius: 38px; background: #030f1f; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+    .screen { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 30px; background: linear-gradient(180deg, #0b3360, #082744); }
+    .compact { padding: 14px; color: #fff; font-weight: 700;
+        background: linear-gradient(160deg, color-mix(in srgb, var(--type-color) 70%, #0b3360), color-mix(in srgb, var(--type-color) 30%, #082744)); }
+    .phone .panel { flex: 1; padding: 12px 10px 30px; scrollbar-width: none; }
+    .tabbar { display: flex; background: #082744; border-top: 1px solid var(--line-soft); }
+    .tabbar span { flex: 1; text-align: center; padding: 10px 0 12px; font-size: .74rem; font-weight: 600; color: #9fc9f8; }
+    .tabbar span.on { color: #a7f3d0; box-shadow: inset 0 3px 0 #34d399; }
+
+    /* ---------- toolbar (same look as the app) ---------- */
+    .search { display: flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(3, 28, 61, .55);
+        border: 1px solid var(--line); color: var(--faint); font-size: .9rem; margin-bottom: 10px; }
+    .search-row { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .search-row .search { flex: 1; min-width: 0; margin: 0; }
+    .search-row .chip { height: 40px; padding: 0 16px; }
+    .phone .search-row .chip { height: 40px; padding: 0 12px; }
+    .search-row .pop { top: 48px; }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; position: relative; }
+    .phone .row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .phone .row.wrap { flex-wrap: wrap; overflow: visible; }
+    .row-label { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-right: 2px; flex: 0 0 auto; }
+    .chip { flex: 0 0 auto; height: 34px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; color: var(--chip-ink); background: var(--chip-bg);
+        border: 1px solid var(--chip-line); border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+    .phone .chip { height: 32px; padding: 0 12px; font-size: .8rem; }
+    .chip em { font-style: normal; font-weight: 500; opacity: .7; }
+    .chip.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .chip.ex { color: #fff; background: rgba(248, 113, 113, .22); border-color: var(--exclude); text-decoration: line-through; text-decoration-thickness: 2px; }
+    .divider { width: 1px; height: 22px; background: var(--line); flex: 0 0 auto; margin: 0 4px; }
+    .count { color: var(--muted); font-size: .85rem; margin-left: auto; white-space: nowrap; }
+    .phone .count { display: none; }
+    .hint { font-size: .72rem; color: var(--faint); flex: 0 0 auto; }
+
+    /* OU / E segmented switch */
+    .match { flex: 0 0 auto; display: inline-flex; height: 30px; padding: 2px; border-radius: 999px; background: rgba(3, 28, 61, .6); border: 1px solid var(--line); }
+    .match button { border: 0; background: none; padding: 0 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; color: var(--faint); white-space: nowrap; }
+    .match button.on { background: #34d399; color: #053b2a; }
+    .match.wide { width: 100%; height: 36px; }
+    .match.wide button { flex: 1; font-size: .82rem; }
+
+    /* C: one pill that flips */
+    .flip { flex: 0 0 auto; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid #34d399; background: rgba(52, 211, 153, .14); color: #a7f3d0; font-size: .72rem; font-weight: 800; letter-spacing: .04em; }
+
+    /* D: sentence */
+    .sentence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: .86rem; color: var(--muted); margin-bottom: 10px; }
+    .phone .sentence { font-size: .8rem; }
+    .inline-select { height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid #34d399; background: rgba(52, 211, 153, .14); color: #a7f3d0; font-weight: 800; font-size: .8rem; }
+
+    /* E: connectors between chips */
+    .conn { flex: 0 0 auto; height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid transparent; background: none; color: #a7f3d0; font-size: .68rem; font-weight: 800; letter-spacing: .06em; }
+    .conn:hover { border-color: #34d399; }
+
+    /* H: grouped capsule */
+    .capsule { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 28, 61, .45); }
+    .capsule .chip { height: 28px; border-color: transparent; background: none; }
+    .capsule .chip.on { background: var(--accent); }
+    .capsule .match { border: 0; background: rgba(52, 211, 153, .1); height: 28px; }
+
+    /* I: icon toggles */
+    .ico { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: inline-grid; place-items: center; border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--chip-ink); font-size: .72rem; font-weight: 800; }
+    .ico.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .ico.jp.on { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .andor { flex: 0 0 auto; width: 46px; height: 34px; border-radius: 10px; border: 1px solid #34d399; background: rgba(52, 211, 153, .14); color: #a7f3d0; font-size: .72rem; font-weight: 800; }
+
+    /* B / G: dropdown and sheet */
+    .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-size: .7rem; display: inline-grid; place-items: center; }
+    .caret { font-size: .7rem; opacity: .8; }
+    .pop { position: absolute; top: 40px; right: 0; z-index: 5; width: 250px; padding: 10px; border-radius: 14px; background: #0a2a50; border: 1px solid var(--line);
+        box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+    .pop label, .sheet label { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 8px; font-size: .88rem; cursor: pointer; }
+    .pop label:hover { background: rgba(147, 197, 253, .08); }
+    .pop label em, .sheet label em { margin-left: auto; font-style: normal; color: var(--faint); font-size: .8rem; }
+    .pop input, .sheet input { accent-color: #9cc8ed; width: 16px; height: 16px; }
+    .pop-foot { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line-soft); font-size: .74rem; color: var(--muted); display: grid; gap: 6px; }
+    .overlay { position: absolute; inset: 0; z-index: 10; background: rgba(2, 10, 24, .55); display: flex; }
+    .pc .overlay { justify-content: flex-end; }
+    .phone .overlay { align-items: flex-end; }
+    .sheet { background: #0a2a50; border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+    .pc .sheet { width: 320px; height: 100%; border-radius: 0; }
+    .phone .sheet { width: 100%; max-height: 80%; border-radius: 22px 22px 0 0; }
+    .sheet h3 { margin: 10px 0 2px; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+    .sheet h3:first-child { margin-top: 0; }
+    .sheet .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sheet .done { margin-top: 12px; height: 40px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+    .sheet .sub { font-size: .74rem; color: var(--faint); margin: 2px 0 0; }
+
+    /* ---------- grid ---------- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 18px; }
+    .phone .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .card { position: relative; aspect-ratio: 63 / 88; border-radius: 8px; overflow: hidden; background: rgba(147,197,253,.07); }
+    .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card .tags { position: absolute; left: 4px; bottom: 4px; display: flex; gap: 3px; }
+    .card .tags span { font-size: .58rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,.7); color: #fff; }
+    .card .tags .jp { background: #dc2626; }
+    .caption { margin: -2px 0 12px; font-size: .8rem; color: #a7f3d0; }
+    .caption b { color: #fff; }
+    .sub-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; font-size: .85rem; color: var(--muted); }
+    .sub-picker button { padding: 6px 12px; border-radius: 999px; background: none; color: #a7f3d0; font-weight: 600; border: 1px solid rgba(52, 211, 153, .45); }
+    .sub-picker button[aria-pressed="true"] { background: #34d399; color: #053b2a; border-color: #34d399; }
+    .empty { grid-column: 1 / -1; padding: 30px 0; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>Filtro de tipo de carta na aba TCG</h1>
+    <p class="lede">Onze opções (a primeira é a escolhida) para colocar <b>Full art</b>, <b>Promo</b> e <b>JP</b> na busca da aba TCG, sempre com
+        a escolha <b style="color:#a7f3d0">OU / E</b> à vista (em verde). O texto desse botão você escolhe nos botões verdes abaixo:
+        <b>OU</b> = a carta tem pelo menos um dos tipos ligados, e <b>E</b> = a carta tem todos.
+        Tudo funciona de verdade sobre 16 cartas do Pikachu. As etiquetas FA / PROMO / JP embaixo de cada carta existem só neste mock. No app continua só a etiqueta JP, que já existe.
+        Para ver a diferença, ligue <b>Promo + JP</b> e troque entre OU (10 cartas) e E (2 cartas).</p>
+
+    <div class="picker" id="picker"></div>
+    <div class="sub-picker" id="labels"></div>
+    <div class="sub-picker" id="captionPicker"></div>
+    <div class="option-info" id="info"></div>
+    <div class="rule" id="rule"></div>
+
+    <div class="frames">
+        <div>
+            <p class="frame-label">Computador</p>
+            <div class="pc" data-root="pc">
+                <div class="hero">
+                    <span class="dex">#0025</span>
+                    <span class="name">Pikachu</span>
+                    <div class="vtabs"><span>Info</span><span>Games</span><span class="on">TCG</span></div>
+                </div>
+                <div class="panel"></div>
+            </div>
+        </div>
+        <div>
+            <p class="frame-label">Celular</p>
+            <div class="phone">
+                <div class="screen" data-root="phone">
+                    <div class="compact">Pikachu</div>
+                    <div class="panel"></div>
+                    <div class="tabbar"><span>Info</span><span>Games</span><span class="on">TCG</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notes">
+        <h2>Como cada filtro é decidido</h2>
+        <ul>
+            <li><b>JP</b>: cartas exclusivas do Japão (<code>lang: 'ja'</code>), dado que já existe.</li>
+            <li><b>Promo</b>: cartas dos sets de promo (Black Star Promos, Promos-A, Miscellaneous Promos e os promos japoneses como SV-P). Falta decidir se McDonald's, POP Series e Trainer Kits também contam.</li>
+            <li><b>Full art</b>: mapeamento nosso. A base é a raridade do TCGdex, mais regras por set (ex.: Trainer Gallery) e uma lista manual de exceções.</li>
+            <li>O <b>OU / E</b> vale só entre Full art, Promo e JP. O filtro de coleção (All / Owned / Missing / Foil) escolhe um e sempre soma com E: "Missing" + "Full art" mostra as full art que faltam.</li>
+            <li>A opção F tem um extra: tocar duas vezes num chip <b>exclui</b> aquele tipo (ex.: "sem JP"). Dá para colocar isso em qualquer outra opção.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const CARDS = [
+    ['sv08-238', ['fa']], ['sv08-247', ['fa']], ['swsh4-188', ['fa']], ['swsh11tg-TG16', ['fa']], ['sv03.5-173', ['fa']], ['sm12-241', ['fa']],
+    ['basep-1', ['promo']], ['swshp-SWSH143', ['promo']], ['smp-SM232', ['promo']], ['svp-106', ['promo']],
+    ['ja-SV-P-197', ['promo', 'jp']], ['ja-SV-P-260', ['promo', 'jp']],
+    ['swsh4-43', []], ['sv08-057', []], ['xy6-20', []], ['cel25-5', []],
+];
+const TYPES = [['fa', 'Full art', 'FA'], ['promo', 'Promo', 'P'], ['jp', 'JP', 'JP']];
+const LABEL = Object.fromEntries(TYPES.map(([id, l]) => [id, l]));
+const TAG_LABEL = { fa: 'FA', promo: 'PROMO', jp: 'JP' };
+
+const OPTIONS = {
+    X: ['★ Chosen (F on PC, G on phone)', `<b>Escolhida.</b> No computador é a F, com tudo numa linha só: All / Owned / Missing / Foil, divisor, "Type", Or / And, Full art · Promo · JP. Se não couber, a linha quebra. No celular é a G, com o botão "Filters" ao lado da busca.
+        <ul><li>Tocar de novo num tipo exclui esse tipo, nos dois tamanhos de tela. No celular, isso acontece dentro da folha de filtros.</li>
+        <li>A linha verde em inglês, abaixo dos filtros, diz o que está aparecendo. No celular, é ela que mostra o que foi escolhido depois que a folha fecha.</li>
+        <li>No celular, o número no botão "Filters" conta quantos filtros estão ligados.</li></ul>`],
+    A: ['Second row', `<b>A · Segunda linha.</b> Abaixo de All / Owned / Missing / Foil entra uma linha "Type" que começa com o OU / E e depois tem os chips.
+        <ul><li>Separa bem os dois filtros: coleção (escolhe um) e tipo (liga vários).</li><li>Ocupa uma linha a mais.</li></ul>`],
+    B: ['Dropdown', `<b>B · Botão com menu.</b> O chip "Type ▾" abre um menu com caixinhas e o OU / E embaixo. O próprio chip mostra a regra (ex.: "2 types · At least one").
+        <ul><li>Não ocupa espaço novo e aceita mais tipos no futuro.</li><li>O que está ligado fica escondido. Usar custa um clique a mais.</li></ul>`],
+    B2: ['Dropdown next to search', `<b>B2 · Botão com menu ao lado da busca.</b> É a B, mas o botão "Type ▾" fica na mesma linha do campo de busca, à direita. A linha All / Owned / Missing / Foil fica só com o filtro de coleção.
+        <ul><li>Busca e tipo ficam juntos (os dois dizem "que cartas eu quero ver"), e a coleção fica separada embaixo.</li>
+        <li>No celular, o campo de busca fica um pouco mais curto para caber o botão.</li>
+        <li>Como na B, o botão mostra a regra quando há 2 ou mais ligados ("2 types · At least one" / "2 types · All of them").</li></ul>`],
+    C: ['Same row', `<b>C · Mesma linha.</b> Os chips entram depois de um divisor, junto com All / Owned / Missing / Foil, e um botão que troca entre OU e E ao clicar.
+        <ul><li>É o mais compacto.</li><li>Mistura os dois tipos de filtro na mesma linha. No celular, a linha fica longa.</li></ul>`],
+    D: ['Sentence', `<b>D · Frase.</b> A linha se lê como uma frase: "Show cards that match [at least one ▾] of: Full art · Promo · JP". O "any/all" é clicável dentro da frase.
+        <ul><li>É o mais fácil de entender: você lê exatamente o que está filtrando.</li><li>Ocupa mais largura. No celular, quebra em duas linhas.</li></ul>`],
+    E: ['OR / AND between chips', `<b>E · Conectores.</b> Entre os chips aparece o conector (OU ou E). Clicar em qualquer conector troca todos.
+        <ul><li>A regra fica visível no lugar exato onde se aplica, como numa busca.</li><li>Os conectores são pequenos para tocar no celular.</li></ul>`],
+    F: ['Include / exclude', `<b>F · Incluir ou excluir.</b> Cada chip tem 3 estados ao clicar: desligado → incluir (azul) → excluir (vermelho, riscado). OU / E decide como os incluídos se juntam. Os excluídos sempre ficam de fora.
+        <ul><li>Permite "Full art sem JP" ou "tudo menos promo".</li><li>É mais poderoso, mas o terceiro clique é menos óbvio.</li></ul>`],
+    G: ['Filters panel', `<b>G · Painel de filtros.</b> Um botão "Filters" abre um painel: lateral no computador, folha de baixo no celular (como o painel da listagem). Dentro ficam Collection, Type e o botão OU / E largo.
+        <ul><li>Igual ao painel de filtros da listagem, então os dois ficam parecidos.</li><li>Aceita muitos filtros no futuro (raridade, set, ano...).</li><li>Os filtros saem da tela principal.</li></ul>`],
+    H: ['Grouped capsule', `<b>H · Cápsula.</b> OU / E e os três chips ficam juntos numa única cápsula, ao lado dos filtros de coleção.
+        <ul><li>Fica claro que o OU / E pertence a esses três.</li><li>Ocupa quase uma linha inteira. No celular, rola para o lado.</li></ul>`],
+    I: ['Icons', `<b>I · Ícones.</b> Botões quadrados pequenos (FA · P · JP) e um botão OU / E no fim da linha de coleção.
+        <ul><li>É o que ocupa menos espaço, e cabe na mesma linha até no celular.</li><li>As siglas precisam de dica (tooltip) e são menos claras.</li></ul>`],
+};
+
+// Texts for the any/all switch. "All" also clashes with the collection filter's "All" chip.
+const LABEL_SETS = [
+    { any: 'At least one', all: 'All of them' },
+    { any: 'Has one', all: 'Has all' },
+    { any: 'Or', all: 'And' },
+    { any: 'Any', all: 'All' },
+];
+// types: Map id → 'in' | 'ex'
+const state = { opt: 'X', status: 'All', types: new Map(), match: 'any', open: false, labels: 2, caption: true };
+const L = () => LABEL_SETS[state.labels];
+const included = () => [...state.types].filter(([, v]) => v === 'in').map(([k]) => k);
+const excluded = () => [...state.types].filter(([, v]) => v === 'ex').map(([k]) => k);
+
+function matches(tags) {
+    if (excluded().some(t => tags.includes(t))) return false;
+    const inc = included();
+    if (!inc.length) return true;
+    return state.match === 'any' ? inc.some(t => tags.includes(t)) : inc.every(t => tags.includes(t));
+}
+const visible = () => CARDS.filter(([, tags]) => matches(tags));
+const typeCount = id => CARDS.filter(([, tags]) => tags.includes(id)).length;
+
+function toggleType(id, triState) {
+    const cur = state.types.get(id);
+    if (!cur) state.types.set(id, 'in');
+    else if (cur === 'in' && triState) state.types.set(id, 'ex');
+    else state.types.delete(id);
+}
+
+// ---------- building blocks ----------
+const statusRow = () => ['All', 'Owned', 'Missing', 'Foil'].map(l =>
+    `<button class="chip ${state.status === l ? 'on' : ''}" data-status="${l}">${l} <em>${l === 'All' || l === 'Missing' ? CARDS.length : 0}</em></button>`).join('');
+const count = () => `<span class="count">${visible().length} cards</span>`;
+const chip = ([id, label]) => {
+    const s = state.types.get(id);
+    return `<button class="chip ${s === 'in' ? 'on' : s === 'ex' ? 'ex' : ''}" data-type="${id}">${label} <em>${typeCount(id)}</em></button>`;
+};
+const typeChips = () => TYPES.map(chip).join('');
+const matchSwitch = (cls = '') => `<span class="match ${cls}">
+    <button class="${state.match === 'any' ? 'on' : ''}" data-match="any" title="Cards with at least one of the picked types">${L().any}</button>
+    <button class="${state.match === 'all' ? 'on' : ''}" data-match="all" title="Cards with every picked type">${L().all}</button></span>`;
+const matchWord = () => L()[state.match];
+const checkboxes = () => TYPES.map(([id, label]) =>
+    `<label><input type="checkbox" data-type="${id}" ${state.types.has(id) ? 'checked' : ''}> ${label} <em>${typeCount(id)}</em></label>`).join('');
+
+function typeDropdown() {
+    const n = included().length;
+    const label = n === 0 ? 'Type' : n === 1 ? LABEL[included()[0]] : `${n} types · ${matchWord()}`;
+    return `<button class="chip ${n ? 'on' : ''}" data-open>${label}<span class="caret">▾</span></button>
+        ${state.open ? `<div class="pop">${checkboxes()}<div class="pop-foot">Cards must match${matchSwitch('wide')}</div></div>` : ''}`;
+}
+const ownSearch = frame => state.opt === 'B' || state.opt === 'B2' || (state.opt === 'X' && frame === 'phone');
+const triState = () => state.opt === 'F' || state.opt === 'X';
+
+function filtersButton() {
+    const n = state.types.size + (state.status !== 'All' ? 1 : 0);
+    return `<button class="chip ${n ? 'on' : ''}" data-open>Filters ${n ? `<span class="badge">${n}</span>` : ''}</button>`;
+}
+// What's picked inside the sheet, so it stays visible after closing it. In-row for G, own line for X.
+function filtersSummary(inline) {
+    const parts = [];
+    if (state.status !== 'All') parts.push(state.status);
+    if (included().length) parts.push(included().map(t => LABEL[t]).join(state.match === 'any' ? ' or ' : ' and '));
+    if (excluded().length) parts.push('no ' + excluded().map(t => LABEL[t]).join(', '));
+    if (!parts.length) return '';
+    return inline ? `<span class="hint">${parts.join(' · ')}</span>` : '';
+}
+
+const TOOLBARS = {
+    A: () => `<div class="row">${statusRow()}${count()}</div>
+        <div class="row"><span class="row-label">Type</span>${matchSwitch()}${typeChips()}</div>`,
+    B: () => `<div class="search">Search name, set or number</div>
+        <div class="row">${statusRow()}${typeDropdown()}${count()}</div>`,
+    B2: () => `<div class="search-row"><div class="search">Search name, set or number</div>${typeDropdown()}</div>
+        <div class="row">${statusRow()}${count()}</div>`,
+    C: () => `<div class="row">${statusRow()}<span class="divider"></span>${typeChips()}
+        <button class="flip" data-flip title="Click to switch">${matchWord().toUpperCase()}</button>${count()}</div>`,
+    D: () => `<div class="row">${statusRow()}${count()}</div>
+        <div class="sentence">Show cards that match
+            <button class="inline-select" data-flip>${matchWord().toLowerCase()} ▾</button> of:
+            ${typeChips()}</div>`,
+    E: () => `<div class="row">${statusRow()}${count()}</div>
+        <div class="row"><span class="row-label">Type</span>${TYPES.map(chip).join(
+            `<button class="conn" data-flip title="Click to switch">${matchWord().toUpperCase()}</button>`)}</div>`,
+    F: () => `<div class="row">${statusRow()}${count()}</div>
+        <div class="row"><span class="row-label">Type</span>${matchSwitch()}${typeChips()}<span class="hint">click again to exclude</span></div>`,
+    G: () => `<div class="row">${filtersButton()}${filtersSummary(true)}${count()}</div>`,
+    X: frame => frame === 'pc'
+        ? `<div class="row">${statusRow()}<span class="divider"></span><span class="row-label">Type</span>${matchSwitch()}${typeChips()}<span class="hint">click again to exclude</span>${count()}</div>`
+        : `<div class="search-row"><div class="search">Search name, set or number</div>${filtersButton()}</div>${filtersSummary()}`,
+    H: () => `<div class="row">${statusRow()}${count()}</div>
+        <div class="row"><span class="capsule">${matchSwitch()}${typeChips()}</span></div>`,
+    I: () => `<div class="row">${statusRow()}<span class="divider"></span>
+        ${TYPES.map(([id, label, short]) => `<button class="ico ${id} ${state.types.has(id) ? 'on' : ''}" data-type="${id}" title="${label}">${short}</button>`).join('')}
+        <button class="andor" data-flip title="Click to switch" style="width:auto;padding:0 10px">${matchWord()}</button>${count()}</div>`,
+};
+
+function sheet(frame) {
+    if (!state.open || !(state.opt === 'G' || (state.opt === 'X' && frame === 'phone'))) return '';
+    return `<div class="overlay" data-close><div class="sheet">
+        <h3>Collection</h3><div class="chips">${statusRow()}</div>
+        <h3>Type</h3><div class="chips">${typeChips()}</div>
+        ${triState() ? '<p class="sub">Tap again to exclude a type.</p>' : ''}
+        <h3>Cards must match</h3>${matchSwitch('wide')}
+        <p class="sub">${state.match === 'any' ? 'Cards with at least one of the picked types.' : 'Cards with every picked type.'}</p>
+        <button class="done" data-close>Show ${visible().length} cards</button></div></div>`;
+}
+
+function grid() {
+    const cards = visible();
+    if (!cards.length) return `<div class="grid"><div class="empty">No cards match these filters.</div></div>`;
+    return `<div class="grid">${cards.map(([id, tags]) => `<div class="card"><img src="../public/images/tcg/${id}/low.webp" alt="${id}" loading="lazy">
+        <div class="tags">${tags.map(t => `<span class="${t}">${TAG_LABEL[t]}</span>`).join('')}</div></div>`).join('')}</div>`;
+}
+
+function ruleText() {
+    const inc = included().map(t => `<b>${LABEL[t]}</b>`), exc = excluded().map(t => `<b>${LABEL[t]}</b>`);
+    let txt = inc.length ? `Mostrando cartas que são ${inc.join(state.match === 'any' ? ' <u>OU</u> ' : ' <u>E</u> ')}` : 'Mostrando todas as cartas';
+    if (exc.length) txt += `, sem ${exc.join(' nem ')}`;
+    return `${txt} → <b>${visible().length}</b> de ${CARDS.length}.`;
+}
+
+// In-app line (English) that spells out the current type rule.
+// On the phone sheet layouts the collection filter is hidden too, so the line also names it.
+function caption(frame) {
+    if (!state.caption) return '';
+    const showStatus = state.status !== 'All' && (state.opt === 'G' || (state.opt === 'X' && frame === 'phone'));
+    const inc = included().map(t => `<b>${LABEL[t]}</b>`), exc = excluded().map(t => `<b>${LABEL[t]}</b>`);
+    if (!inc.length && !exc.length && !showStatus) return '';
+    const status = showStatus ? `<b>${state.status.toLowerCase()}</b> ` : '';
+    let txt = inc.length > 1
+        ? `Showing ${status}cards that are ${inc.join(state.match === 'any' ? ' or ' : ' and ')}`
+        : inc.length ? `Showing ${status}${inc[0]} cards` : `Showing ${status || 'all '}cards`;
+    if (exc.length) txt += `, except ${exc.join(' and ')}`;
+    return `<p class="caption">${txt}</p>`;
+}
+
+function render() {
+    document.getElementById('labels').innerHTML = 'Texto do botão:' + LABEL_SETS.map((s, i) =>
+        `<button data-labels="${i}" aria-pressed="${i === state.labels}">${s.any} / ${s.all}</button>`).join('');
+    document.getElementById('captionPicker').innerHTML = 'Linha explicando o filtro dentro do app:' +
+        `<button data-caption="1" aria-pressed="${state.caption}">With line</button><button data-caption="0" aria-pressed="${!state.caption}">Without</button>`;
+    document.getElementById('picker').innerHTML = Object.entries(OPTIONS).map(([k, [name]]) =>
+        `<button data-opt="${k}" aria-pressed="${k === state.opt}">${k} · ${name}</button>`).join('');
+    document.getElementById('info').innerHTML = OPTIONS[state.opt][1];
+    document.getElementById('rule').innerHTML = ruleText();
+    document.querySelectorAll('[data-root]').forEach(root => {
+        const frame = root.dataset.root;
+        const search = ownSearch(frame) ? '' : '<div class="search">Search name, set or number</div>';
+        root.querySelector('.panel').innerHTML = `${search}${TOOLBARS[state.opt](frame)}${caption(frame)}${grid()}`;
+        root.querySelector('.overlay')?.remove();
+        root.insertAdjacentHTML('beforeend', sheet(frame));
+    });
+}
+
+document.addEventListener('click', e => {
+    if (e.target.matches('.overlay')) { state.open = false; render(); return; }
+    const t = e.target.closest('button, input');
+    if (!t) { if (state.open && OWN_SEARCH.has(state.opt) &&!e.target.closest('.pop')) { state.open = false; render(); } return; }
+    if (t.dataset.opt) { state.opt = t.dataset.opt; state.open = false; if (!triState()) excluded().forEach(id => state.types.delete(id)); }
+    else if (t.dataset.labels) state.labels = +t.dataset.labels;
+    else if (t.dataset.caption) state.caption = t.dataset.caption === '1';
+    else if (t.dataset.status) state.status = t.dataset.status;
+    else if (t.dataset.type) toggleType(t.dataset.type, triState());
+    else if (t.dataset.match) state.match = t.dataset.match;
+    else if (t.hasAttribute('data-flip')) state.match = state.match === 'any' ? 'all' : 'any';
+    else if (t.hasAttribute('data-open')) state.open = !state.open;
+    else if (t.hasAttribute('data-close')) state.open = false;
+    else return;
+    render();
+});
+render();
+</script>
+</body>
+</html>

@@ -144,6 +144,10 @@ export interface TcgCard {
     lang?: 'ja';
     /** Set by the Japanese collector, whose card names the form rules can't read. */
     form?: TcgCardForm;
+    /** Art covers the whole card. Set by scripts/tag-tcg-cards.mjs, only when true. */
+    fullArt?: boolean;
+    /** Card from a promo set (PROMO mark). Set by scripts/tag-tcg-cards.mjs, only when true. */
+    promo?: boolean;
 }
 
 export interface TcgCardsApiResponse {

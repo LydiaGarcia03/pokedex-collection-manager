@@ -13,8 +13,9 @@
     "fetch-serebii-tcg": "node scripts/fetch-serebii-tcg-images.mjs",
     "fetch-fallback-tcg": "node scripts/fetch-fallback-tcg-images.mjs",
     "collect-tcg-japanese": "node scripts/collect-tcg-japanese.mjs",
+    "tag-tcg": "node scripts/tag-tcg-cards.mjs",
     "download-images": "node scripts/download-images.mjs",
-    "setup": "npm run compile-data && npm run collect-tcg && npm run fetch-serebii-tcg && npm run fetch-fallback-tcg && npm run download-images && npm run collect-tcg-japanese"
+    "setup": "npm run compile-data && npm run collect-tcg && npm run fetch-serebii-tcg && npm run fetch-fallback-tcg && npm run download-images && npm run collect-tcg-japanese && npm run tag-tcg"
   },
   "dependencies": {
     "firebase": "^12.15.0",

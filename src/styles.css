@@ -3942,7 +3942,168 @@ input {
     border-color: #9cc8ed;
 }
 
+/* Desktop: collection chips │ Type [Or|And] Full art · Promo · JP, on one line that wraps */
+.pokemon-tcg-filters--wrap {
+    flex-wrap: wrap;
+    align-items: center;
+    overflow: visible;
+}
+
+.pokemon-tcg-filters__divider {
+    width: 1px;
+    height: 22px;
+    margin: 0 4px;
+    background: rgba(147, 197, 253, 0.32);
+}
+
+.pokemon-tcg-filters__label {
+    color: rgba(226, 232, 240, 0.5);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pokemon-tcg-filters__hint {
+    color: rgba(226, 232, 240, 0.5);
+    font-size: 0.72rem;
+}
+
+.pokemon-tcg-filter--excluded {
+    color: #fff;
+    background: rgba(248, 113, 113, 0.22);
+    border-color: #f87171;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+}
+
+/* Or / And: how the included card types combine */
+.pokemon-tcg-match {
+    flex: 0 0 auto;
+    display: inline-flex;
+    height: 30px;
+    padding: 2px;
+    background: rgba(3, 28, 61, 0.6);
+    border: 1px solid rgba(147, 197, 253, 0.32);
+    border-radius: 999px;
+}
+
+.pokemon-tcg-match button {
+    padding: 0 12px;
+    color: rgba(226, 232, 240, 0.5);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pokemon-tcg-match button.pokemon-tcg-match__option--active {
+    color: #053b2a;
+    background: #34d399;
+}
+
+.pokemon-tcg-match--wide {
+    width: 100%;
+    height: 38px;
+}
+
+.pokemon-tcg-match--wide button {
+    flex: 1;
+    font-size: 0.85rem;
+}
+
+/* "Showing cards that are Full art or Promo, except JP" */
+.pokemon-tcg-filter-description {
+    margin: 0;
+    color: #a7f3d0;
+    font-size: 0.8rem;
+}
+
+.pokemon-tcg-filter-description b {
+    color: #fff;
+}
+
+/* Phone: search + Filters button on one line, filters in a bottom sheet */
+.pokemon-tcg-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pokemon-tcg-search-row .pokemon-tcg-search {
+    flex: 1;
+    min-width: 0;
+}
+
+.pokemon-tcg-filters-button {
+    flex: 0 0 auto;
+    height: 42px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #9fc9f8;
+    background: #0A2F59;
+    border: 1px solid rgba(147, 197, 253, 0.5);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pokemon-tcg-filters-button--active {
+    color: #092f58;
+    background: #9cc8ed;
+    border-color: #9cc8ed;
+}
+
+.pokemon-tcg-filters-button__badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-grid;
+    place-items: center;
+    color: #9cc8ed;
+    background: #092f58;
+    border-radius: 999px;
+    font-size: 0.7rem;
+}
+
+.filter-sheet__panel--fit {
+    height: auto;
+    max-height: 86dvh;
+}
+
+.pokemon-tcg-sheet__body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 16px 8px;
+}
+
+.pokemon-tcg-sheet__body h3 {
+    margin: 14px 0 8px;
+    color: rgba(226, 232, 240, 0.5);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pokemon-tcg-sheet__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pokemon-tcg-sheet__note {
+    margin: 8px 0 0;
+    color: rgba(226, 232, 240, 0.5);
+    font-size: 0.76rem;
+}
+
 .pokemon-tcg-count {
+    margin-left: auto;
     color: rgba(226, 232, 240, 0.72);
     font-size: 0.85rem;
     white-space: nowrap;

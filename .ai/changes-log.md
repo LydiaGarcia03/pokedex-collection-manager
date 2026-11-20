@@ -1,5 +1,70 @@
 # Changes Log
 
+## 2026-11-20 (6) — v1.2.0 (minor)
+
+### Filtro Full art / Promo / JP na aba TCG
+
+**Files modified:**
+- `scripts/tag-tcg-cards.mjs` (novo, `npm run tag-tcg`, também no fim do `npm run setup`): grava
+  `fullArt: true` / `promo: true` nas cartas do `tcg-cards.json`, só quando verdadeiro. O script é
+  dono desses dois campos: recalcula a cada execução e nunca adiciona nem remove cartas.
+  - **Promo:** cartas de sets de promo. São os sets com "Promo" no nome em `tcg-sets.json`, mais
+    os japoneses `ja-*-P`. Deu 1433 cartas.
+  - **Full art:** vem da raridade do TCGdex. Deu 2535 cartas. As regras:
+    - raridades sempre full art (Illustration / Special illustration / Hyper / Secret / Shiny
+      Ultra…, e no Pocket ★, ★★, ★★★, Crown e Two Shiny);
+    - Ultra Rare da SWSH em diante;
+    - Trainer Gallery e Galarian Gallery inteiros.
+  - **Ultra Rare na BW/XY/SM:** o TCGdex dá essa raridade também ao EX/GX comum (xy1-97 comum e
+    xy1-146 full art são as duas Ultra Rare). Nessas eras, a carta é full art quando o número vem
+    depois da última carta comum do set, contando Trainers e Energias pela lista completa do set
+    no TCGdex. Os subsets RC contam à parte.
+  - A primeira versão, por "mesmo nome", errava em casos como sm5-144 e sm4-90. A versão final foi
+    conferida olhando as imagens dos casos-limite (sm3.5-57, sm4-90, xy7-84, g1-RC21,
+    ja-SM12a-175).
+  - O filtro do TCGdex `?rarity=` é por trecho ("Ultra Rare" também traz "Shiny Ultra Rare"), então
+    o script usa `eq:`.
+- `scripts/tcg-full-art-overrides.json` (novo, vazio): correções manuais
+  `{ "cardId": true | false }`. É o único jeito de marcar promos full art.
+- `public/data/tcg-cards.json`: 4133 cartas ganharam os campos novos. O arquivo cresceu 59 KB.
+- `src/types/Pokemon.ts`: `TcgCard.fullArt?` e `TcgCard.promo?`.
+- `src/components/PokemonTcgTab.tsx`:
+  - chips Full art / Promo / JP de 3 estados (desligado → incluir → excluir) e seletor Or / And,
+    filtrados por `matchesKinds`;
+  - linha verde em inglês que descreve o filtro (`describeFilters`);
+  - computador: tudo na linha dos filtros de coleção, que quebra se faltar espaço;
+  - celular: botão "Filters" ao lado da busca, que abre uma folha de baixo (reaproveita
+    `.filter-sheet*`) com Collection, Type, Or / And, Reset e "Show N cards";
+  - os chips de tipo aparecem mesmo com o Pokémon fora da coleção.
+- `src/styles.css`: estilos do seletor Or / And, do chip excluído, do botão Filters, da folha e da
+  linha de descrição.
+- `package.json`: script `tag-tcg`. `src/appInfo.ts`: versão `1.2.0`. `CLAUDE.md`: feature,
+  Step 3e, File Map e Data Files.
+
+**Why:** o User pediu para filtrar cartas full art, promo e exclusivas do Japão, combinando os
+filtros com OU / E. O layout foi escolhido no mock (opção "★ Chosen").
+
+## 2026-11-20 (5) — mock, sem mudança de versão
+
+### Mock do filtro de tipo de carta (Full art / Promo / JP) na aba TCG
+
+**Files modified:**
+- `docs/tcg-card-type-filter-mock.html` (novo): 11 opções de onde pôr os filtros Full art, Promo e
+  JP na busca da aba TCG, no computador e no celular. São elas: ★ a escolhida, A segunda linha, B botão com menu, B2 botão com menu ao lado da busca,
+  C mesma linha, D frase, E conectores OR/AND entre os chips, F incluir/excluir, G painel de
+  filtros, H cápsula e I ícones. Em todas, a escolha OU / E fica sempre à vista. O mock deixa
+  comparar 4 textos para esse botão ("At least one / All of them", "Has one / Has all", "Or / And",
+  "Any / All") e ligar uma linha dentro do app que diz o filtro em palavras. Uma linha acima das telas
+  diz em palavras qual regra está valendo. Usa 16 cartas reais do Pikachu em
+  `public/images/tcg/`.
+
+Opção escolhida (★ no mock): F no computador, com tudo numa linha só (quebra se não couber);
+  G no celular, com o botão "Filters" ao lado da busca. Texto Or / And e linha explicando o filtro.
+
+**Why:** o User pediu esses filtros e quis ver o layout antes de implementar. Full art ainda não
+existe nos dados. Vai ser um mapeamento nosso, a partir da raridade do TCGdex, de regras por set e
+de exceções manuais.
+
 ## 2026-11-20 (4) — v1.1.1 (patch)
 
 ### Cartas TCG mais abaixo na lista mostravam placeholder em vez da imagem
