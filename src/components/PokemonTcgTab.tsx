@@ -209,7 +209,7 @@ export function PokemonTcgTab({
         return (
             <div className="pokemon-tcg-tab">
                 <p className="pokemon-tab-empty">
-                    No TCG cards found for {pokemon.formName ? `${pokemon.name} (${pokemon.formName})` : pokemon.name}.
+                    No TCG cards found for {pokemon.formName ? `${pokemon.name} (${pokemon.formName})` : pokemon.name} yet.
                 </p>
             </div>
         );
@@ -421,6 +421,7 @@ export function PokemonTcgTab({
 
                                 <CardImage card={card} lazy />
 
+                                {card.lang === 'ja' && <span className="pokemon-tcg-lang-tag" title="Japan-exclusive card">JP</span>}
                                 {isFoil && <span className="pokemon-tcg-foil-tag">Foil</span>}
                             </div>
                         );
@@ -490,6 +491,7 @@ export function PokemonTcgTab({
                             </button>
                             <div className={`pokemon-tcg-viewer__card ${ownershipOf(focusedCard.id) === 'foil' ? 'pokemon-tcg-card--foil' : ''}`}>
                                 <CardImage card={focusedCard} />
+                                {focusedCard.lang === 'ja' && <span className="pokemon-tcg-lang-tag" title="Japan-exclusive card">JP</span>}
                                 {ownershipOf(focusedCard.id) === 'foil' && <span className="pokemon-tcg-foil-tag">Foil</span>}
                             </div>
                             <button type="button" className="pokemon-tcg-viewer__round" onClick={() => stepFocus(1)} aria-label="Next card">

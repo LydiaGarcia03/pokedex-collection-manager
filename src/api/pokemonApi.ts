@@ -1,4 +1,4 @@
-import type { Pokemon, PokemonMoves, PokemonSummary, PokemonTypeFilterId, TcgCard, TcgCardsApiResponse } from '../types/Pokemon';
+import type { Pokemon, PokemonMoves, PokemonSummary, PokemonTypeFilterId, TcgCard, TcgCardForm, TcgCardsApiResponse } from '../types/Pokemon';
 
 // import.meta.env.BASE_URL is set by Vite to the value of `base` in vite.config.ts.
 // In production this is '/pokedex-collection-manager-static/'.
@@ -79,17 +79,24 @@ export function getLoadedTcgCards(pokemonName: string): TcgCard[] | null {
     return tcgCardCache ? tcgCardCache[pokemonName.toLowerCase()] ?? [] : null;
 }
 
-// Forms that have cards of their own, told apart by the card name. Tauros' Combat/Blaze/Aqua
-// breeds are its Paldean forms.
-const FORM_CARD_RULES: { formId: RegExp; cardName: RegExp }[] = [
-    { formId: /-alola/, cardName: /^Alolan /i },
-    { formId: /-galar/, cardName: /^Galarian /i },
-    { formId: /-hisui/, cardName: /^Hisuian /i },
-    { formId: /-(paldea|combat|blaze|aqua)/, cardName: /^Paldean /i },
-    { formId: /-mega/, cardName: /^(M|Mega) /i },
-    { formId: /-primal/, cardName: /^Primal /i },
-    { formId: /-gmax/, cardName: /VMAX/ },
+// Forms that have cards of their own. English cards are told apart by name; Japanese ones carry
+// the form (card.form). Tauros' Combat/Blaze/Aqua breeds are its Paldean forms.
+const FORM_CARD_RULES: { formId: RegExp; cardName: RegExp; cardForms: TcgCardForm[] }[] = [
+    { formId: /-alola/, cardName: /^Alolan /i, cardForms: ['alola'] },
+    { formId: /-galar/, cardName: /^Galarian /i, cardForms: ['galar'] },
+    { formId: /-hisui/, cardName: /^Hisuian /i, cardForms: ['hisui'] },
+    { formId: /-(paldea|combat|blaze|aqua)/, cardName: /^Paldean /i, cardForms: ['paldea'] },
+    { formId: /-mega/, cardName: /^(M|Mega) /i, cardForms: ['mega', 'mega-x', 'mega-y'] },
+    { formId: /-primal/, cardName: /^Primal /i, cardForms: ['primal'] },
+    { formId: /-gmax/, cardName: /VMAX/, cardForms: ['gmax'] },
 ];
+
+const cardIsForm = (card: TcgCard, rule: (typeof FORM_CARD_RULES)[number]) =>
+    card.form ? rule.cardForms.includes(card.form) : card.lang !== 'ja' && rule.cardName.test(card.name);
+
+// Mega X / Mega Y: an English name says " X "/" Y ", a Japanese card says it in card.form.
+const isMegaOf = (card: TcgCard, side: 'X' | 'Y') =>
+    card.form === `mega-${side.toLowerCase()}` || new RegExp(` ${side} `, 'i').test(card.name);
 
 let formIdsByDex: Map<string, string[]> | null = null;
 
@@ -118,15 +125,15 @@ export function cardsForForm(
 ): TcgCard[] {
     const ownRule = FORM_CARD_RULES.find(rule => rule.formId.test(pokemon.id));
     if (ownRule) {
-        const formCards = cards.filter(c => ownRule.cardName.test(c.name));
-        if (/ X$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !/ Y /i.test(c.name));
-        if (/ Y$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !/ X /i.test(c.name));
+        const formCards = cards.filter(c => cardIsForm(c, ownRule));
+        if (/ X$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !isMegaOf(c, 'Y'));
+        if (/ Y$/i.test(pokemon.formName ?? '')) return formCards.filter(c => !isMegaOf(c, 'X'));
         return formCards;
     }
     if (excludeForms) return cards;
     const formIds = speciesFormIds(pokemon.dexNumberFormatted);
     const otherFormRules = FORM_CARD_RULES.filter(rule => formIds.some(id => rule.formId.test(id)));
-    return cards.filter(c => !otherFormRules.some(rule => rule.cardName.test(c.name)));
+    return cards.filter(c => !otherFormRules.some(rule => cardIsForm(c, rule)));
 }
 
 export function getLoadedTcgSetNames(): Record<string, string> | null {

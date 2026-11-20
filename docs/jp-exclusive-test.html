@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste — cartas exclusivas JP</title>
+<style>
+    :root { --text: #e8f4ff; --muted: rgba(226,232,240,.72); --line: rgba(147,197,253,.28); }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); font-family: Inter, system-ui, Arial, sans-serif; background: #0b2342; }
+    .page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { margin: 0 0 6px; } .lede { color: var(--muted); max-width: 950px; line-height: 1.55; font-size: .92rem; }
+    .pokemon { margin-top: 26px; padding: 18px; border-radius: 18px; background: rgba(3,28,61,.55); border: 1px solid var(--line); }
+    .pokemon h2 { margin: 0 0 6px; } .stats { color: var(--muted); font-size: .86rem; line-height: 1.6; margin: 0 0 12px; }
+    details { margin-top: 12px; } summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 10px; }
+    .card { position: relative; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .card img, .ph { width: 100%; aspect-ratio: 5/7; border-radius: 9px; object-fit: cover; background: rgba(147,197,253,.08); border: 1px solid var(--line); }
+    .ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px; text-align: center; font-size: .78rem; color: var(--muted); }
+    .ph strong { color: var(--text); } .ph em { opacity: .6; font-size: .7rem; }
+    figcaption { display: flex; flex-direction: column; gap: 2px; font-size: .74rem; } figcaption span { color: var(--muted); }
+    figcaption small { color: rgba(226,232,240,.55); font-size: .68rem; line-height: 1.35; }
+    .tag { position: absolute; left: 0; top: 10px; z-index: 2; padding: 2px 7px 2px 6px; font-size: .6rem; font-weight: 900; letter-spacing: .1em; border-radius: 0 6px 6px 0; }
+    .tag.jp { color: #fff; background: #bc002d; }
+    .empty { color: var(--muted); font-size: .85rem; }
+</style></head><body><div class="page">
+<h1>Teste — cartas exclusivas do Japão</h1>
+<p class="lede">
+    Para cada Pokémon: as cartas japonesas do TCGdex que entrariam na aba TCG, os casos-limite e, recolhido no fim, o que a aba mostra hoje.
+    Uma carta japonesa conta como a mesma arte de uma inglesa quando as duas têm o mesmo Pokémon e o mesmo ilustrador.
+    Quando o TCGdex não tem a imagem, a página usa a do site oficial japonês (pokemon-card.com), achada pelo nome e pela coleção.
+    A legenda diz de onde veio cada imagem. Nada foi baixado para o projeto: as imagens são carregadas direto dos dois sites.
+</p>
+
+    <section class="pokemon">
+        <h2>Pikachu</h2>
+        <p class="stats">
+            Hoje na aba TCG: <b>246</b> cartas em inglês ·
+            TCGdex tem <b>100</b> cartas japonesas deste Pokémon
+            (10 com imagem) ·
+            entrariam pela regra rígida: <b>3</b> ·
+            casos-limite: <b>2</b> ·
+            sem ilustrador (não dá para comparar): <b>8</b>
+        </p>
+
+        <details open><summary>JP que entrariam — regra rígida (nenhuma carta em inglês deste Pokémon com o mesmo ilustrador): 3</summary>
+            <div class="grid"><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/044245_P_MEITANTEIPIKACHIXYUU.jpg" alt="" loading="lazy">
+        <figcaption><strong>名探偵ピカチュウ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #098</span><small>Illus. MINAMINAMI Take · HP 90<br>Imagem: site oficial japonês</small></figcaption></figure><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/049618_P_HIROSHIMANOPIKACHIXYUU.jpg" alt="" loading="lazy">
+        <figcaption><strong>ヒロシマのピカチュウ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #261</span><small>Illus. REOspikee · HP 70<br>Imagem: site oficial japonês</small></figcaption></figure><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/049620_P_FUKUOKANOPIKACHIXYUU.jpg" alt="" loading="lazy">
+        <figcaption><strong>フクオカのピカチュウ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #289</span><small>Illus. Nelnal · HP 70<br>Imagem: site oficial japonês</small></figcaption></figure></div>
+        </details>
+
+        <details open><summary>Casos-limite — mesmo ilustrador em inglês, HP diferente (a regra solta deixaria entrar; a rígida não): 2</summary>
+            <div class="grid"><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/046294_P_PIKACHIXYUU.jpg" alt="" loading="lazy">
+        <figcaption><strong>ピカチュウ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #197</span><small>Illus. Atsushi Furusawa · HP 70<br>Em inglês, mesmo ilustrador: Pikachu (Promos-A, HP 60); Pikachu (SVP Black Star Promos, HP 60); Pikachu (30th Celebration, HP 50)…<br>Imagem: site oficial japonês (conferida pelo número)</small></figcaption></figure><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/049617_P_TOUHOKUNOPIKACHIXYUU.jpg" alt="" loading="lazy">
+        <figcaption><strong>トウホクのピカチュウ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #260</span><small>Illus. Kouki Saitou · HP 70<br>Em inglês, mesmo ilustrador: Pikachu (Nintendo Black Star Promos, HP 50); Pikachu (POP Series 4, HP 50); Pikachu (Promos-A, HP 60)…<br>Imagem: site oficial japonês</small></figcaption></figure></div>
+        </details>
+
+        <details><summary>Hoje — cartas em inglês já na aba TCG: 246</summary>
+            <div class="grid"><figure class="card"><img src="../public/images/tcg/fut2020-1/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu on the Ball</strong><span>Pokémon Futsal 2020 · #1</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-1/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Wizards Black Star Promos · #1</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-hs-r-2/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>HS trainer Kit (Raichu) · #2</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2024sv-2/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2024 · #2</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2018sm-4/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2018 · #4</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-4/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Wizards Black Star Promos · #4</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex5.5-5/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Poké Card Creator Pack · #5</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2014xy-5/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2014 · #5</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2017sm-5/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2017 · #5</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25-5/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Celebrations · #5</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-ex-latio-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>EX trainer Kit (Latios) · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2016xy-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2016 · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2023sv-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2023 · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2015xy-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2015 · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2019sm-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2019 · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25-6/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Flying Pikachu V</strong><span>Celebrations · #6</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2022swsh-7/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2022 · #7</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25-7/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Flying Pikachu VMAX</strong><span>Celebrations · #7</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ru1-7/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Pokémon Rumble · #7</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-c-008/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>30th Classic Collection · #008</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25-8/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Surfing Pikachu V</strong><span>Celebrations · #8</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/P-A-009/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Promos-A · #009</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop6-9/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>POP Series 6 · #9</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25-9/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Surfing Pikachu VMAX</strong><span>Celebrations · #9</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/det1-10/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Detective Pikachu</strong><span>Detective Pikachu · #10</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/np-12/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Nintendo Black Star Promos · #12</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop5-12/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>POP Series 5 · #12</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop5-13/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu δ</strong><span>POP Series 5 · #13</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop4-13/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>POP Series 4 · #13</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-xy-p-14/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu Libre</strong><span>XY trainer Kit (Pikachu Libre) · #14</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-sm-r-14/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM trainer Kit (Alolan Raichu) · #14</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-c-014/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Classic Collection · #014</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/P-A-015/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Promos-A · #015</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop9-15/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>POP Series 9 · #15</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-hs-r-16/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>HS trainer Kit (Raichu) · #16</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop2-16/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>POP Series 2 · #16</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/mfb-17/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>My First Battle · #17</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv04.5-018/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Paldean Fates · #018</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm115-19/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Hidden Fates · #19</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy6-20/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Roaring Skies · #20</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2b-022/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Shining Revelry · #022</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-023/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #023</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-024/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #024</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-24/low.webp" alt="" loading="lazy">
+        <figcaption><strong>___________'s Pikachu</strong><span>Wizards Black Star Promos · #24</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2a-025/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Triumphant Light · #025</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2021swsh-25/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>McDonald's Collection 2021 · #25</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-025/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #025</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-25/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Flying Pikachu</strong><span>Wizards Black Star Promos · #25</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1a-025/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Mythical Island · #025</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv03.5-025/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>151 · #025</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/P-A-026/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Promos-A · #026</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/g1-26/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Generations · #26</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-026/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #026</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-26/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Wizards Black Star Promos · #26</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy3-27/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Furious Fists · #27</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-027/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #027</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh10.5-027/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Pokémon GO · #027</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-27/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Wizards Black Star Promos · #27</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-027/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #027</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm3.5-28/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Shining Legends · #28</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-028/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #028</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh10.5-028/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Pokémon GO · #028</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-28/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Surfing Pikachu</strong><span>Wizards Black Star Promos · #28</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08.5-028/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Prismatic Evolutions · #028</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-sm-r-29/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM trainer Kit (Alolan Raichu) · #29</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-029/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #029</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm4-30/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Crimson Invasion · #30</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-xy-p-30/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu Libre</strong><span>XY trainer Kit (Pikachu Libre) · #30</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-030/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #030</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-031/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #031</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-032/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #032</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-33/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>Team Up · #33</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-033/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #033</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-034/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #034</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy12-35/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Evolutions · #35</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-035/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #035</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/np-35/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu δ</strong><span>Nintendo Black Star Promos · #35</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-036/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #036</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-037/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #037</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-038/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #038</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw4-39/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Next Destinies · #39</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-039/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #039</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm3-40/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Burning Shadows · #40</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-040/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #040</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-041/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #041</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy1-42/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>XY · #42</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-042/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #042</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-043/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #043</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4-43/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>Vivid Voltage · #43</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex4-43/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Team Magma vs Team Aqua · #43</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-044/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #044</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4-44/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>Vivid Voltage · #44</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-045/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #045</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-046/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #046</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-047/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #047</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy8-48/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>BREAKthrough · #48</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-048/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #048</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-049/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #049</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh12-049/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Silver Tempest · #049</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh7-49/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Evolving Skies · #49</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/B2-049/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Fantastical Parade · #049</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw7-50/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Boundaries Crossed · #50</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-050/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #050</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-051/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #051</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv05-051/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Temporal Forces · #051</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-052/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>30th Celebration · #052</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh11-052/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Lost Origin · #052</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-053/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>30th Celebration · #053</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm10-54/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Unbroken Bonds · #54</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-054/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>30th Celebration · #054</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm11-55/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Unified Minds · #55</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me02.5-055/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Ascended Heroes · #055</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm11-56/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Unified Minds · #56</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3-057/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Celestial Guardians · #057</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me02.5-057/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Ascended Heroes · #057</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex16-57/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Power Keepers · #57</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08-057/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Surging Sparks · #057</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/base1-58/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Base Set · #58</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/base2-60/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Jungle · #60</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex9-60/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Emerald · #60</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/hgss3-61/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Undaunted · #61</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv02-062/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Paldea Evolved · #062</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv02-063/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Paldea Evolved · #063</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh1-65/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Sword &amp; Shield · #65</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm12-66/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Cosmic Eclipse · #66</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dp5-70/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Majestic Dawn · #70</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dp7-70/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Stormfront · #70</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/neo1-70/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Neo Genesis · #70</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl4-71/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Arceus · #71</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex2-72/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Sandstorm · #72</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex6-74/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>FireRed &amp; LeafGreen · #74</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/hgss1-78/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>HeartGold SoulSilver · #78</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex13-78/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Holon Phantoms · #78</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex13-79/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu δ</strong><span>Holon Phantoms · #79</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/gym1-81/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Lt. Surge's Pikachu</strong><span>Gym Heroes · #81</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2b-082/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Shining Revelry · #082</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/gym2-84/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Lt. Surge's Pikachu</strong><span>Gym Challenge · #84</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ecard3-84/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Skyridge · #84</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-085/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu with Grey Felt Hat</strong><span>SVP Black Star Promos · #085</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/lc-86/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Legendary Collection · #86</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh8-86/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>Fusion Strike · #86</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/base4-87/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Base Set 2 · #87</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-088/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #088</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2b-092/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Shining Revelry · #092</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex12-93/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu δ</strong><span>Legend Maker · #93</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-094/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Genetic Apex · #094</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dp2-94/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Mysterious Treasures · #94</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-096/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Genetic Apex · #096</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-101/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #101</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex13-104/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu Star</strong><span>Holon Phantoms · #104</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-106/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>SVP Black Star Promos · #106</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy12-110/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Flying Pikachu</strong><span>Evolutions · #110</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy12-111/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Surfing Pikachu</strong><span>Evolutions · #111</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl2-112/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Rising Rivals · #112</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl2-113/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Flying Pikachu</strong><span>Rising Rivals · #113</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl2-114/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Surfing Pikachu</strong><span>Rising Rivals · #114</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw1-115/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Black &amp; White · #115</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl3-120/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Supreme Victors · #120</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ecard1-124/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Expedition Base Set · #124</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv04.5-131/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Paldean Fates · #131</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-149/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>30th Celebration · #149</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-150/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>30th Celebration · #150</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh9-157/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>Brilliant Stars · #157</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh12.5-160/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Crown Zenith · #160</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-162/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>Team Up · #162</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4-170/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>Vivid Voltage · #170</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv03.5-173/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>151 · #173</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08.5-179/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Prismatic Evolutions · #179</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-184/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>Team Up · #184</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4-188/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>Vivid Voltage · #188</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-190/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #190</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-214/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #214</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08-219/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Surging Sparks · #219</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-225/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SVP Black Star Promos · #225</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08-238/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Surging Sparks · #238</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm12-241/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Cosmic Eclipse · #241</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08-247/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Surging Sparks · #247</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-259/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Genetic Apex · #259</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me02.5-276/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Ascended Heroes · #276</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me02.5-277/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Ascended Heroes · #277</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-281/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Genetic Apex · #281</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-285/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Genetic Apex · #285</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/B1-321/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>Mega Rising · #321</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bwp-BW54/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>BW Black Star Promos · #BW54</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bwp-BW77/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>BW Black Star Promos · #BW77</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/cel25cc-CC008/low.webp" alt="" loading="lazy">
+        <figcaption><strong>_____'s Pikachu</strong><span>Celebrations Classic Collection · #CC008</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dpp-DP16/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>DP Black Star Promos · #DP16</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh12.5gg-GG30/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Crown Zenith Galarian Gallery · #GG30</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/hgssp-HGSS03/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>HGSS Black Star Promos · #HGSS03</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/mep-Museum/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu at the Museum</strong><span>MEP Black Star Promos · #Museum</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/g1-RC29/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Generations · #RC29</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw11-RC7/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Legendary Treasures · #RC7</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM04/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM04</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM108/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM108</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM109/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM109</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM110/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM110</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM111/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM111</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM112/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM112</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM113/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM113</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM114/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Ash's Pikachu</strong><span>SM Black Star Promos · #SM114</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM157/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM157</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM162/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM162</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM168/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>SM Black Star Promos · #SM168</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM170/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Detective Pikachu</strong><span>SM Black Star Promos · #SM170</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM183/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM183</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM190/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Detective Pikachu</strong><span>SM Black Star Promos · #SM190</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM194/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Detective Pikachu</strong><span>SM Black Star Promos · #SM194</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM206/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM206</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM227/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM227</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM232/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu GX</strong><span>SM Black Star Promos · #SM232</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM234/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM234</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM248/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu &amp; Zekrom GX</strong><span>SM Black Star Promos · #SM248</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM76/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM76</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM81/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM81</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM86/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM86</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM98/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SM Black Star Promos · #SM98</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH020/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SWSH Black Star Promos · #SWSH020</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH039/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SWSH Black Star Promos · #SWSH039</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH061/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH061</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH062/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>SWSH Black Star Promos · #SWSH062</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH063/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH063</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH074/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Special Delivery Pikachu</strong><span>SWSH Black Star Promos · #SWSH074</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH139/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V-UNION</strong><span>SWSH Black Star Promos · #SWSH139</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH140/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V-UNION</strong><span>SWSH Black Star Promos · #SWSH140</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH141/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V-UNION</strong><span>SWSH Black Star Promos · #SWSH141</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH142/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V-UNION</strong><span>SWSH Black Star Promos · #SWSH142</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH143/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH143</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH145/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH145</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH153/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SWSH Black Star Promos · #SWSH153</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH198/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH198</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH234/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>SWSH Black Star Promos · #SWSH234</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH285/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>SWSH Black Star Promos · #SWSH285</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH286/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>SWSH Black Star Promos · #SWSH286</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh11tg-TG05/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>Lost Origin Trainer Gallery · #TG05</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh11tg-TG16/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu V</strong><span>Lost Origin Trainer Gallery · #TG16</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh11tg-TG17/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>Lost Origin Trainer Gallery · #TG17</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh11tg-TG29/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu VMAX</strong><span>Lost Origin Trainer Gallery · #TG29</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY124/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu EX</strong><span>XY Black Star Promos · #XY124</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY174/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu-EX</strong><span>XY Black Star Promos · #XY174</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY202/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>XY Black Star Promos · #XY202</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY84/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu EX</strong><span>XY Black Star Promos · #XY84</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY89/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>XY Black Star Promos · #XY89</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xyp-XY95/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>XY Black Star Promos · #XY95</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/mep-093/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu</strong><span>MEP Black Star Promos · #093</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/mep-107/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>MEP Black Star Promos · #107</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/mep-109/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Pikachu ex</strong><span>MEP Black Star Promos · #109</span></figcaption></figure></div>
+        </details>
+    </section>
+    <section class="pokemon">
+        <h2>Eevee</h2>
+        <p class="stats">
+            Hoje na aba TCG: <b>112</b> cartas em inglês ·
+            TCGdex tem <b>51</b> cartas japonesas deste Pokémon
+            (8 com imagem) ·
+            entrariam pela regra rígida: <b>2</b> ·
+            casos-limite: <b>1</b> ·
+            sem ilustrador (não dá para comparar): <b>6</b>
+        </p>
+
+        <details open><summary>JP que entrariam — regra rígida (nenhuma carta em inglês deste Pokémon com o mesmo ilustrador): 2</summary>
+            <div class="grid"><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/M-P/050485_P_IBUI.jpg" alt="" loading="lazy">
+        <figcaption><strong>イーブイ</strong><span>メガ プロモカード (M-P) · #134</span><small>Illus. UKUMO uiti · HP 70<br>Imagem: site oficial japonês</small></figcaption></figure><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SV-P/043691_P_IBUI.jpg" alt="" loading="lazy">
+        <figcaption><strong>イーブイ</strong><span>スカーレット&amp;バイオレット プロモカード (SV-P) · #062</span><small>Illus. YU NAGABA · HP 50<br>Imagem: site oficial japonês (conferida pelo número)</small></figcaption></figure></div>
+        </details>
+
+        <details open><summary>Casos-limite — mesmo ilustrador em inglês, HP diferente (a regra solta deixaria entrar; a rígida não): 1</summary>
+            <div class="grid"><figure class="card"><span class="tag jp">JP</span><img src="https://www.pokemon-card.com/assets/images/card_images/large/SM6/034744_P_IBUI.jpg" alt="" loading="lazy">
+        <figcaption><strong>イーブイ</strong><span>禁断の光 (SM6) · #070</span><small>Illus. Aya Kusube · HP 60<br>Em inglês, mesmo ilustrador: Eevee (Neo Discovery, HP 50)<br>Imagem: site oficial japonês</small></figcaption></figure></div>
+        </details>
+
+        <details><summary>Hoje — cartas em inglês já na aba TCG: 112</summary>
+            <div class="grid"><figure class="card"><img src="../public/images/tcg/fut2020-2/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee on the Ball</strong><span>Pokémon Futsal 2020 · #2</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-xy-su-4/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>XY trainer Kit (Suicune) · #4</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2018sm-11/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>McDonald's Collection 2018 · #11</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/basep-11/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Wizards Black Star Promos · #11</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2016xy-12/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>McDonald's Collection 2016 · #12</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2019sm-12/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>McDonald's Collection 2019 · #12</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-xy-sy-13/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>XY trainer Kit (Sylveon) · #13</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/2024sv-13/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>McDonald's Collection 2024 · #13</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pop3-13/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>POP Series 3 · #13</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/tk-xy-sy-21/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>XY trainer Kit (Sylveon) · #21</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/P-A-030/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Promos-A · #030</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/neo2-38/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Neo Discovery · #38</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-043/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SVP Black Star Promos · #043</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/hgss3-47/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Undaunted · #47</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/hgss3-48/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Undaunted · #48</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm115-48/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Hidden Fates · #48</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm115-49/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Hidden Fates · #49</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv06.5-050/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Shrouded Fable · #050</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/base2-51/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Jungle · #51</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/gym2-51/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Lt. Surge's Eevee</strong><span>Gym Challenge · #51</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4.5-52/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Shining Fates · #52</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh10.5-054/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Pokémon GO · #054</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ecard3-54/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Skyridge · #54</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-055/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Eevee Grove · #055</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/base5-55/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Team Rocket · #55</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex10-55/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Unseen Forces · #55</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-056/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>Eevee Grove · #056</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/col1-56/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Call of Legends · #56</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/pl2-59/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Rising Rivals · #59</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1a-061/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Mythical Island · #061</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2a-062/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Triumphant Light · #062</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dp5-62/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Majestic Dawn · #62</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex2-63/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Sandstorm · #63</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy7-63/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Ancient Origins · #63</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/dp5-63/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Majestic Dawn · #63</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-066/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee Bag</strong><span>Eevee Grove · #066</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex11-68/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee δ</strong><span>Delta Species · #68</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ex11-69/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Delta Species · #69</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/lc-74/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Legendary Collection · #74</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08.5-074/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Prismatic Evolutions · #074</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/ecard2-75/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Aquapolis · #75</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08.5-075/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>Prismatic Evolutions · #075</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-078/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Eevee Grove · #078</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/xy3-80/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Furious Fists · #80</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-083/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>Eevee Grove · #083</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw5-83/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Dark Explorers · #83</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw5-84/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Dark Explorers · #84</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw9-89/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Plasma Freeze · #89</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw9-90/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Plasma Freeze · #90</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/P-A-092/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Promos-A · #092</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-092/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>Eevee Grove · #092</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm1-101/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Sun &amp; Moon · #101</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm5-104/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Ultra Prism · #104</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm5-105/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Ultra Prism · #105</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A3b-107/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee Bag</strong><span>Eevee Grove · #107</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh12.5-108/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee V</strong><span>Crown Zenith · #108</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv07-113/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Stellar Crown · #113</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-116/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>30th Celebration · #116</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-117/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>30th Celebration · #117</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/30th-118/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>30th Celebration · #118</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh10-119/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Astral Radiance · #119</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-120/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee &amp; Snorlax GX</strong><span>Team Up · #120</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh7-125/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Evolving Skies · #125</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A2-126/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Space-Time Smackdown · #126</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh4-130/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Vivid Voltage · #130</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv03.5-133/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>151 · #133</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A4-134/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Wisdom of Sea and Sky · #134</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv06-135/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Twilight Masquerade · #135</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08-143/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Surging Sparks · #143</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm8-155/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Lost Thunder · #155</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm12-166/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Cosmic Eclipse · #166</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv03-166/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Obsidian Flames · #166</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm12-167/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Cosmic Eclipse · #167</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv08.5-167/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>Prismatic Evolutions · #167</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-171/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee &amp; Snorlax GX</strong><span>Team Up · #171</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-173/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SVP Black Star Promos · #173</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-174/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee ex</strong><span>SVP Black Star Promos · #174</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/B1-184/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Mega Rising · #184</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sv06-188/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Twilight Masquerade · #188</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sm9-191/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee &amp; Snorlax GX</strong><span>Team Up · #191</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/svp-200/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SVP Black Star Promos · #200</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh8-205/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Fusion Strike · #205</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-206/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Genetic Apex · #206</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-207/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Genetic Apex · #207</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-208/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Genetic Apex · #208</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A4-231/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Wisdom of Sea and Sky · #231</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/A1-248/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Genetic Apex · #248</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bwp-BW94/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>BW Black Star Promos · #BW94</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bwp-BW97/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>BW Black Star Promos · #BW97</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/bw11-RC14/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Legendary Treasures · #RC14</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM169/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee &amp; Snorlax GX</strong><span>SM Black Star Promos · #SM169</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM174/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee GX</strong><span>SM Black Star Promos · #SM174</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM175/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee GX</strong><span>SM Black Star Promos · #SM175</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM176/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee GX</strong><span>SM Black Star Promos · #SM176</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM184/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SM Black Star Promos · #SM184</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM233/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee GX</strong><span>SM Black Star Promos · #SM233</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM235/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SM Black Star Promos · #SM235</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/smp-SM242/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee GX</strong><span>SM Black Star Promos · #SM242</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/sma-SV41/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Hidden Fates Shiny Vault · #SV41</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH042/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH042</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH065/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee V</strong><span>SWSH Black Star Promos · #SWSH065</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH087/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee VMAX</strong><span>SWSH Black Star Promos · #SWSH087</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH095/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH095</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH118/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH118</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH127/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH127</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH175/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH175</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH190/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH190</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH212/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>SWSH Black Star Promos · #SWSH212</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swshp-SWSH230/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Radiant Eevee</strong><span>SWSH Black Star Promos · #SWSH230</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/swsh9tg-TG11/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Brilliant Stars Trainer Gallery · #TG11</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me06-078/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Delta Reign · #078</span></figcaption></figure><figure class="card"><img src="../public/images/tcg/me06-114/low.webp" alt="" loading="lazy">
+        <figcaption><strong>Eevee</strong><span>Delta Reign · #114</span></figcaption></figure></div>
+        </details>
+    </section>
+</div></body></html>

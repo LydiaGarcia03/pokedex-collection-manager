@@ -4016,6 +4016,29 @@ input {
     }
 }
 
+/* A small "JP" sticker on the top-left corner of Japan-exclusive cards (card.lang === 'ja'). */
+.pokemon-tcg-lang-tag {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    z-index: 3;
+    padding: 2px 7px 2px 6px;
+    color: #ffffff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: #bc002d;
+    border-radius: 0 6px 6px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.pokemon-tcg-viewer__card .pokemon-tcg-lang-tag {
+    top: 16px;
+    padding: 4px 11px 4px 10px;
+    font-size: 0.8rem;
+}
+
 /* A silver "FOIL" sticker on the card's left edge. */
 .pokemon-tcg-foil-tag {
     position: absolute;

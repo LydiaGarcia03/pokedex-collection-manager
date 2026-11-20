@@ -69,6 +69,10 @@ grandes.
   Hisuian/Paldean), Mega, Primal e Gigantamax mostram só as cartas delas, pelo nome da carta
   ("Alolan …", "M …"/"Mega …", "Primal …", VMAX). A entrada da espécie deixa essas cartas de fora,
   exceto com "Exclude forms" ligado. A aba TCG e a contagem ao lado da aba usam a mesma função
+- Cartas exclusivas do Japão (arte que nunca saiu em inglês), com nome japonês e etiqueta vermelha
+  "JP" (`card.lang === 'ja'`). Vêm de `scripts/collect-tcg-japanese.mjs`: imagem do TCGdex ou, se
+  faltar, do site oficial japonês (pokemon-card.com), reduzida com `sharp`. A forma (Alola, Mega
+  etc.) vem em `card.form`, porque `cardsForForm` não consegue ler o nome japonês
 - **O pipeline de cartas é aditivo:** nenhum script remove carta ou imagem já existente no
   catálogo — `collect-tcg` faz merge com o `tcg-cards.json` atual em vez de reescrever do zero
 - Jogos em que cada Pokémon aparece — cada versão de um par (ex. Scarlet vs Violet) mostra sua
@@ -263,6 +267,19 @@ Bulbagarden Archives, which blocks scripted downloads. Save those through a brow
 `public/images/tcg/{cardId}/low.webp` and re-run the command — a file already on disk for a card
 without `imageUrl` is adopted as-is and never overwritten.
 
+### Step 3d — Japan-exclusive cards (optional, re-run anytime)
+Adds the Japanese cards whose art never came out in English (no English card of the same Pokémon
+with the same illustrator + HP). Images come from TCGdex or, when missing, the official Japanese
+card database (pokemon-card.com, matched by name + set + number), resized with `sharp` to 245px
+WebP. Cards found in neither are skipped. Downloads its own images, so it doesn't depend on Step 4.
+TCGdex and pokemon-card.com answers are cached in `scripts/.cache/` (gitignored); the first run
+takes ~15 minutes, later runs only fetch new cards.
+
+```powershell
+npm run collect-tcg-japanese
+node scripts/collect-tcg-japanese.mjs --dry-run   # only report what would be added
+```
+
 ### Step 4 — Download all images
 Downloads ~1100 Pokémon sprites + ~19000 TCG card images (~440MB total, TCGdex + Serebii-sourced).
 Idempotent — skips files already downloaded.
@@ -320,7 +337,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|--------|--------|
 | `src/api/pokemonApi.ts` | **Modified** | Loads local JSON; no backend calls |
 | `src/pages/PokedexPage.tsx` | **Modified** | Client-side filtering; no detail fetch |
-| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; card viewer with No / Yes / Yes, foil (phone full screen, desktop window); desktop corner box cycles have/foil and Shift+click multi-mark |
+| `src/components/PokemonTcgTab.tsx` | **Modified** | Uses `pokemon.name` for TCG lookup; search + filters; card viewer with No / Yes / Yes, foil (phone full screen, desktop window); desktop corner box cycles have/foil and Shift+click multi-mark; "JP" tag on Japan-exclusive cards |
 | `src/components/PokemonModal.tsx` | **Modified** | Renders `PokemonModalMobile` at ≤640px; desktop = type-colored hero column with stacked tabs + ← → keys; tab content and links shared by both layouts |
 | `src/components/PokemonModalMobile.tsx` | **New** | Phone layout of the Pokémon detail |
 | `src/components/PokemonGamesTab.tsx` | **Modified** | Game swatches in each game's color (H4); hint when the Pokémon isn't collected |
@@ -331,7 +348,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 | `src/hooks/useIsMobile.ts` | **New** | `(max-width: 640px)` media query as a hook |
 | `src/hooks/useCollection.ts` | **Modified** | `getCardOwnership` / `setCardOwnership` (same saved format); `toggleFoil` removed (unused) |
 | `vite.config.ts` | **Modified** | No proxy; `base: '/pokedex-collection-manager/'` (nome do repo no GitHub); `VitePWA` plugin (manifest + service worker) |
-| `package.json` | **Modified** | Removed `axios`; added setup scripts; `vite-plugin-pwa` (devDependency) |
+| `package.json` | **Modified** | Removed `axios`; added setup scripts; `vite-plugin-pwa` and `sharp` (devDependencies; `sharp` only for `collect-tcg-japanese`) |
 | `scripts/compile-pokedata.mjs` | **New** | Compiles source data into static JSON; moves split into `data/moves/{id}.json` |
 | `src/appInfo.ts` | **New** | `APP_NAME` + `APP_VERSION`; only the version is shown (filter panel tab column on desktop, Actions menu on phone) |
 | `src/hooks/useAuth.ts` | **Modified** | Remembers the last logged-in name (`pcm.lastUserName`) so the header shows the user button, not "Login", while Firebase restores the session |
@@ -340,6 +357,7 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 | `scripts/collect-tcg-sets.mjs` | **New** | Writes `tcg-sets.json` (set names for the TCG search) |
 | `scripts/fetch-serebii-tcg-images.mjs` | **New** | Fills in TCG card images TCGdex is missing, from Serebii |
 | `scripts/fetch-fallback-tcg-images.mjs` | **New** | Fills in what's still missing from pokemon-tcg-data/Scrydex, pkmncards, Limitless, manual overrides |
+| `scripts/collect-tcg-japanese.mjs` | **New** | Adds Japan-exclusive cards (`lang: 'ja'`, `form`), images from TCGdex or pokemon-card.com |
 | `scripts/tcg-image-overrides.json` | **New** | Manual `cardId → imageUrl` overrides used by the fallback script |
 | `scripts/download-images.mjs` | **New** | Downloads all images locally |
 | `scripts/generate-type-symbols.py` | **New** | One-off (Python + Pillow): type icon → big white symbol mask for the desktop detail corner |
@@ -354,7 +372,8 @@ In production, `BASE_URL` is `/pokedex-collection-manager/` (nome do repositóri
 |------|-------------|----------------|------------|
 | `public/data/pokemon-compiled.json` | ~3.5MB | `npm run compile-data` | Yes |
 | `public/data/moves/{id}.json` | ~23MB total, 1288 files | `npm run compile-data` | Yes |
-| `public/data/tcg-cards.json` | ~2MB | `npm run collect-tcg` (merge), updated by `npm run fetch-serebii-tcg` and `npm run fetch-fallback-tcg` | Yes |
+| `public/data/tcg-cards.json` | ~2MB | `npm run collect-tcg` (merge), updated by `npm run fetch-serebii-tcg`, `npm run fetch-fallback-tcg` and `npm run collect-tcg-japanese` | Yes |
+| `scripts/.cache/*.json` | ~3MB | `npm run collect-tcg-japanese` | **No** (gitignored) |
 | `public/data/type-chart.json` | <10KB | `npm run compile-data` | Yes |
 | `public/data/tcg-sets.json` | ~6KB | `npm run collect-tcg` (or `node scripts/collect-tcg-sets.mjs`) | Yes |
 | `public/data/tcg-download-manifest.json` | ~3MB | `npm run collect-tcg`, extended by `npm run fetch-serebii-tcg` | **No** (gitignored) |

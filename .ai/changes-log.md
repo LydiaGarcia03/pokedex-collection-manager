@@ -1,5 +1,48 @@
 # Changes Log
 
+## 2026-11-20 (3) — v1.1.0 (minor)
+
+### Cartas TCG exclusivas do Japão
+
+**Files modified:**
+- `scripts/collect-tcg-japanese.mjs` (novo, `npm run collect-tcg-japanese`, também no fim do
+  `npm run setup`): adiciona ao `tcg-cards.json` as cartas japonesas cuja arte nunca saiu em
+  inglês.
+  - Uma carta japonesa conta como já lançada em inglês quando existe uma carta inglesa do mesmo
+    Pokémon com o mesmo ilustrador e o mesmo HP. Sem ilustrador, basta o mesmo HP.
+  - A imagem vem do TCGdex. Quando o TCGdex não tem, vem do site oficial japonês
+    (pokemon-card.com): busca pelo nome exato, fica com o resultado da mesma coleção e confere o
+    número na página da carta. Essas imagens vêm grandes (~350 KB) e são reduzidas com `sharp`
+    para 245px de largura em WebP (~20 KB).
+  - Salva com id `ja-{id do TCGdex}`, setId `ja-{set}`, `lang: "ja"` e, quando é o caso, `form`
+    (alola/galar/hisui/paldea/mega/mega-x/mega-y/primal/gmax), lida do nome japonês.
+  - Aditivo: não remove nada do catálogo. As respostas do TCGdex e do site oficial ficam em
+    `scripts/.cache/` (ignorado pelo git), então rodar de novo só busca o que é novo.
+- `package.json`: script `collect-tcg-japanese`, incluído no `setup`; `sharp` como devDependency,
+  usado só pelo script (não vai para o site).
+- `.gitignore`: `scripts/.cache/`.
+- `src/types/Pokemon.ts`: `TcgCard` ganha `lang?: 'ja'` e `form?: TcgCardForm`.
+- `src/api/pokemonApi.ts`: `cardsForForm` usa `card.form` nas cartas japonesas (o nome japonês não
+  bate com as regras "Alolan …", "M …" etc.), inclusive Mega X/Y.
+- `src/components/PokemonTcgTab.tsx` + `src/styles.css`: etiqueta vermelha "JP" no canto de cima
+  à esquerda da carta (na grade e na carta grande). A mensagem de vazio passa a terminar em "yet.".
+- `docs/jp-exclusive-test.html`: página de teste com o Pikachu e o Eevee, usada para validar a
+  regra.
+- `src/appInfo.ts`: versão `1.1.0`.
+
+**Resultado da execução:** de 10.601 cartas japonesas de Pokémon, 10.391 já existem em inglês e
+205 são exclusivas. Entraram 140 cartas, de 104 Pokémon e 16 coleções: 16 com imagem do TCGdex e
+124 com imagem do site oficial. As imagens somam 3 MB. Nenhuma carta foi removida (20.793 →
+20.933). Ficaram de fora 65 cartas sem imagem em nenhuma das duas fontes, quase todas de coleções
+antigas (VS, Gym, Neo, web) que o site oficial não tem, e 5 cartas de Pokémon não identificado.
+
+**Atenção:** 85 das 140 são da coleção mais nova, M6 (Storm Emerald), que ainda não saiu em
+inglês. Quando ela sair, `npm run collect-tcg` traz as inglesas, e as japonesas continuam no
+catálogo, porque o pipeline não remove nada. Se isso incomodar, dá para tirar à mão as `ja-M6-*`.
+
+**Why:** o User pediu para mostrar também as cartas que só saíram no Japão, buscando no site
+oficial japonês as imagens que o TCGdex não tem.
+
 ## 2026-11-20 (2) — v1.0.3 (patch)
 
 ### Cartas TCG separadas por forma (regional, Mega, Primal, Gigantamax)

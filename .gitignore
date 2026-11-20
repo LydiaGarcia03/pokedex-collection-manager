@@ -31,3 +31,6 @@ scripts/serebii-dlc-reference.json
 
 # Local AI/change logs — not tracked remotely
 .ai/
+
+# TCGdex answers cached by collect-tcg-japanese.mjs (re-runs only fetch new cards)
+scripts/.cache/

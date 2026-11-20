@@ -131,12 +131,19 @@ export interface MegaEvolution {
 }
 
 // TCG card from backend (sourced from TCGdex)
+// Forms with cards of their own (see cardsForForm in src/api/pokemonApi.ts).
+export type TcgCardForm = 'alola' | 'galar' | 'hisui' | 'paldea' | 'mega' | 'mega-x' | 'mega-y' | 'primal' | 'gmax';
+
 export interface TcgCard {
     id: string;
     name: string;
     number: string | null;
     imageUrl: string | null;
     setId: string | null;
+    /** Only on Japan-exclusive cards (scripts/collect-tcg-japanese.mjs); English otherwise. */
+    lang?: 'ja';
+    /** Set by the Japanese collector, whose card names the form rules can't read. */
+    form?: TcgCardForm;
 }
 
 export interface TcgCardsApiResponse {
