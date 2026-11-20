@@ -1,5 +1,20 @@
 # Changes Log
 
+## 2026-11-20 (7) — v1.2.1 (patch)
+
+### "Click again to exclude" na mesma linha que a contagem de cartas; OR / AND em maiúsculas
+
+**Files modified:**
+- `src/components/PokemonTcgTab.tsx`: no computador, a dica "Click again to exclude" saiu do grupo
+  de chips e foi para uma linha própria junto com "X of Y cards" (dica à esquerda, contagem à
+  direita). Antes, a dica quebrava para baixo dos chips e a contagem ia sozinha para outra linha.
+- `src/components/PokemonTcgTab.tsx`: o seletor Or / And (`KindMatchSwitch`) agora mostra
+  "OR" / "AND" em maiúsculas, no computador e na folha de filtros do celular.
+- `src/appInfo.ts`: 1.2.0 → 1.2.1.
+
+**Why:** pedido da User a partir de um print da aba TCG (Pikachu), em que dica e contagem ficavam
+em linhas separadas.
+
 ## 2026-11-20 (6) — v1.2.0 (minor)
 
 ### Filtro Full art / Promo / JP na aba TCG

@@ -91,7 +91,7 @@ function KindMatchSwitch({ value, onChange, wide = false }: { value: KindMatch; 
                     title={option === 'or' ? 'Cards with at least one of the picked types' : 'Cards with every picked type'}
                     onClick={() => onChange(option)}
                 >
-                    {option === 'or' ? 'Or' : 'And'}
+                    {option === 'or' ? 'OR' : 'AND'}
                 </button>
             ))}
         </span>
@@ -480,19 +480,19 @@ export function PokemonTcgTab({
     ) : (
         <div className="pokemon-tcg-toolbar">
             {searchField}
+            <div className="pokemon-tcg-filters pokemon-tcg-filters--wrap" role="group" aria-label="Filter cards">
+                {selected && (
+                    <>
+                        {statusChips}
+                        <span className="pokemon-tcg-filters__divider" aria-hidden="true" />
+                    </>
+                )}
+                <span className="pokemon-tcg-filters__label">Type</span>
+                <KindMatchSwitch value={kindMatch} onChange={setKindMatch} />
+                {kindChips}
+            </div>
             <div className="pokemon-tcg-toolbar__row">
-                <div className="pokemon-tcg-filters pokemon-tcg-filters--wrap" role="group" aria-label="Filter cards">
-                    {selected && (
-                        <>
-                            {statusChips}
-                            <span className="pokemon-tcg-filters__divider" aria-hidden="true" />
-                        </>
-                    )}
-                    <span className="pokemon-tcg-filters__label">Type</span>
-                    <KindMatchSwitch value={kindMatch} onChange={setKindMatch} />
-                    {kindChips}
-                    <span className="pokemon-tcg-filters__hint">Click again to exclude</span>
-                </div>
+                <span className="pokemon-tcg-filters__hint">Click again to exclude</span>
                 {count}
             </div>
             {filterDescription && <p className="pokemon-tcg-filter-description">{filterDescription}</p>}
